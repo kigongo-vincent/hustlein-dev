@@ -1,68 +1,61 @@
+@import "tailwindcss";
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+  --primary: #ff9600;
+  --primary-dark: #682308;
+  --secondary: #ff9600;
+  --dark: #050200;
+  --background: #fffaf2;
+  --foreground: #ffffff;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-weight: 400;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Inputs: visible border; --focus-border set from Themestore (brand.secondary) */
+.input-base {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  transition: border-color 0.15s ease;
+}
+@media (prefers-color-scheme: dark) {
+  .input-base {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+.input-base:focus {
+  border-color: var(--focus-border);
+  outline: none;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* Floating label inputs: room for label on top border */
+.input-floating {
+  padding-top: 1.25rem;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Autofill: detect in JS via animation; keep background consistent */
+@keyframes onAutoFillStart {
+  from { opacity: 1; }
+  to { opacity: 1; }
+}
+@keyframes onAutoFillCancel {
+  from { opacity: 1; }
+  to { opacity: 1; }
+}
+.input-floating:-webkit-autofill {
+  animation: onAutoFillStart 0.001s;
+}
+.input-floating:not(:-webkit-autofill) {
+  animation: onAutoFillCancel 0.001s;
+}
+
+/* Max border-radius 4px across the app */
+.rounded-base {
+  border-radius: 4px;
+}
+
+.shadow-custom {
+  box-shadow: 3px 3px 20px rgba(0, 0, 0, 0.035);
 }
