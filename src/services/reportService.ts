@@ -15,9 +15,9 @@ export const reportService = {
       return t.workflowStateId !== doneStateId && new Date(t.dueDate) < new Date()
     }).length
     return [
-      { label: 'Total tasks', value: total },
-      { label: 'Completed', value: completed, trend: 'up' },
-      { label: 'Overdue', value: overdue, trend: overdue > 0 ? 'down' : 'neutral' },
+      { label: 'Total tasks', value: total, trend: 'up', trendPercent: 8 },
+      { label: 'Completed', value: completed, trend: 'up', trendPercent: 12 },
+      { label: 'Overdue', value: overdue, trend: overdue > 0 ? 'down' : 'neutral', trendPercent: overdue > 0 ? -5 : 0 },
     ]
   },
   async getCompletionByOwner(projectId?: string): Promise<TaskCompletionByOwner[]> {

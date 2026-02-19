@@ -4,16 +4,21 @@ import Text from '../base/Text'
 import { baseFontSize } from '../base/Text'
 import { Themestore } from '../../data/Themestore'
 
+export type InputMode = 'fill' | 'outline'
+
 export interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
   hint?: string
+  /** fill = solid background from theme; outline = transparent background (default outside auth) */
+  mode?: InputMode
 }
 
 const Input = ({
   label,
   error,
   hint,
+  mode = 'outline',
   className = '',
   id,
   value,
@@ -91,10 +96,15 @@ const Input = ({
     onChange?.(e)
   }
 
+  const dark = current?.system?.dark
+  const darkPaled = dark === 'black' ? '#00000014' : dark && /^#[0-9A-Fa-f]{6}$/.test(dark) ? `${dark}14` : undefined
   return (
     <div
       className="rounded-base"
-      style={{ ['--focus-border' as string]: current?.brand?.secondary }}
+      style={{
+        ['--focus-border' as string]: current?.brand?.secondary,
+        ['--input-border' as string]: darkPaled,
+      }}
     >
       <div className="relative">
         <input
@@ -111,11 +121,11 @@ const Input = ({
           onBlur={handleBlur}
           onInput={onInput}
           onChange={handleChange}
-          className={`input-base input-floating w-full rounded-base pt-4 pb-3 ${isPassword ? 'pr-10' : 'px-3'} pl-3 ${error ? '!border-red-500' : ''} ${className}`}
+          className={`input-base input-floating input-mode-${mode} w-full rounded-base pt-3 pb-2 ${isPassword ? 'pr-10' : 'px-3'} pl-3 ${error ? '!border-red-500' : ''} ${className}`}
           style={{
             fontSize: baseFontSize,
             lineHeight: 1.5,
-            backgroundColor: current?.system?.background,
+            backgroundColor: mode === 'fill' ? (current?.system?.background ?? undefined) : 'transparent',
             color: current?.system?.dark,
           }}
           {...rest}
@@ -143,7 +153,7 @@ const Input = ({
               fontSize: floated ? 11 : baseFontSize,
               lineHeight: 1.5,
               color: floated ? (current?.system?.dark ?? 'inherit') : (current?.system?.dark ? `${current.system.dark}99` : 'inherit'),
-              backgroundColor: floated ? (current?.system?.background ?? 'transparent') : 'transparent',
+              backgroundColor: floated ? (mode === 'fill' ? (current?.system?.background ?? 'transparent') : (current?.system?.foreground ?? 'transparent')) : 'transparent',
               paddingLeft: floated ? 2 : 0,
               paddingRight: floated ? 2 : 0,
             }}

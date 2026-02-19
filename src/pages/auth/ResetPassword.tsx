@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router'
 import View from '../../components/base/View'
 import Text from '../../components/base/Text'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
-import { Input, Button } from '../../components/ui'
+import { Input, Button, AlertModal } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 
 const ResetPassword = () => {
@@ -88,11 +88,6 @@ const ResetPassword = () => {
               required
               autoComplete="new-password"
             />
-            {error && (
-              <Text variant="sm" className="opacity-90" color={current?.system?.error}>
-                {error}
-              </Text>
-            )}
             <Button
               type="submit"
               label={loading ? 'Updating…' : 'Update password'}
@@ -109,6 +104,13 @@ const ResetPassword = () => {
           </Link>
         </div>
       </View>
+      <AlertModal
+        open={!!error}
+        title="Error"
+        message={error}
+        onClose={() => setError('')}
+        variant="error"
+      />
     </View>
   )
 }

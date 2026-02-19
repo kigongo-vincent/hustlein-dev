@@ -1,6 +1,7 @@
-import { useRoutes, useLocation } from 'react-router'
+import { useRoutes, useLocation, Navigate } from 'react-router'
 import { AnimatePresence } from 'framer-motion'
 import { motion } from 'framer-motion'
+import { Authstore } from '../data/Authstore'
 import Splashscreen from '../pages/auth/Splashscreen'
 import Login from '../pages/auth/Login'
 import Signup from '../pages/auth/Signup'
@@ -17,6 +18,7 @@ const pageTransition = {
 }
 
 const Auth = () => {
+  const user = Authstore((s) => s.user)
   const location = useLocation()
   const element = useRoutes([
     { index: true, element: <Splashscreen /> },
@@ -27,6 +29,10 @@ const Auth = () => {
     { path: 'verify-email', element: <VerifyEmail /> },
     { path: 'check-email', element: <CheckEmail /> },
   ])
+
+  if (user) {
+    return <Navigate to="/app" replace />
+  }
 
   return (
     <AnimatePresence mode="wait">

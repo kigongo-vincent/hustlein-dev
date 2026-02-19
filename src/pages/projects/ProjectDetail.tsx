@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router'
 import Text from '../../components/base/Text'
 import { Card, Button, Badge, Table } from '../../components/ui'
+import { AppPageLayout } from '../../components/layout'
 import { projectService, taskService, milestoneService, userService } from '../../services'
 import type { Project, Task, Milestone } from '../../types'
 
@@ -27,24 +28,19 @@ const ProjectDetail = () => {
   if (!project) return <Text>Loading…</Text>
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to="/app/projects">
-          <Button variant="ghost" size="sm" label="← Projects" />
-        </Link>
-      </div>
-      <Text variant="xl" className="font-medium">
-        {project.name}
-      </Text>
-      <Text variant="md" className="opacity-80">
-        {project.description}
-      </Text>
-      <Text variant="sm">Project lead: {leadName}</Text>
+    <AppPageLayout title={project.name} subtitle={project.description}>
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Link to="/app/projects">
+            <Button variant="ghost" size="sm" label="← Projects" />
+          </Link>
+          <Text variant="sm" className="opacity-80">Project lead: {leadName}</Text>
+        </div>
       <Card title="Milestones" subtitle={`${milestones.length} total`}>
         <ul className="space-y-2">
           {milestones.map((m) => (
             <li key={m.id} className="flex items-center gap-2">
-              <Text variant="md">{m.name}</Text>
+              <Text>{m.name}</Text>
               <Badge variant={m.priority}>{m.priority}</Badge>
               <Text variant="sm" className="opacity-70">
                 Target: {m.targetDate}
@@ -73,7 +69,8 @@ const ProjectDetail = () => {
           ))}
         </Table>
       </Card>
-    </div>
+      </div>
+    </AppPageLayout>
   )
 }
 

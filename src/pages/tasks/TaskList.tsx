@@ -1,15 +1,25 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import Text from '../../components/base/Text'
 import { Card, Badge, Table, Select, Input } from '../../components/ui'
+import { AppPageLayout } from '../../components/layout'
 import { taskService, userService, projectService } from '../../services'
 import type { Task, Project } from '../../types'
 
 const TaskList = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const ownerIdFromUrl = searchParams.get('ownerId') ?? ''
+
   const [tasks, setTasks] = useState<Task[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [owners, setOwners] = useState<Record<string, string>>({})
   const [projectFilter, setProjectFilter] = useState<string>('')
+  const [ownerFilter, setOwnerFilter] = useState<string>(ownerIdFromUrl)
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    setOwnerFilter((prev) => ownerIdFromUrl || prev)
+  }, [ownerIdFromUrl])
 
   useEffect(() => {
     taskService.list().then(setTasks)
@@ -23,9 +33,10 @@ const TaskList = () => {
 
   const filtered = tasks.filter((t) => {
     const matchProject = !projectFilter || t.projectId === projectFilter
+    const matchOwner = !ownerFilter || t.ownerId === ownerFilter
     const matchSearch =
       !search || t.title.toLowerCase().includes(search.toLowerCase())
-    return matchProject && matchSearch
+    return matchProject && matchOwner && matchSearch
   })
 
   const projectOptions = [
@@ -33,11 +44,25 @@ const TaskList = () => {
     ...projects.map((p) => ({ value: p.id, label: p.name })),
   ]
 
+  const ownerOptions = [
+    { value: '', label: 'All owners' },
+    ...Object.entries(owners).map(([id, name]) => ({ value: id, label: name })),
+  ]
+
+  const handleOwnerChange = (value: string) => {
+    setOwnerFilter(value)
+    if (value) {
+      searchParams.set('ownerId', value)
+      setSearchParams(searchParams, { replace: true })
+    } else {
+      searchParams.delete('ownerId')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      <Text variant="xl" className="font-medium">
-        Tasks
-      </Text>
+    <AppPageLayout title="Tasks" subtitle="Filter and manage tasks">
+      <div className="space-y-6">
       <Card title="Filters">
         <div className="flex flex-wrap gap-4">
           <div className="min-w-[200px]">
@@ -46,6 +71,14 @@ const TaskList = () => {
               options={projectOptions}
               value={projectFilter}
               onChange={(e) => setProjectFilter(e.target.value)}
+            />
+          </div>
+          <div className="min-w-[200px]">
+            <Select
+              label="Owner"
+              options={ownerOptions}
+              value={ownerFilter}
+              onChange={(e) => handleOwnerChange(e.target.value)}
             />
           </div>
           <div className="min-w-[200px]">
@@ -81,7 +114,8 @@ const TaskList = () => {
           ))}
         </Table>
       </Card>
-    </div>
+      </div>
+    </AppPageLayout>
   )
 }
 

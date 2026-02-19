@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Text from '../../components/base/Text'
 import { Card, Badge, Table } from '../../components/ui'
+import { AppPageLayout } from '../../components/layout'
 import { milestoneService, projectService } from '../../services'
 import type { Milestone, Project } from '../../types'
 
@@ -18,10 +19,7 @@ const MilestoneList = () => {
   }, [])
 
   return (
-    <div className="space-y-6">
-      <Text variant="xl" className="font-medium">
-        Milestones
-      </Text>
+    <AppPageLayout title="Milestones" subtitle={`${milestones.length} total`}>
       <Card title="All milestones" subtitle={`${milestones.length} total`}>
         <Table headers={['Name', 'Project', 'Priority', 'Target date', 'Tasks']}>
           {milestones.map((m) => (
@@ -45,7 +43,7 @@ const MilestoneList = () => {
           ))}
         </Table>
       </Card>
-    </div>
+    </AppPageLayout>
   )
 }
 

@@ -15,15 +15,13 @@ body {
   font-weight: 400;
 }
 
-/* Inputs: visible border; --focus-border set from Themestore (brand.secondary) */
+/* Inputs: --input-border from theme (dark paled); --focus-border for focus */
 .input-base {
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.15));
   transition: border-color 0.15s ease;
 }
-@media (prefers-color-scheme: dark) {
-  .input-base {
-    border-color: rgba(255, 255, 255, 0.2);
-  }
+.input-mode-outline {
+  background-color: transparent;
 }
 .input-base:focus {
   border-color: var(--focus-border);
@@ -32,17 +30,25 @@ body {
 
 /* Floating label inputs: room for label on top border */
 .input-floating {
-  padding-top: 1.25rem;
+  padding-top: 1rem;
 }
 
 /* Autofill: detect in JS via animation; keep background consistent */
 @keyframes onAutoFillStart {
-  from { opacity: 1; }
-  to { opacity: 1; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes onAutoFillCancel {
-  from { opacity: 1; }
-  to { opacity: 1; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .input-floating:-webkit-autofill {
   animation: onAutoFillStart 0.001s;
@@ -57,5 +63,5 @@ body {
 }
 
 .shadow-custom {
-  box-shadow: 3px 3px 20px rgba(0, 0, 0, 0.035);
+  box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.01);
 }

@@ -1,15 +1,14 @@
 import { create } from "zustand";
-export type themeMode = "dark" | "light";
-export interface ThemestoreI {
-  current: ThemeI;
-  setTheme: (theme: themeMode) => void;
-  getThemeByName: (theme: themeMode) => ThemeI;
-}
 
-interface ThemeI {
+const THEME_STORAGE_KEY = "hustle-in-theme";
+
+export type themeMode = "dark" | "light";
+
+export interface ThemeI {
   system: {
     background: string;
     foreground: string;
+    border: string;
     error: string;
     success: string;
     dark: string;
@@ -20,23 +19,42 @@ interface ThemeI {
   };
 }
 
+export type ThemeOverrides = {
+  system?: Partial<ThemeI["system"]>;
+  brand?: Partial<ThemeI["brand"]>;
+};
+
+export interface ThemestoreI {
+  current: ThemeI;
+  mode: themeMode;
+  customOverrides: ThemeOverrides | null;
+  setTheme: (theme: themeMode) => void;
+  setCustomTheme: (overrides: ThemeOverrides | null) => void;
+  resetCustomTheme: () => void;
+  getThemeByName: (theme: themeMode) => ThemeI;
+}
+
+/** Dark theme grounds benchmarked from IG: black base, elevated surfaces, light text */
 const darkTheme: ThemeI = {
   system: {
-    background: "#FFFAF2",
-    foreground: "#ffffff",
-    error: "red",
-    success: "green",
-    dark: "black",
+    background: "#000000",
+    foreground: "#121212",
+    border: "rgba(255,255,255,0.08)",
+    error: "#ff6b6b",
+    success: "#51cf66",
+    dark: "#f5f5f5",
   },
   brand: {
-    primary: "",
-    secondary: "",
+    primary: "#682308",
+    secondary: "#FF9600",
   },
 };
+
 const lightTheme: ThemeI = {
   system: {
     background: "#F4f4f4",
     foreground: "#f9f9f9",
+    border: "rgba(0,0,0,0.1)",
     error: "red",
     success: "green",
     dark: "black",
@@ -47,12 +65,61 @@ const lightTheme: ThemeI = {
   },
 };
 
+function mergeTheme(base: ThemeI, overrides: ThemeOverrides | null): ThemeI {
+  if (!overrides) return base;
+  return {
+    system: { ...base.system, ...overrides.system },
+    brand: { ...base.brand, ...overrides.brand },
+  };
+}
+
+function loadStored(): { mode: themeMode; customOverrides: ThemeOverrides | null } {
+  try {
+    const raw = localStorage.getItem(THEME_STORAGE_KEY);
+    if (!raw) return { mode: "light", customOverrides: null };
+    const parsed = JSON.parse(raw) as { mode?: themeMode; customOverrides?: ThemeOverrides | null };
+    return {
+      mode: parsed.mode === "dark" ? "dark" : "light",
+      customOverrides: parsed.customOverrides ?? null,
+    };
+  } catch {
+    return { mode: "light", customOverrides: null };
+  }
+}
+
+function saveStored(mode: themeMode, customOverrides: ThemeOverrides | null) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ mode, customOverrides }));
+  } catch {
+    // ignore
+  }
+}
+
+const stored = loadStored();
+const baseTheme = stored.mode === "dark" ? darkTheme : lightTheme;
+const initialCurrent = mergeTheme(baseTheme, stored.customOverrides);
+
 export const Themestore = create<ThemestoreI>((set, get) => ({
-  current: lightTheme,
+  current: initialCurrent,
+  mode: stored.mode,
+  customOverrides: stored.customOverrides,
   setTheme: (t: themeMode) => {
-    set({ ...get(), current: get().getThemeByName(t) });
+    const base = t === "dark" ? darkTheme : lightTheme;
+    const merged = mergeTheme(base, get().customOverrides);
+    saveStored(t, get().customOverrides);
+    set({ current: merged, mode: t });
+  },
+  setCustomTheme: (overrides: ThemeOverrides | null) => {
+    const base = get().mode === "dark" ? darkTheme : lightTheme;
+    const merged = mergeTheme(base, overrides);
+    saveStored(get().mode, overrides);
+    set({ customOverrides: overrides, current: merged });
+  },
+  resetCustomTheme: () => {
+    get().setCustomTheme(null);
   },
   getThemeByName: (t: themeMode): ThemeI => {
-    return t == "dark" ? darkTheme : lightTheme;
+    const base = t === "dark" ? darkTheme : lightTheme;
+    return mergeTheme(base, get().customOverrides);
   },
 }));

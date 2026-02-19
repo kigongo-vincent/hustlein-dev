@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
+import { Authstore } from '../../data/Authstore'
 import Logo from '../../components/base/Logo'
 import Text from '../../components/base/Text'
 import View from '../../components/base/View'
@@ -8,14 +9,15 @@ import View from '../../components/base/View'
 const SPLASH_DURATION_MS = 1200
 
 const Splashscreen = () => {
+  const user = Authstore((s) => s.user)
   const navigate = useNavigate()
 
   useEffect(() => {
     const t = setTimeout(() => {
-      navigate('/auth/login', { replace: true })
+      navigate(user ? '/app' : '/auth/login', { replace: true })
     }, SPLASH_DURATION_MS)
     return () => clearTimeout(t)
-  }, [navigate])
+  }, [navigate, user])
 
   return (
     <View

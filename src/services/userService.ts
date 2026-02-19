@@ -20,4 +20,7 @@ export const userService = {
   async update(id: string, payload: Partial<User>): Promise<User | null> {
     return userRepo.update(id, payload)
   },
+  async delete(id: string): Promise<boolean> {
+    return userRepo.delete(id)
+  },
 }

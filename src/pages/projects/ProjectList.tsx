@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import Text from '../../components/base/Text'
 import { Card, Button } from '../../components/ui'
+import { AppPageLayout } from '../../components/layout'
 import { projectService, userService } from '../../services'
 import type { Project } from '../../types'
 
@@ -19,12 +20,7 @@ const ProjectList = () => {
   }, [])
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Text variant="xl" className="font-medium">
-          Projects
-        </Text>
-      </div>
+    <AppPageLayout title="Projects" subtitle="View and manage your projects">
       <div className="grid gap-4">
         {projects.map((p) => (
           <Link key={p.id} to={`/app/projects/${p.id}`}>
@@ -37,7 +33,7 @@ const ProjectList = () => {
           </Link>
         ))}
       </div>
-    </div>
+    </AppPageLayout>
   )
 }
 

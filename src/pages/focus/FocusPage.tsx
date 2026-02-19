@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Text from '../../components/base/Text'
 import { Card, Badge } from '../../components/ui'
+import { AppPageLayout } from '../../components/layout'
 import { taskService } from '../../services'
 import { Authstore } from '../../data/Authstore'
 import type { Task } from '../../types'
@@ -33,11 +34,9 @@ const FocusPage = () => {
   }, [user?.id])
 
   return (
-    <div className="space-y-6">
-      <Text variant="xl" className="font-medium">
-        Focus
-      </Text>
-      <Text variant="md" className="opacity-80">
+    <AppPageLayout title="Focus" subtitle="Today’s tasks and overdue items">
+      <div className="space-y-6">
+      <Text className="opacity-80 mb-2 block">
         Today&apos;s priorities, urgent overdue, and completed.
       </Text>
       <Card title="Today's priorities" subtitle={`${todayTasks.length} tasks`}>
@@ -49,7 +48,7 @@ const FocusPage = () => {
           ) : (
             todayTasks.map((t) => (
               <li key={t.id} className="flex items-center gap-2">
-                <Text variant="md">{t.title}</Text>
+                <Text>{t.title}</Text>
                 <Badge variant={t.priority}>{t.priority}</Badge>
               </li>
             ))
@@ -65,7 +64,7 @@ const FocusPage = () => {
           ) : (
             overdue.map((t) => (
               <li key={t.id} className="flex items-center gap-2">
-                <Text variant="md">{t.title}</Text>
+                <Text>{t.title}</Text>
                 <Badge variant="error">Overdue</Badge>
                 <Text variant="sm" className="opacity-70">
                   Due {t.dueDate}
@@ -84,13 +83,14 @@ const FocusPage = () => {
           ) : (
             completedToday.map((t) => (
               <li key={t.id}>
-                <Text variant="md">{t.title}</Text>
+                <Text>{t.title}</Text>
               </li>
             ))
           )}
         </ul>
       </Card>
-    </div>
+      </div>
+    </AppPageLayout>
   )
 }
 

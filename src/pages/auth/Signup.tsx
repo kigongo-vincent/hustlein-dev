@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router'
 import View from '../../components/base/View'
 import Text from '../../components/base/Text'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
-import { Input, Button } from '../../components/ui'
+import { Input, Button, AlertModal } from '../../components/ui'
 import { userService } from '../../services'
 import { Authstore } from '../../data/Authstore'
 import { Themestore } from '../../data/Themestore'
@@ -110,11 +110,6 @@ const Signup = () => {
             required
             autoComplete="new-password"
           />
-          {error && (
-            <Text variant="sm" className="opacity-90" color={current?.system?.error}>
-              {error}
-            </Text>
-          )}
           <Button
             type="submit"
             label={loading ? 'Creating account…' : 'Create account'}
@@ -130,6 +125,13 @@ const Signup = () => {
           </Link>
         </div>
       </View>
+      <AlertModal
+        open={!!error}
+        title="Error"
+        message={error}
+        onClose={() => setError('')}
+        variant="error"
+      />
     </View>
   )
 }

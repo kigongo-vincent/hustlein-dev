@@ -7,16 +7,15 @@ export interface Props extends HTMLAttributes<HTMLDivElement> {
 
 }
 
-const View = ({ bg = "bg", children, className }: Props) => {
-
+const View = ({ bg = "bg", children, className, style, ...rest }: Props) => {
     const { current } = Themestore()
-
+    const bgColor = bg == "p" ? current?.brand?.primary : bg == "fg" ? current?.system?.foreground : current?.system?.background
     return (
         <div
             className={`${bg == "fg" && "shadow-custom"} ${className}`}
-            style={{
-                backgroundColor: bg == "p" ? current?.brand?.primary : bg == "fg" ? current?.system?.foreground : current?.system?.background
-            }}>
+            style={{ backgroundColor: bgColor, ...style }}
+            {...rest}
+        >
             {children}
         </div>
     )

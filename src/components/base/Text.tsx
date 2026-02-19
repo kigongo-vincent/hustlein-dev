@@ -8,7 +8,7 @@ export interface Props extends HTMLAttributes<HTMLParagraphElement> {
   color?: string
 }
 
-export const baseFontSize = 13.5
+export const baseFontSize = 12.5
 
 const getSize = (fontSize: fontSize): number => {
   switch (fontSize) {

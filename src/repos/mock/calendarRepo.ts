@@ -39,6 +39,12 @@ export const calendarRepo = {
     data.push(next)
     return Promise.resolve(next)
   },
+  async update(id: string, patch: Partial<Omit<CalendarEvent, 'id'>>): Promise<CalendarEvent | null> {
+    const i = data.findIndex((e) => e.id === id)
+    if (i === -1) return Promise.resolve(null)
+    data[i] = { ...data[i], ...patch }
+    return Promise.resolve(data[i])
+  },
   async delete(id: string): Promise<boolean> {
     const i = data.findIndex((e) => e.id === id)
     if (i === -1) return Promise.resolve(false)
