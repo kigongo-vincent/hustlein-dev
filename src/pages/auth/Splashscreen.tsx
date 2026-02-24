@@ -22,7 +22,7 @@ const Splashscreen = () => {
   return (
     <View
       bg="p"
-      className="h-screen py-10 w-screen flex flex-col items-center justify-between overflow-hidden"
+      className="flex-1 min-h-0 w-full py-10 flex flex-col items-center justify-between overflow-hidden"
     >
       <div />
       <motion.div

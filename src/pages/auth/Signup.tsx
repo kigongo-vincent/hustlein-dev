@@ -58,7 +58,7 @@ const Signup = () => {
   }
 
   return (
-    <View bg="bg" className="min-h-screen flex flex-col items-center justify-center p-6">
+    <View bg="bg" className="flex-1 min-h-0 overflow-auto scroll-slim flex flex-col items-center justify-center p-6">
       <View bg="fg" className="w-full max-w-md rounded-base shadow-custom p-[3rem]">
         <div className="flex justify-center my-10">
           <Logo size="lg" src={LOGIN_LOGO_URL} />

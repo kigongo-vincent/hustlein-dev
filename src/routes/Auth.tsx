@@ -42,7 +42,8 @@ const Auth = () => {
         animate={pageTransition.animate}
         exit={pageTransition.exit}
         transition={pageTransition.transition}
-        className="min-h-screen w-full"
+        className="w-full flex flex-col overflow-hidden"
+        style={{ height: 'var(--app-viewport-height)' }}
       >
         {element}
       </motion.div>
