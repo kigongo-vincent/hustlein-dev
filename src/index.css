@@ -62,6 +62,61 @@ body {
   border-radius: 4px;
 }
 
+/* Borderless inputs (e.g. settings hex fields) */
+.input-borderless {
+  border: none;
+  outline: none;
+}
+.input-borderless:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus-ring, rgba(0, 0, 0, 0.12));
+}
+
 .shadow-custom {
   box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.01);
+}
+
+/* Slim scrollbars – use theme vars when set by app (Themestore), fallback neutral */
+.scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+.scroll-slim::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, rgba(0, 0, 0, 0.04));
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, rgba(0, 0, 0, 0.18));
+  border-radius: 3px;
+}
+.scroll-slim::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, rgba(0, 0, 0, 0.28));
+}
+
+/* Overlay scrollbar – does not reserve layout space (e.g. mention dropdown) */
+.scroll-slim-overlay {
+  scrollbar-width: thin;
+  overflow-y: auto;
+}
+.scroll-slim-overlay::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-slim-overlay::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, rgba(0, 0, 0, 0.04));
+}
+.scroll-slim-overlay::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, rgba(0, 0, 0, 0.18));
+  border-radius: 3px;
+}
+.scroll-slim-overlay::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, rgba(0, 0, 0, 0.28));
+}
+@supports (overflow: overlay) {
+  .scroll-slim-overlay {
+    overflow-y: overlay;
+  }
 }

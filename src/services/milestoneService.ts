@@ -17,4 +17,7 @@ export const milestoneService = {
   async update(id: string, payload: Partial<Milestone>): Promise<Milestone | null> {
     return milestoneRepo.update(id, payload)
   },
+  async remove(id: string): Promise<boolean> {
+    return milestoneRepo.delete(id)
+  },
 }

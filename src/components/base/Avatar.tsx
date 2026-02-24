@@ -32,9 +32,7 @@ const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false 
   const initials = getInitials(name || 'Guest')
   const bgColor = inverted
     ? 'rgba(255,255,255,0.25)'
-    : current?.brand?.primary
-      ? `${current.system.background}`
-      : 'rgba(0,0,0,0.08)'
+    : (current?.system?.background ?? 'rgba(0,0,0,0.08)')
   const textColor = inverted ? '#fff' : current?.brand?.primary || current?.system?.dark || '#333'
 
   return (
@@ -53,6 +51,7 @@ const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false 
           src={src}
           alt=""
           className="h-full w-full object-cover"
+          style={{ opacity: 1 }}
           onError={() => setErrored(true)}
         />
       )}

@@ -1,179 +1,191 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Text from '../../components/base/Text'
-import { Card, Button } from '../../components/ui'
+import View from '../../components/base/View'
+import { Card } from '../../components/ui'
 import { AppPageLayout } from '../../components/layout'
 import { Themestore } from '../../data/Themestore'
-import type { themeMode, ThemeOverrides } from '../../data/Themestore'
-import { Palette, RotateCcw } from 'lucide-react'
+import type { themeMode } from '../../data/Themestore'
+import {
+  Palette,
+  Settings,
+  User,
+  Bell,
+  ChevronRight,
+  Sun,
+  Moon,
+} from 'lucide-react'
+
+type SettingsSectionId = 'general' | 'appearance' | 'account' | 'notifications'
+
+interface SectionItem {
+  id: SettingsSectionId
+  label: string
+  icon: React.ReactNode
+}
+
+const SECTIONS: SectionItem[] = [
+  { id: 'general', label: 'General', icon: <Settings className="w-4 h-4" /> },
+  { id: 'appearance', label: 'Appearance', icon: <Palette className="w-4 h-4" /> },
+  { id: 'account', label: 'Account', icon: <User className="w-4 h-4" /> },
+  { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
+]
 
 const SettingsPage = () => {
-  const { current, mode, setTheme, setCustomTheme, resetCustomTheme, customOverrides } = Themestore()
-  const [primary, setPrimary] = useState(current?.brand?.primary ?? '#682308')
-  const [secondary, setSecondary] = useState(current?.brand?.secondary ?? '#FF9600')
-  const [background, setBackground] = useState(current?.system?.background ?? '#F4f4f4')
-  const [foreground, setForeground] = useState(current?.system?.foreground ?? '#f9f9f9')
+  const { current, mode, setTheme } = Themestore()
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>('appearance')
 
-  useEffect(() => {
-    setPrimary(current?.brand?.primary ?? '#682308')
-    setSecondary(current?.brand?.secondary ?? '#FF9600')
-    setBackground(current?.system?.background ?? '#F4f4f4')
-    setForeground(current?.system?.foreground ?? '#f9f9f9')
-  }, [current?.brand?.primary, current?.brand?.secondary, current?.system?.background, current?.system?.foreground])
-
-  const applyOverrides = (overrides: ThemeOverrides) => {
-    setCustomTheme({
-      ...customOverrides,
-      ...overrides,
-      brand: { ...customOverrides?.brand, ...overrides.brand },
-      system: { ...customOverrides?.system, ...overrides.system },
-    })
-  }
-
-  const handlePrimaryChange = (value: string) => {
-    setPrimary(value)
-    applyOverrides({ brand: { primary: value } })
-  }
-  const handleSecondaryChange = (value: string) => {
-    setSecondary(value)
-    applyOverrides({ brand: { secondary: value } })
-  }
-  const handleBackgroundChange = (value: string) => {
-    setBackground(value)
-    applyOverrides({ system: { background: value } })
-  }
-  const handleForegroundChange = (value: string) => {
-    setForeground(value)
-    applyOverrides({ system: { foreground: value } })
-  }
-
-  const handleReset = () => {
-    resetCustomTheme()
-    // useEffect will sync local state from updated current
-  }
+  const bg = current?.system?.background ?? '#F4f4f4'
+  const dark = current?.system?.dark ?? '#111'
+  const primaryColor = current?.brand?.primary ?? '#682308'
 
   return (
-    <AppPageLayout title="Settings" subtitle="Preferences and theming">
-      <div className="space-y-6 w-full max-w-3xl">
-      <Card title="Theming" subtitle="Customize colors and appearance" rightIcon={<Palette className="w-4 h-4" />}>
-        <div className="space-y-5">
-          <div>
-            <Text variant="sm" className="font-medium opacity-90 mb-2 block">Theme mode</Text>
-            <div className="flex gap-2">
-              {(['light', 'dark'] as themeMode[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setTheme(m)}
-                  className={`px-4 py-2.5 rounded-base font-normal capitalize transition ${mode === m ? 'opacity-100 ring-2 ring-offset-2' : 'opacity-70 hover:opacity-90'}`}
-                  style={
-                    mode === m
-                      ? {
-                          backgroundColor: current?.brand?.primary || '#682308',
-                          color: 'white',
-                          ringColor: current?.brand?.primary || '#682308',
-                        }
-                      : {}
-                  }
-                >
-                  {m}
-                </button>
-              ))}
+    <AppPageLayout title="Settings" subtitle="Preferences and configuration" fullWidth>
+      <div className="w-full flex flex-col lg:flex-row gap-6 lg:gap-8">
+        <nav
+          className="shrink-0 w-full lg:w-56"
+          aria-label="Settings sections"
+        >
+          <View
+            bg="fg"
+            className="rounded-base shadow-custom py-1 overflow-hidden"
+          >
+            <ul className="flex flex-row lg:flex-col overflow-x-auto scroll-slim gap-0.5">
+              {SECTIONS.map((section) => {
+                const isActive = activeSection === section.id
+                return (
+                  <li key={section.id}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection(section.id)}
+                      className={`
+                        w-full flex items-center gap-3 py-2.5 pl-3 pr-3 rounded-base text-left
+                        transition-colors duration-150 ease-out
+                        ${isActive ? 'opacity-100' : 'opacity-80 hover:opacity-100'}
+                      `}
+                      style={{
+                        backgroundColor: isActive ? `${primaryColor}14` : 'transparent',
+                        color: isActive ? primaryColor : dark,
+                      }}
+                      aria-current={isActive ? 'true' : undefined}
+                    >
+                      <span
+                        className="shrink-0 flex items-center justify-center [&>svg]:size-4"
+                        style={{ color: isActive ? primaryColor : undefined }}
+                        aria-hidden
+                      >
+                        {section.icon}
+                      </span>
+                      <Text
+                        variant="sm"
+                        className="font-medium flex-1"
+                        color={isActive ? primaryColor : dark}
+                      >
+                        {section.label}
+                      </Text>
+                      <ChevronRight
+                        className="w-4 h-4 shrink-0 lg:hidden opacity-60"
+                        style={{ color: dark }}
+                        aria-hidden
+                      />
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </View>
+        </nav>
+
+        <main className="flex-1 min-w-0">
+          {activeSection === 'general' && (
+            <div className="space-y-6">
+              <Card title="Default view" subtitle="Choose what you see when you open the app">
+                <Text variant="sm" className="opacity-90" color={dark}>
+                  Set your preferred home view and default filters. These apply across devices when you sign in.
+                </Text>
+              </Card>
+              <Card title="Language & region" subtitle="Display language and formats">
+                <Text variant="sm" className="opacity-90" color={dark}>
+                  Change language, date and number formats. Updates apply immediately across the app.
+                </Text>
+              </Card>
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <Text variant="sm" className="font-medium opacity-90">Brand primary</Text>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={primary}
-                  onChange={(e) => handlePrimaryChange(e.target.value)}
-                  className="w-10 h-10 rounded-base border border-black/15 cursor-pointer shrink-0"
-                  aria-label="Primary color"
-                />
-                <input
-                  type="text"
-                  value={primary}
-                  onChange={(e) => handlePrimaryChange(e.target.value)}
-                  className="flex-1 min-w-0 px-3 py-2 rounded-base border border-black/15 text-sm font-mono"
-                  aria-label="Primary color hex"
-                />
-              </div>
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <Text variant="sm" className="font-medium opacity-90">Brand secondary</Text>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={secondary}
-                  onChange={(e) => handleSecondaryChange(e.target.value)}
-                  className="w-10 h-10 rounded-base border border-black/15 cursor-pointer shrink-0"
-                  aria-label="Secondary color"
-                />
-                <input
-                  type="text"
-                  value={secondary}
-                  onChange={(e) => handleSecondaryChange(e.target.value)}
-                  className="flex-1 min-w-0 px-3 py-2 rounded-base border border-black/15 text-sm font-mono"
-                  aria-label="Secondary color hex"
-                />
-              </div>
-            </label>
-          </div>
+          {activeSection === 'appearance' && (
+            <div className="space-y-6">
+              <Card title="Theme" subtitle="Light or dark interface">
+                <div className="space-y-3">
+                  <Text variant="sm" className="opacity-90" color={dark}>
+                    Choose how the app looks.
+                  </Text>
+                  <div
+                    className="inline-flex rounded-base p-1 gap-0"
+                    style={{ backgroundColor: bg }}
+                  >
+                    {(['light', 'dark'] as themeMode[]).map((m) => {
+                      const isSelected = mode === m
+                      return (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setTheme(m)}
+                          className={`
+                            flex items-center gap-2 py-2 pl-4 pr-4 rounded-base font-normal capitalize
+                            transition-all duration-150 ease-out
+                            ${isSelected ? 'opacity-100' : 'opacity-80 hover:opacity-100'}
+                          `}
+                          style={
+                            isSelected
+                              ? { backgroundColor: primaryColor, color: '#fff' }
+                              : { backgroundColor: 'transparent', color: dark }
+                          }
+                          aria-pressed={isSelected}
+                        >
+                          {m === 'light' ? (
+                            <Sun className="w-4 h-4 shrink-0" aria-hidden />
+                          ) : (
+                            <Moon className="w-4 h-4 shrink-0" aria-hidden />
+                          )}
+                          {m}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <Text variant="sm" className="font-medium opacity-90">Page background</Text>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={background}
-                  onChange={(e) => handleBackgroundChange(e.target.value)}
-                  className="w-10 h-10 rounded-base border border-black/15 cursor-pointer shrink-0"
-                  aria-label="Background color"
-                />
-                <input
-                  type="text"
-                  value={background}
-                  onChange={(e) => handleBackgroundChange(e.target.value)}
-                  className="flex-1 min-w-0 px-3 py-2 rounded-base border border-black/15 text-sm font-mono"
-                  aria-label="Background color hex"
-                />
-              </div>
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <Text variant="sm" className="font-medium opacity-90">Card / surface</Text>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={foreground}
-                  onChange={(e) => handleForegroundChange(e.target.value)}
-                  className="w-10 h-10 rounded-base border border-black/15 cursor-pointer shrink-0"
-                  aria-label="Foreground color"
-                />
-                <input
-                  type="text"
-                  value={foreground}
-                  onChange={(e) => handleForegroundChange(e.target.value)}
-                  className="flex-1 min-w-0 px-3 py-2 rounded-base border border-black/15 text-sm font-mono"
-                  aria-label="Foreground color hex"
-                />
-              </div>
-            </label>
-          </div>
+          {activeSection === 'account' && (
+            <div className="space-y-6">
+              <Card title="Profile" subtitle="Name, email and avatar">
+                <Text variant="sm" className="opacity-90" color={dark}>
+                  Update your display name, email address and profile photo. Changes are visible to your team.
+                </Text>
+              </Card>
+              <Card title="Security" subtitle="Password and sign-in">
+                <Text variant="sm" className="opacity-90" color={dark}>
+                  Change your password and manage sign-in options. Enable two-factor authentication for extra security.
+                </Text>
+              </Card>
+            </div>
+          )}
 
-          <div className="pt-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              label="Reset to defaults"
-              startIcon={<RotateCcw className="w-4 h-4" />}
-              onClick={handleReset}
-            />
-          </div>
-        </div>
-      </Card>
+          {activeSection === 'notifications' && (
+            <div className="space-y-6">
+              <Card title="In-app notifications" subtitle="Alerts and activity">
+                <Text variant="sm" className="opacity-90" color={dark}>
+                  Choose which in-app alerts you receive: mentions, project updates, deadlines and team activity.
+                </Text>
+              </Card>
+              <Card title="Email" subtitle="Digests and reminders">
+                <Text variant="sm" className="opacity-90" color={dark}>
+                  Configure email frequency for digests and reminders. Turn off emails you don’t need.
+                </Text>
+              </Card>
+            </div>
+          )}
+        </main>
       </div>
     </AppPageLayout>
   )

@@ -13,15 +13,15 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
-import Text from '../../components/base/Text'
+import Text, { baseFontSize } from '../../components/base/Text'
 import Avatar from '../../components/base/Avatar'
 import View from '../../components/base/View'
-import { Card, Button, Skeleton, AddConsultantModal, Modal } from '../../components/ui'
+import { Card, Button, Skeleton, AddConsultantModal, Modal, CustomSelect } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { userService } from '../../services'
 import type { User, UserRole, ConsultantDetailsSource, ConsultantProfile } from '../../types'
-import { UserPlus, Users, UserCog, Briefcase, TrendingUp, Eye, Pencil, Trash2, CalendarOff, UserCheck, Phone, MapPin, Building2, Users as UsersIcon, DollarSign, FileText, Calendar, CircleDot, X, ListTodo, Receipt, ChevronLeft, ChevronRight } from 'lucide-react'
+import { UserPlus, Users, UserCog, Briefcase, TrendingUp, Eye, Pencil, Trash2, CalendarOff, UserCheck, Phone, MapPin, Building2, Users as UsersIcon, DollarSign, FileText, Calendar, CircleDot, X, ListTodo, Receipt, ChevronLeft, ChevronRight, Search, SlidersHorizontal } from 'lucide-react'
 
 function isConsultantProfile(p: ConsultantDetailsSource): p is ConsultantProfile {
   return 'fullName' in p || 'jobTitle' in p || 'firstName' in p
@@ -198,6 +198,17 @@ const FULL_PROFILE_SAMPLES: Record<string, ConsultantProfile> = {
   },
 }
 
+/** Sample hours logged for performance analytics (today, this week, this month). Key = user id. */
+const HOURS_LOGGED_SAMPLES: Record<string, { today: number; week: number; month: number }> = {
+  u2: { today: 6.5, week: 32, month: 128 },
+  u3: { today: 8, week: 38, month: 142 },
+  u4: { today: 4, week: 28, month: 120 },
+}
+
+function getHoursLogged(userId: string): { today: number; week: number; month: number } {
+  return HOURS_LOGGED_SAMPLES[userId] ?? { today: 0, week: 0, month: 0 }
+}
+
 function getStatIcon(label: string) {
   const n = label.toLowerCase()
   if (n.includes('total') || n.includes('team')) return <Users />
@@ -219,7 +230,32 @@ const ConsultantsPage = () => {
   const [leaveUser, setLeaveUser] = useState<User | null>(null)
   const [saving, setSaving] = useState(false)
   const [page, setPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterRole, setFilterRole] = useState<UserRole | ''>('')
+  const [filterStatus, setFilterStatus] = useState<'active' | 'on_leave' | ''>('')
+  const [filterSort, setFilterSort] = useState<string>('name_asc')
+  const [filterSidebarExiting, setFilterSidebarExiting] = useState(false)
+  const [filterSidebarEntered, setFilterSidebarEntered] = useState(false)
   const PAGE_SIZE = 10
+
+  const ROLE_OPTIONS = [
+    { value: '', label: 'All roles' },
+    { value: 'consultant', label: 'Consultant' },
+    { value: 'project_lead', label: 'Project Lead' },
+  ]
+  const STATUS_OPTIONS = [
+    { value: '', label: 'All statuses' },
+    { value: 'active', label: 'Active' },
+    { value: 'on_leave', label: 'On leave' },
+  ]
+  const SORT_OPTIONS = [
+    { value: 'name_asc', label: 'Name A–Z' },
+    { value: 'name_desc', label: 'Name Z–A' },
+    { value: 'role', label: 'Role' },
+    { value: 'status', label: 'Status' },
+  ]
+  const FILTER_SIDEBAR_DURATION_MS = 220
 
   const fetchConsultants = useCallback(() => {
     if (!user?.companyId) return
@@ -236,15 +272,63 @@ const ConsultantsPage = () => {
     fetchConsultants()
   }, [fetchConsultants])
 
-  const totalConsultants = consultants.length
+  const searchLower = searchQuery.trim().toLowerCase()
+  const filteredConsultants = consultants.filter((u) => {
+    const matchSearch =
+      !searchLower ||
+      u.name.toLowerCase().includes(searchLower) ||
+      u.email.toLowerCase().includes(searchLower)
+    const matchRole = !filterRole || u.role === filterRole
+    const matchStatus =
+      !filterStatus || (filterStatus === 'on_leave' ? u.status === 'on_leave' : u.status !== 'on_leave')
+    return matchSearch && matchRole && matchStatus
+  })
+  const sortedConsultants = [...filteredConsultants].sort((a, b) => {
+    if (filterSort === 'name_asc') return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+    if (filterSort === 'name_desc') return b.name.localeCompare(a.name, undefined, { sensitivity: 'base' })
+    if (filterSort === 'role') return a.role.localeCompare(b.role) || a.name.localeCompare(b.name)
+    if (filterSort === 'status') {
+      const sa = a.status === 'on_leave' ? 1 : 0
+      const sb = b.status === 'on_leave' ? 1 : 0
+      return sa - sb || a.name.localeCompare(b.name)
+    }
+    return 0
+  })
+  const totalConsultants = sortedConsultants.length
   const totalPages = Math.max(1, Math.ceil(totalConsultants / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const start = (safePage - 1) * PAGE_SIZE
-  const paginatedConsultants = consultants.slice(start, start + PAGE_SIZE)
+  const paginatedConsultants = sortedConsultants.slice(start, start + PAGE_SIZE)
 
   useEffect(() => {
     if (safePage !== page) setPage(safePage)
   }, [safePage, page])
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery, filterRole, filterStatus, filterSort])
+
+  useEffect(() => {
+    if (filterOpen) {
+      setFilterSidebarExiting(false)
+      setFilterSidebarEntered(false)
+      const start = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setFilterSidebarEntered(true))
+      })
+      return () => cancelAnimationFrame(start)
+    } else {
+      setFilterSidebarEntered(false)
+    }
+  }, [filterOpen])
+
+  const closeFilterSidebar = useCallback(() => {
+    setFilterSidebarExiting(true)
+    const t = setTimeout(() => {
+      setFilterOpen(false)
+      setFilterSidebarExiting(false)
+    }, FILTER_SIDEBAR_DURATION_MS)
+    return () => clearTimeout(t)
+  }, [])
 
   const handleCloseAddOrEdit = () => {
     setAddModalOpen(false)
@@ -460,7 +544,52 @@ const ConsultantsPage = () => {
         </Card>
       </div>
 
-      <Card title="Consultants" subtitle="All team members" className="p-0 overflow-hidden">
+      <Card
+        title="Consultants"
+        subtitle="All team members"
+        className="p-0 overflow-hidden"
+        titleSuffix={
+          <div
+            className="flex items-center flex-1 min-w-0 max-w-md justify-end rounded-base overflow-hidden"
+            style={{
+              border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.12)'}`,
+            }}
+          >
+            <div className="flex-1 min-w-0 relative flex items-center">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-60 pointer-events-none shrink-0"
+                style={{ color: current?.system?.dark }}
+              />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name or email…"
+                className="w-full py-2 pl-9 pr-3 bg-transparent focus:outline-none focus:ring-0 border-0 placeholder:opacity-60"
+                style={{
+                  fontSize: baseFontSize,
+                  lineHeight: 1.5,
+                  color: current?.system?.dark,
+                }}
+                aria-label="Search consultants"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setFilterOpen(true)}
+              className="shrink-0 p-2.5 transition-opacity hover:opacity-100 opacity-90 focus:outline-none focus:ring-0"
+              style={{
+                color: current?.system?.dark,
+                backgroundColor: filterOpen ? current?.system?.background : 'transparent',
+              }}
+              title="Filter"
+              aria-label="Open filters"
+              aria-expanded={filterOpen}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+          </div>
+        }
+      >
         {loading ? (
           <div className="p-4 space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -474,14 +603,16 @@ const ConsultantsPage = () => {
               </div>
             ))}
           </div>
-        ) : consultants.length === 0 ? (
+        ) : filteredConsultants.length === 0 ? (
           <div className="p-8 text-center">
             <Text variant="sm" className="opacity-80">
-              No consultants yet. Add team members to get started.
+              {consultants.length === 0
+                ? 'No consultants yet. Add team members to get started.'
+                : 'No consultants match your search or filters.'}
             </Text>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scroll-slim">
             <table className="w-full">
               <thead>
                 <tr style={{ backgroundColor: current?.system?.background }}>
@@ -621,6 +752,88 @@ const ConsultantsPage = () => {
         )}
       </Card>
 
+      {/* Filter right sidebar */}
+      {(filterOpen || filterSidebarExiting) && (
+        <>
+          <div
+            role="presentation"
+            className="fixed inset-0 z-40 transition-opacity ease-out"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.35)',
+              opacity: filterSidebarEntered && !filterSidebarExiting ? 1 : 0,
+              transitionDuration: `${FILTER_SIDEBAR_DURATION_MS}ms`,
+            }}
+            onClick={closeFilterSidebar}
+            aria-hidden
+          />
+          <aside
+            className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm flex flex-col shadow-lg transition-transform ease-out"
+            style={{
+              backgroundColor: current?.system?.foreground ?? '#fff',
+              borderLeft: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
+              transform: filterSidebarEntered && !filterSidebarExiting ? 'translateX(0)' : 'translateX(100%)',
+              transitionDuration: `${FILTER_SIDEBAR_DURATION_MS}ms`,
+            }}
+            aria-label="Filter consultants"
+          >
+            <div
+              className="flex items-center justify-between gap-3 px-4 py-3 border-b shrink-0"
+              style={{ borderColor: current?.system?.border }}
+            >
+              <Text className="font-medium">Filters</Text>
+              <button
+                type="button"
+                onClick={closeFilterSidebar}
+                className="p-2 rounded-base opacity-80 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-1"
+                style={{ color: current?.system?.dark }}
+                aria-label="Close filters"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto scroll-slim flex-1 min-h-0 space-y-5">
+              <CustomSelect
+                label="Role"
+                options={ROLE_OPTIONS}
+                value={filterRole}
+                onChange={(v) => setFilterRole((v || '') as UserRole | '')}
+                placeholder="All roles"
+                aria-label="Filter by role"
+                placement="below"
+              />
+              <CustomSelect
+                label="Status"
+                options={STATUS_OPTIONS}
+                value={filterStatus}
+                onChange={(v) => setFilterStatus((v || '') as 'active' | 'on_leave' | '')}
+                placeholder="All statuses"
+                aria-label="Filter by status"
+                placement="below"
+              />
+              <CustomSelect
+                label="Sort by"
+                options={SORT_OPTIONS}
+                value={filterSort}
+                onChange={(v) => setFilterSort(v || 'name_asc')}
+                placeholder="Sort by"
+                aria-label="Sort consultants"
+                placement="below"
+              />
+              <Button
+                size="sm"
+                label="Reset filters"
+                onClick={() => {
+                  setFilterRole('')
+                  setFilterStatus('')
+                  setFilterSort('name_asc')
+                }}
+                disabled={!filterRole && !filterStatus && filterSort === 'name_asc'}
+              />
+            </div>
+          </aside>
+        </>
+      )}
+
       {/* Profile / details modal — organized sections, all fields */}
       <Modal open={!!viewUser} onClose={() => setViewUser(null)}>
         {viewUser && (() => {
@@ -658,63 +871,70 @@ const ConsultantsPage = () => {
 
           return (
             <div className="min-w-0 max-w-lg max-h-[90vh] flex flex-col">
-              {/* Hero — full primary background, contact close to name, white text, close icon in header */}
-              <div className="relative pt-8 pb-8 px-6 shrink-0 rounded-t-base" style={{ backgroundColor: primary ?? bg }}>
+              {/* Hero — image and content on same row, border-b, same typography */}
+              <div
+                className="relative pt-8 pb-8 px-6 shrink-0 rounded-t-base border-b"
+                style={{ backgroundColor: fg ?? bg, borderColor: current?.system?.border ?? 'rgba(0,0,0,0.06)' }}
+              >
                 <button
                   type="button"
                   onClick={() => setViewUser(null)}
-                  className="absolute top-4 right-4 p-2 rounded-base hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-white/50"
-                  style={{ color: '#fff' }}
+                  className="absolute top-4 right-4 p-2 rounded-base hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-black/10"
+                  style={{ color: dark }}
                   aria-label="Close"
                 >
                   <X className="w-5 h-5" />
                 </button>
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-4 shrink-0">
-                    <Avatar name={getDisplayName(p)} size="xl" src={getAvatarUrl(p)} inverted />
+                <div className="flex flex-row items-center gap-6 text-left">
+                  <div className="shrink-0">
+                    <Avatar name={getDisplayName(p)} size="xl" src={getAvatarUrl(p)} />
                   </div>
-                  <p className="text-3xl font-normal mb-2" style={{ color: '#fff', fontSize: '1.875rem', lineHeight: 1.3 }}>{getDisplayName(p)}</p>
-                  <div className="w-full space-y-1 text-center mb-4">
-                    <div>
-                      <a href={`mailto:${p.email}`} className="text-sm font-normal hover:opacity-100 transition-opacity" style={{ color: '#fff', opacity: 0.9 }}>
-                        {p.email}
-                      </a>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <p className="text-base font-normal m-0" style={{ color: dark, lineHeight: 1.4 }}>{getDisplayName(p)}</p>
+                    <div className="space-y-0.5 m-0">
+                      <Text variant="sm" className="m-0">
+                        <a href={`mailto:${p.email}`} className="hover:opacity-100 transition-opacity no-underline" style={{ color: dark, opacity: 0.9 }}>{p.email}</a>
+                      </Text>
+                      {isFull && p.phoneNumber && (
+                        <Text variant="sm" className="m-0">
+                          <a href={`tel:${p.phoneNumber}`} className="hover:opacity-100 transition-opacity no-underline" style={{ color: dark, opacity: 0.9 }}>{p.phoneNumber}</a>
+                        </Text>
+                      )}
                     </div>
-                    {isFull && p.phoneNumber && (
-                      <div>
-                        <a href={`tel:${p.phoneNumber}`} className="text-sm font-normal hover:opacity-100 transition-opacity" style={{ color: '#fff', opacity: 0.9 }}>
-                          {p.phoneNumber}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    <span
-                      className="inline-flex rounded-base px-2.5 py-1 text-xs font-normal"
-                      style={{
-                        backgroundColor: primary ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)',
-                        color: '#fff',
-                        border: '1px solid rgba(255,255,255,0.4)',
-                      }}
-                    >
-                      {getRoleDisplay(p)}
-                    </span>
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-base px-2.5 py-1 text-xs font-normal"
-                      style={{
-                        backgroundColor: (p as User).status === 'on_leave' || (p as ConsultantProfile).status === 'inactive' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.25)',
-                        color: '#fff',
-                        border: '1px solid rgba(255,255,255,0.4)',
-                      }}
-                    >
-                      {(p as User).status !== 'on_leave' && (p as ConsultantProfile).status !== 'inactive' && <CircleDot className="w-3.5 h-3.5 shrink-0" />}
-                      {getStatusDisplay(p)}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-normal"
+                        style={{
+                          backgroundColor: (p as User).status === 'on_leave' || (p as ConsultantProfile).status === 'inactive'
+                            ? 'rgba(0,0,0,0.05)'
+                            : (current?.system?.success && /^#[0-9A-Fa-f]{6}$/.test(current.system.success)
+                              ? `${current.system.success}12`
+                              : 'rgba(34, 197, 94, 0.1)'),
+                          color: (p as User).status === 'on_leave' || (p as ConsultantProfile).status === 'inactive' ? dark : (current?.system?.success ?? dark),
+                        }}
+                      >
+                        {getStatusDisplay(p)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 pt-8 pb-6 overflow-y-auto flex-1 min-h-0 space-y-5">
+              <div className="px-6 pt-8 pb-6 overflow-y-auto scroll-slim flex-1 min-h-0 space-y-5">
+                {/* Performance analytics — hours logged */}
+                <Section title="Performance" icon={TrendingUp}>
+                  {(() => {
+                    const hours = getHoursLogged(p.id)
+                    return (
+                      <>
+                        <Row label="Hours logged today" value={hours.today > 0 ? `${hours.today} h` : '—'} />
+                        <Row label="Hours logged this week" value={hours.week > 0 ? `${hours.week} h` : '—'} />
+                        <Row label="Hours logged this month" value={hours.month > 0 ? `${hours.month} h` : '—'} />
+                      </>
+                    )
+                  })()}
+                </Section>
+
                 {/* 1. Personal */}
                 <Section title="Personal" icon={UserCog}>
                   {isFull && (p.firstName || p.lastName) && <Row label="First name" value={p.firstName} />}

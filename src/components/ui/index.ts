@@ -1,5 +1,9 @@
 export { default as Button } from "./Button";
 export { default as Input } from "./Input";
+export { default as Textarea } from "./Textarea";
+export type { TextareaProps, TextareaMode } from "./Textarea";
+export { default as RichTextEditor } from "./RichTextEditor";
+export type { RichTextEditorProps, RichTextEditorMode, RichTextToolbarPreset } from "./RichTextEditor";
 export { default as Card } from "./Card";
 export { default as Select } from "./Select";
 export type { Option as SelectOption } from "./Select";
@@ -17,3 +21,7 @@ export { default as DatePicker } from "./DatePicker";
 export type { DatePickerProps } from "./DatePicker";
 export { default as DateSelectInput } from "./DateSelectInput";
 export type { DateSelectInputProps } from "./DateSelectInput";
+export { default as Popover } from "./Popover";
+export type { PopoverProps } from "./Popover";
+export { default as NoteCard } from "../NoteCard";
+export type { NoteCardProps } from "../NoteCard";

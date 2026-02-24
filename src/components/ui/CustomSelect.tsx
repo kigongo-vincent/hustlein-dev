@@ -1,4 +1,5 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown } from 'lucide-react'
 import Text from '../base/Text'
 import { baseFontSize } from '../base/Text'
@@ -22,6 +23,8 @@ export interface CustomSelectProps {
   className?: string
   'aria-label'?: string
   mode?: InputMode
+  /** Open menu above or below the trigger. Default 'above'. Use 'below' when space above is limited (e.g. in a sidebar). */
+  placement?: 'above' | 'below'
 }
 
 export default function CustomSelect({
@@ -35,20 +38,37 @@ export default function CustomSelect({
   className = '',
   'aria-label': ariaLabel,
   mode = 'outline',
+  placement = 'above',
 }: CustomSelectProps) {
   const { current } = Themestore()
   const [open, setOpen] = useState(false)
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
 
   const selected = options.find((o) => o.value === value)
   const display = selected?.label ?? placeholder
 
+  useLayoutEffect(() => {
+    const el = triggerRef.current ?? containerRef.current
+    if (!open || !el) return
+    const rect = el.getBoundingClientRect()
+    const gap = 4
+    const maxHeight = 220
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+    const openBelow = placement === 'below' ? spaceBelow >= Math.min(maxHeight, spaceAbove) : spaceAbove < spaceBelow
+    const top = openBelow ? rect.bottom + gap : rect.top - maxHeight - gap
+    setDropdownRect({ top, left: rect.left, width: rect.width })
+  }, [open, placement])
+
   useEffect(() => {
     if (!open) return
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+      const target = e.target as Node
+      if (containerRef.current?.contains(target) || listRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -73,6 +93,7 @@ export default function CustomSelect({
         </label>
       )}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => !disabled && setOpen((o) => !o)}
         disabled={disabled}
@@ -96,41 +117,49 @@ export default function CustomSelect({
         />
       </button>
 
-      {open && (
-        <div
-          role="listbox"
-          className="absolute left-0 right-0 bottom-full mb-1 rounded-base border shadow-lg overflow-hidden max-h-[220px] overflow-y-auto"
-          style={{
-            zIndex: 9999,
-            backgroundColor: current?.system?.foreground ?? '#fff',
-            borderColor: current?.system?.border ?? 'rgba(0,0,0,0.1)',
-          }}
-        >
-          {options.map((opt) => {
-            const isSelected = value === opt.value
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => {
-                  onChange(opt.value)
-                  setOpen(false)
-                }}
-                className="w-full text-left px-3 py-3 transition-colors hover:opacity-90"
-                style={{
-                  fontSize: baseFontSize,
-                  backgroundColor: isSelected ? (current?.system?.background ?? undefined) : undefined,
-                  color: current?.system?.dark,
-                }}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
-      )}
+      {open &&
+        dropdownRect &&
+        createPortal(
+          <div
+            ref={listRef}
+            role="listbox"
+            className="rounded-base border shadow-lg overflow-hidden max-h-[220px] overflow-y-auto scroll-slim"
+            style={{
+              position: 'fixed',
+              top: dropdownRect.top,
+              left: dropdownRect.left,
+              width: dropdownRect.width,
+              zIndex: 99999,
+              backgroundColor: current?.system?.foreground ?? '#fff',
+              borderColor: current?.system?.border ?? 'rgba(0,0,0,0.1)',
+            }}
+          >
+            {options.map((opt) => {
+              const isSelected = value === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    onChange(opt.value)
+                    setOpen(false)
+                  }}
+                  className="w-full text-left px-3 py-3 transition-colors hover:opacity-90"
+                  style={{
+                    fontSize: baseFontSize,
+                    backgroundColor: isSelected ? (current?.system?.background ?? undefined) : undefined,
+                    color: current?.system?.dark,
+                  }}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>,
+          document.body
+        )}
 
       {error && (
         <Text variant="sm" className="mt-1" color={current?.system?.error}>

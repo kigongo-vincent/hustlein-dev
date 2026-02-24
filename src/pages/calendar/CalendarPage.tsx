@@ -1,8 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import Text from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Input, Select, AlertModal } from '../../components/ui'
-import { AppPageLayout } from '../../components/layout'
+import { Card, Button, Input, AlertModal, DatePicker, CustomSelect } from '../../components/ui'
 import { calendarService } from '../../services'
 import { Authstore } from '../../data/Authstore'
 import { Themestore } from '../../data/Themestore'
@@ -79,6 +78,37 @@ function getHoursDecimal(iso: string): number {
   return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600
 }
 
+/** 15-minute step time options for non-native time picking */
+const TIME_OPTIONS = (() => {
+  const out: { value: string; label: string }[] = []
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      out.push({ value, label: value })
+    }
+  }
+  return out
+})()
+
+function getDatePart(dt: string): string {
+  if (!dt) return ''
+  const i = dt.indexOf('T')
+  return i >= 0 ? dt.slice(0, i) : dt.slice(0, 10)
+}
+function getTimePart(dt: string): string {
+  if (!dt) return '09:00'
+  const i = dt.indexOf('T')
+  if (i < 0) return '09:00'
+  const rest = dt.slice(i + 1)
+  const [h, m] = rest.split(':').map(Number)
+  if (Number.isNaN(h) || Number.isNaN(m)) return '09:00'
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+function setDateTime(date: string, time: string): string {
+  if (!date) return ''
+  return `${date}T${time}`
+}
+
 const CalendarPage = () => {
   const { user } = Authstore()
   const { current } = Themestore()
@@ -95,9 +125,10 @@ const CalendarPage = () => {
 
   const primary = current?.brand?.primary || '#682308'
   const secondary = current?.brand?.secondary || '#FF9600'
+  const bg = current?.system?.background
   const fg = current?.system?.foreground || '#f9f9f9'
   const dark = current?.system?.dark || 'black'
-  const borderColor = dark ? `${dark}18` : 'rgba(0,0,0,0.08)'
+  const borderColor = current?.system?.border || (dark ? `${dark}18` : 'rgba(0,0,0,0.08)')
 
   useEffect(() => {
     if (!user?.id) return
@@ -203,20 +234,31 @@ const CalendarPage = () => {
     EVENT_TYPES.find((t) => t.value === type)?.label ?? type.replace(/_/g, ' ')
 
   return (
-    <AppPageLayout title="Calendar" subtitle="Schedule and events" fullWidth>
-      <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="min-w-0">
-          <Text variant="sm" className="opacity-80">
-            Your task schedules, planning blocks, and milestone deadlines.
-          </Text>
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-4 min-h-0 flex-1">
+      {/* Page header */}
+      <View bg="bg" className="p-3 rounded-base shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Text className="font-medium" style={{ color: dark }}>Calendar</Text>
+            <Text variant="sm" className="opacity-80 mt-0.5 block" style={{ color: dark }}>
+              Schedule and events · Task schedules, planning blocks, and milestone deadlines
+            </Text>
+          </div>
         </div>
-      </div>
+      </View>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar area */}
-        <div className="lg:col-span-2">
-          <View bg="fg" className="rounded-base p-4" style={{ border: `1px solid ${borderColor}` }}>
+      {/* Main fg section: calendar + sidebar */}
+      <View bg="fg" className="rounded-base shadow-custom p-4 lg:p-6 flex flex-col gap-6 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 flex-1 min-h-0">
+          {/* Calendar area */}
+          <div className="lg:col-span-2 min-w-0 flex flex-col flex-1 min-h-0">
+            <div
+              className="rounded-base p-4 overflow-auto flex flex-col min-h-0 flex-1 max-h-[45vh]"
+              style={{
+                maxWidth: 'min(100%, 72vh)',
+                backgroundColor: bg ?? fg,
+              }}
+            >
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <button
@@ -240,7 +282,7 @@ const CalendarPage = () => {
                 </Text>
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex rounded-base overflow-hidden" style={{ border: `1px solid ${borderColor}` }}>
+                <div className="flex rounded-base overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setViewMode('month')}
@@ -265,7 +307,7 @@ const CalendarPage = () => {
             </div>
 
             {viewMode === 'month' && (
-              <div className="grid grid-cols-7 gap-px" style={{ backgroundColor: borderColor }}>
+              <div className="grid grid-cols-7 gap-px">
                 {WEEKDAYS.map((wd) => (
                   <div key={wd} className="py-2 text-center" style={{ backgroundColor: fg, color: dark, fontSize: 13.5 }}>
                     <Text variant="sm" className="font-medium opacity-80">{wd}</Text>
@@ -280,12 +322,10 @@ const CalendarPage = () => {
                       key={iso}
                       type="button"
                       onClick={() => setSelectedDate(iso)}
-                      className="min-h-[88px] lg:min-h-[100px] p-1.5 text-left flex flex-col items-stretch transition hover:opacity-90"
+                      className="min-h-[4.5vh] max-h-[7vh] p-1.5 text-left flex flex-col items-stretch transition hover:opacity-90 focus:outline-none"
                       style={{
-                        backgroundColor: isSelected ? primary + '20' : fg,
+                        backgroundColor: isSelected ? primary + '20' : isToday ? primary + '12' : fg,
                         color: dark,
-                        outline: isToday ? `2px solid ${primary}` : 'none',
-                        outlineOffset: -1,
                       }}
                     >
                       <Text variant="sm" className={`font-medium ${isCurrentMonth ? '' : 'opacity-40'}`} style={{ color: dark }}>
@@ -313,7 +353,7 @@ const CalendarPage = () => {
             )}
 
             {viewMode === 'week' && (
-              <div className="grid grid-cols-8 gap-px overflow-x-auto" style={{ backgroundColor: borderColor, minHeight: 420 }}>
+              <div className="grid grid-cols-8 gap-px overflow-x-auto scroll-slim" style={{ minHeight: 420 }}>
                 <div className="row-span-1 py-1.5" style={{ backgroundColor: fg }} />
                 {HOURS.map((h) => (
                   <div
@@ -330,15 +370,15 @@ const CalendarPage = () => {
                   const dayEvents = events.filter((e) => eventOverlapsDay(e, iso))
                   const isToday = iso === todayIso
                   const isSelected = iso === selectedDate
+                  const isCurrentMonth = date.getMonth() === month
                   return (
                     <div key={iso} className="contents">
                       <button
                         type="button"
                         onClick={() => setSelectedDate(iso)}
-                        className="py-1.5 text-center border-b"
+                        className="py-1.5 text-center"
                         style={{
                           backgroundColor: isSelected ? primary + '20' : fg,
-                          borderColor,
                           color: dark,
                           fontWeight: isToday ? 600 : undefined,
                         }}
@@ -359,8 +399,8 @@ const CalendarPage = () => {
                         return (
                           <div
                             key={`${iso}-${hour}`}
-                            className="min-h-[28px] border-b border-l"
-                            style={{ backgroundColor: fg, borderColor }}
+                            className="min-h-[28px]"
+                            style={{ backgroundColor: fg }}
                           >
                             {inSlot.map((ev) => {
                               const startH = getHoursDecimal(ev.start)
@@ -376,7 +416,6 @@ const CalendarPage = () => {
                                     height: `${height}%`,
                                     minHeight: 18,
                                     backgroundColor: getEventColor(ev.type) + '35',
-                                    borderLeft: `3px solid ${getEventColor(ev.type)}`,
                                   }}
                                 >
                                   <Text variant="sm" className="truncate block" style={{ fontSize: 11, color: dark }}>
@@ -399,10 +438,10 @@ const CalendarPage = () => {
 
             {viewMode === 'week' && (
               <div className="relative mt-2" style={{ minHeight: (WEEK_END_HOUR - WEEK_START_HOUR) * 28 }}>
-                <div className="grid grid-cols-8 gap-px" style={{ backgroundColor: borderColor }}>
+                <div className="grid grid-cols-8 gap-px">
                   <div className="py-1.5" style={{ backgroundColor: fg }} />
                   {weekDays.map(({ date, iso }) => (
-                    <div key={iso} className="py-1.5 text-center" style={{ backgroundColor: fg, borderColor }}>
+                    <div key={iso} className="py-1.5 text-center" style={{ backgroundColor: fg }}>
                       <Text variant="sm" className="font-medium" style={{ color: dark }}>
                         {date.toLocaleDateString(undefined, { weekday: 'short' })}
                       </Text>
@@ -433,7 +472,6 @@ const CalendarPage = () => {
                                 top: Math.max(0, topPx),
                                 height: Math.max(18, heightPx),
                                 backgroundColor: getEventColor(ev.type) + '30',
-                                borderLeft: `3px solid ${getEventColor(ev.type)}`,
                                 color: dark,
                               }}
                             >
@@ -448,17 +486,17 @@ const CalendarPage = () => {
                 </div>
               </div>
             )}
-          </View>
-        </div>
+            </div>
+          </div>
 
-        {/* Selected day panel */}
-        <div className="lg:col-span-1 flex flex-col gap-4 min-w-0">
+          {/* Selected day panel */}
+          <div className="lg:col-span-1 flex flex-col gap-4 min-w-0">
           <Card
             title={selectedDate ? new Date(selectedDate + 'T12:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) : 'Pick a day'}
             subtitle={selectedDate ? `${selectedEvents.length} event${selectedEvents.length !== 1 ? 's' : ''}` : undefined}
           >
             {selectedDate && (
-              <ul className="space-y-0 max-h-[280px] overflow-y-auto">
+              <ul className="space-y-0 max-h-[280px] overflow-y-auto scroll-slim">
                 {selectedEvents.length === 0 ? (
                   <li>
                     <Text variant="sm" className="opacity-70">
@@ -469,8 +507,7 @@ const CalendarPage = () => {
                   selectedEvents.map((ev) => (
                     <li
                       key={ev.id}
-                      className="flex items-start justify-between gap-2 py-2.5 border-b border-black/5 last:border-0"
-                      style={{ borderColor }}
+                      className="flex items-start justify-between gap-2 py-2.5 last:border-0"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -510,20 +547,60 @@ const CalendarPage = () => {
             <Card title="Add event" subtitle="Create an event for this day">
               <form onSubmit={handleAddEvent} className="space-y-3">
                 <Input label="Title" placeholder="Event title" value={addTitle} onChange={(e) => setAddTitle(e.target.value)} required />
-                <Input label="Start" type="datetime-local" value={addStart} onChange={(e) => setAddStart(e.target.value)} required />
-                <Input label="End" type="datetime-local" value={addEnd} onChange={(e) => setAddEnd(e.target.value)} required />
-                <Select
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 items-start">
+                  <div className="min-w-0 flex flex-col gap-1">
+                    <Text variant="sm" className="font-medium opacity-90" style={{ color: dark }}>Start date</Text>
+                    <DatePicker
+                      label=""
+                      placeholder="dd/mm/yyyy"
+                      value={getDatePart(addStart)}
+                      onChange={(d) => setAddStart(setDateTime(d, getTimePart(addStart)))}
+                    />
+                  </div>
+                  <div className="min-w-0 flex flex-col gap-1">
+                    <Text variant="sm" className="font-medium opacity-90" style={{ color: dark }}>Start time</Text>
+                    <CustomSelect
+                      label=""
+                      options={TIME_OPTIONS}
+                      value={getTimePart(addStart)}
+                      onChange={(t) => setAddStart(setDateTime(getDatePart(addStart) || selectedDate || '', t))}
+                      placement="below"
+                    />
+                  </div>
+                  <div className="min-w-0 flex flex-col gap-1">
+                    <Text variant="sm" className="font-medium opacity-90" style={{ color: dark }}>End date</Text>
+                    <DatePicker
+                      label=""
+                      placeholder="dd/mm/yyyy"
+                      value={getDatePart(addEnd)}
+                      onChange={(d) => setAddEnd(setDateTime(d, getTimePart(addEnd)))}
+                    />
+                  </div>
+                  <div className="min-w-0 flex flex-col gap-1">
+                    <Text variant="sm" className="font-medium opacity-90" style={{ color: dark }}>End time</Text>
+                    <CustomSelect
+                      label=""
+                      options={TIME_OPTIONS}
+                      value={getTimePart(addEnd)}
+                      onChange={(t) => setAddEnd(setDateTime(getDatePart(addEnd) || selectedDate || '', t))}
+                      placement="below"
+                    />
+                  </div>
+                </div>
+                <CustomSelect
                   label="Type"
                   options={EVENT_TYPES}
                   value={addType}
-                  onChange={(e) => setAddType(e.target.value as CalendarEvent['type'])}
+                  onChange={(v) => setAddType(v as CalendarEvent['type'])}
+                  placement="below"
                 />
                 <Button type="submit" label={submitting ? 'Adding…' : 'Add event'} fullWidth disabled={submitting} startIcon={<Plus size={16} />} />
               </form>
             </Card>
           )}
+          </div>
         </div>
-      </div>
+      </View>
 
       <AlertModal
         open={!!eventToDelete}
@@ -533,8 +610,7 @@ const CalendarPage = () => {
         variant="error"
         onClose={() => setEventToDelete(null)}
       />
-      </div>
-    </AppPageLayout>
+    </div>
   )
 }
 

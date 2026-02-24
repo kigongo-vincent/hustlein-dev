@@ -1,4 +1,5 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Calendar } from 'lucide-react'
 import Text from '../base/Text'
 import { baseFontSize } from '../base/Text'
@@ -46,6 +47,9 @@ export default function DatePicker({
     return new Date()
   })
   const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null)
 
   const displayValue = value ? formatDisplay(value) : ''
   const hasValue = displayValue.length > 0
@@ -58,12 +62,24 @@ export default function DatePicker({
     }
   }, [value])
 
+  useLayoutEffect(() => {
+    const el = triggerRef.current ?? containerRef.current
+    if (!open || !el) return
+    const rect = el.getBoundingClientRect()
+    const gap = 4
+    const dropdownHeight = 320
+    const spaceBelow = window.innerHeight - rect.bottom
+    const openBelow = spaceBelow >= Math.min(dropdownHeight, rect.top)
+    const top = openBelow ? rect.bottom + gap : rect.top - dropdownHeight - gap
+    setDropdownRect({ top, left: rect.left, width: Math.max(rect.width, 280) })
+  }, [open])
+
   useEffect(() => {
     if (!open) return
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+      const target = e.target as Node
+      if (containerRef.current?.contains(target) || dropdownRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -102,6 +118,7 @@ export default function DatePicker({
     >
       <div className="relative">
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => !disabled && setOpen((o) => !o)}
           disabled={disabled}
@@ -138,75 +155,84 @@ export default function DatePicker({
         )}
       </div>
 
-      {open && (
-        <div
-          className="absolute left-0 right-0 top-full z-50 mt-1 rounded-base shadow-lg border overflow-hidden"
-          style={{
-            backgroundColor: current?.system?.foreground ?? '#fff',
-            borderColor: current?.system?.border ?? 'rgba(0,0,0,0.1)',
-          }}
-        >
-          <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: current?.system?.border }}>
-            <button
-              type="button"
-              onClick={prevMonth}
-              className="p-1.5 rounded-base hover:opacity-80"
-              style={{ color: current?.system?.dark }}
-              aria-label="Previous month"
-            >
-              ‹
-            </button>
-            <Text className="font-medium" style={{ fontSize: baseFontSize * 1.1 }}>
-              {monthName} {year}
-            </Text>
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="p-1.5 rounded-base hover:opacity-80"
-              style={{ color: current?.system?.dark }}
-              aria-label="Next month"
-            >
-              ›
-            </button>
-          </div>
-          <div className="p-2">
-            <div className="grid grid-cols-7 gap-0.5 mb-1">
-              {DAYS.map((d) => (
-                <div
-                  key={d}
-                  className="text-center py-1 text-[11px] opacity-70"
-                  style={{ color: current?.system?.dark }}
-                >
-                  {d.slice(0, 2)}
-                </div>
-              ))}
+      {open &&
+        dropdownRect &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className="rounded-base shadow-lg border overflow-hidden"
+            style={{
+              position: 'fixed',
+              top: dropdownRect.top,
+              left: dropdownRect.left,
+              width: dropdownRect.width,
+              zIndex: 99999,
+              backgroundColor: current?.system?.foreground ?? '#fff',
+              borderColor: current?.system?.border ?? 'rgba(0,0,0,0.1)',
+            }}
+          >
+            <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: current?.system?.border }}>
+              <button
+                type="button"
+                onClick={prevMonth}
+                className="p-1.5 rounded-base hover:opacity-80"
+                style={{ color: current?.system?.dark }}
+                aria-label="Previous month"
+              >
+                ‹
+              </button>
+              <Text className="font-medium" style={{ fontSize: baseFontSize * 1.1 }}>
+                {monthName} {year}
+              </Text>
+              <button
+                type="button"
+                onClick={nextMonth}
+                className="p-1.5 rounded-base hover:opacity-80"
+                style={{ color: current?.system?.dark }}
+                aria-label="Next month"
+              >
+                ›
+              </button>
             </div>
-            <div className="grid grid-cols-7 gap-0.5">
-              {days.map((day, i) => {
-                if (day === null) {
-                  return <div key={`empty-${i}`} />;
-                }
-                const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const isSelected = value === iso;
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => handleSelect(day)}
-                    className="rounded-base py-1.5 text-[13px] hover:opacity-90"
-                    style={{
-                      color: isSelected ? '#fff' : current?.system?.dark,
-                      backgroundColor: isSelected ? (current?.brand?.primary ?? '#682308') : 'transparent',
-                    }}
+            <div className="p-2">
+              <div className="grid grid-cols-7 gap-0.5 mb-1">
+                {DAYS.map((d) => (
+                  <div
+                    key={d}
+                    className="text-center py-1 text-[11px] opacity-70"
+                    style={{ color: current?.system?.dark }}
                   >
-                    {day}
-                  </button>
-                );
-              })}
+                    {d.slice(0, 2)}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-0.5">
+                {days.map((day, i) => {
+                  if (day === null) {
+                    return <div key={`empty-${i}`} />;
+                  }
+                  const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const isSelected = value === iso;
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => handleSelect(day)}
+                      className="rounded-base py-1.5 text-[13px] hover:opacity-90"
+                      style={{
+                        color: isSelected ? '#fff' : current?.system?.dark,
+                        backgroundColor: isSelected ? (current?.brand?.primary ?? '#682308') : 'transparent',
+                      }}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {error && (
         <Text variant="sm" className="mt-1" color={current?.system?.error}>

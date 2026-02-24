@@ -12,6 +12,8 @@ export interface User {
   avatarUrl?: string
   /** Optional; defaults to active when absent */
   status?: UserStatus
+  /** 'online' or ISO date string for last seen (used in chat and mention dropdowns) */
+  lastSeen?: string
 }
 export interface AuthUser extends User {
   token?: string
@@ -138,6 +140,8 @@ export interface Company {
 }
 
 // Project
+export type ProjectStatus = 'active' | 'suspended'
+
 export interface Project {
   id: string
   companyId: string
@@ -147,6 +151,8 @@ export interface Project {
   workflowId: string
   folderId?: string
   createdAt: string
+  /** Optional; defaults to active when absent */
+  status?: ProjectStatus
 }
 
 // Workflow
@@ -188,6 +194,10 @@ export interface Milestone {
   targetDate: string
   taskIds: string[]
   createdAt: string
+  /** Board column (workflow state). When missing, treated as first state. */
+  workflowStateId?: string
+  /** User IDs assigned to this milestone (optional; also derived from task owners). */
+  assigneeIds?: string[]
 }
 
 // Goal (high-level, can map to milestones)
@@ -218,6 +228,11 @@ export interface Comment {
   authorId: string
   body: string
   createdAt: string
+  /** Optional attachment for display (e.g. in project chat) */
+  attachmentUrl?: string
+  attachmentType?: 'image' | 'doc'
+  /** Display size for doc attachments (e.g. "1.2 MB", "245 KB") */
+  attachmentSize?: string
 }
 
 // Calendar / scheduling
@@ -230,6 +245,73 @@ export interface CalendarEvent {
   start: string
   end: string
   type: 'task_schedule' | 'planning_block' | 'milestone_deadline'
+}
+
+// Invoice (company admin)
+export type InvoiceStatus = 'paid' | 'unpaid' | 'overdue'
+
+export interface InvoiceLineItem {
+  description: string
+  quantity: number
+  unitPrice: number
+  total: number
+  /** Optional: consultant id for consultant-based billing */
+  consultantId?: string
+  /** Optional: hours per month (for rate = gross / hoursPerMonth); total is capped at gross */
+  hoursPerMonth?: number
+  /** Optional: gross pay for the period (max line total) */
+  gross?: number
+}
+
+export interface InvoiceIssuer {
+  name?: string
+  email?: string
+  phone?: string
+  address?: string
+  abn?: string
+}
+
+export interface InvoiceBankDetails {
+  bankName?: string
+  bsb?: string
+  accountNumber?: string
+  accountName?: string
+}
+
+export interface Invoice {
+  id: string
+  number: string
+  clientName: string
+  amount: number
+  currency: string
+  dueDate: string
+  issuedDate?: string
+  status: InvoiceStatus
+  description?: string
+  paidAt?: string
+  /** Invoices are per person: consultant this invoice is for */
+  consultantId?: string
+  consultantName?: string
+  /** Optional logo URL (e.g. company logo); fallback to app nav logo */
+  logoUrl?: string
+  issuer?: InvoiceIssuer
+  bank?: InvoiceBankDetails
+  lineItems?: InvoiceLineItem[]
+}
+
+// Note (standalone notes page + project file notes)
+export const NOTE_COLORS = ['#fef3c7', '#d1fae5', '#dbeafe', '#fce7f3', '#e9d5ff', '#fed7aa', '#e5e7eb', '#fff'] as const
+export type NoteColor = (typeof NOTE_COLORS)[number]
+
+export interface Note {
+  id: string
+  title: string
+  content: string
+  color: NoteColor | string
+  createdAt: string
+  updatedAt: string
+  /** When set, note belongs to a project file (folder node id) */
+  projectFileNodeId?: string
 }
 
 // Report stats

@@ -12,6 +12,8 @@ export interface Props extends InputHTMLAttributes<HTMLInputElement> {
   hint?: string
   /** fill = solid background from theme; outline = transparent background (default outside auth) */
   mode?: InputMode
+  /** Override background for the floating label (e.g. to match a colored modal) */
+  labelBackgroundColor?: string
 }
 
 const Input = ({
@@ -19,6 +21,7 @@ const Input = ({
   error,
   hint,
   mode = 'outline',
+  labelBackgroundColor,
   className = '',
   id,
   value,
@@ -153,7 +156,7 @@ const Input = ({
               fontSize: floated ? 11 : baseFontSize,
               lineHeight: 1.5,
               color: floated ? (current?.system?.dark ?? 'inherit') : (current?.system?.dark ? `${current.system.dark}99` : 'inherit'),
-              backgroundColor: floated ? (mode === 'fill' ? (current?.system?.background ?? 'transparent') : (current?.system?.foreground ?? 'transparent')) : 'transparent',
+              backgroundColor: floated ? (labelBackgroundColor ?? (mode === 'fill' ? (current?.system?.background ?? 'transparent') : (current?.system?.foreground ?? 'transparent'))) : 'transparent',
               paddingLeft: floated ? 2 : 0,
               paddingRight: floated ? 2 : 0,
             }}

@@ -8,6 +8,8 @@ export interface Props {
   title?: string
   message: string
   onClose: () => void
+  /** When set, primary button calls this then onClose (e.g. for delete confirm) */
+  onConfirm?: () => void | Promise<void>
   /** Optional label for the primary button (default "OK") */
   confirmLabel?: string
   /** 'error' uses theme error color for title */
@@ -19,10 +21,19 @@ const AlertModal = ({
   title = 'Message',
   message,
   onClose,
+  onConfirm,
   confirmLabel = 'OK',
   variant = 'neutral',
 }: Props) => {
   const { current } = Themestore()
+
+  const handleConfirm = () => {
+    if (onConfirm) {
+      Promise.resolve(onConfirm()).then(onClose)
+    } else {
+      onClose()
+    }
+  }
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -40,7 +51,7 @@ const AlertModal = ({
           <Button
             type="button"
             label={confirmLabel}
-            onClick={onClose}
+            onClick={handleConfirm}
           />
         </div>
       </div>

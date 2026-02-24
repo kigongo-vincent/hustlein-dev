@@ -3,9 +3,14 @@ import Text from '../base/Text'
 import Avatar from '../base/Avatar'
 import { Authstore } from '../../data/Authstore'
 import { Themestore } from '../../data/Themestore'
-import { User, Settings, Sun, Moon } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Settings, Sun, Moon } from 'lucide-react'
 
-const Header = () => {
+type HeaderProps = {
+  sidebarOpen: boolean
+  onToggleSidebar: () => void
+}
+
+const Header = ({ sidebarOpen, onToggleSidebar }: HeaderProps) => {
   const { user, logout } = Authstore()
   const { current, mode, setTheme } = Themestore()
   const navigate = useNavigate()
@@ -14,6 +19,7 @@ const Header = () => {
     navigate('/auth/login')
   }
   const toggleTheme = () => setTheme(mode === 'light' ? 'dark' : 'light')
+  const dark = current?.system?.dark
 
   return (
     <div
@@ -21,23 +27,29 @@ const Header = () => {
       style={{ backgroundColor: current?.system?.foreground }}
     >
       <div className="flex items-center gap-3">
-        <Avatar src={user?.avatarUrl} name={user?.name} size="md" />
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="p-2 rounded-base opacity-80 hover:opacity-100 transition"
+          style={{ color: dark }}
+          title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+          aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+          aria-expanded={sidebarOpen}
+        >
+          {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+        </button>
+        <Link to="/app/profile" className="flex items-center gap-2 rounded-base hover:opacity-90 transition" style={{ color: dark }}>
+          <Avatar src={user?.avatarUrl} name={user?.name} size="md" />
         <Text className="font-medium">
           {user?.name ?? 'Guest'}
         </Text>
+        </Link>
       </div>
       <div className="flex items-center gap-1">
-        {/* <Link
-          to="/app/profile"
-          className="p-2 rounded-base opacity-80 hover:opacity-100 transition"
-          title="Profile"
-          aria-label="Profile"
-        >
-          <User size={18} />
-        </Link> */}
         <Link
           to="/app/settings"
           className="p-2 rounded-base opacity-80 hover:opacity-100 transition"
+          style={{ color: dark }}
           title="Settings"
           aria-label="Settings"
         >

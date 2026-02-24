@@ -2,12 +2,22 @@ import { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Themestore } from '../../data/Themestore'
 
+export type ModalVariant = 'default' | 'wide' | 'fullscreen'
+
+const VARIANT_CLASSES: Record<ModalVariant, string> = {
+  default: 'max-w-md max-h-[90vh]',
+  wide: 'max-w-4xl max-h-[95vh]',
+  fullscreen: 'fixed inset-0 w-full h-full max-w-none max-h-none rounded-none',
+}
+
 export interface Props {
   open: boolean
   onClose?: () => void
   children: ReactNode
   /** Clicking the backdrop calls onClose when true (default true) */
   closeOnBackdrop?: boolean
+  /** Layout size: default (narrow) or wide (e.g. for invoice/details) */
+  variant?: ModalVariant
 }
 
 const overlayTransition = { duration: 0.2 }
@@ -18,15 +28,17 @@ const Modal = ({
   onClose,
   children,
   closeOnBackdrop = true,
+  variant = 'default',
 }: Props) => {
   const { current } = Themestore()
+  const panelClass = VARIANT_CLASSES[variant]
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div
           key="modal"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className={`fixed inset-0 z-50 flex items-center justify-center ${variant === 'fullscreen' ? 'p-0' : 'p-4'}`}
           role="dialog"
           aria-modal="true"
           initial={{ opacity: 0 }}
@@ -44,7 +56,7 @@ const Modal = ({
             onClick={closeOnBackdrop ? onClose : undefined}
           />
           <motion.div
-            className="relative rounded-base shadow-lg max-w-md w-full max-h-[90vh] overflow-auto"
+            className={`relative rounded-base shadow-lg w-full overflow-auto scroll-slim ${panelClass}`}
             style={{
               backgroundColor: current?.system?.foreground ?? undefined,
             }}

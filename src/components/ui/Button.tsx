@@ -3,7 +3,7 @@ import View from '../base/View'
 import Text from '../base/Text'
 import { Themestore } from '../../data/Themestore'
 
-type Variant = 'primary' | 'secondary' | 'background' | 'ghost' | 'danger'
+type Variant = 'primary' | 'secondary' | 'secondaryBrand' | 'background' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 export interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -28,12 +28,14 @@ const Button = ({
   const padding =
     size === 'sm' ? 'px-3 py-2' : size === 'lg' ? 'px-6 py-3' : 'px-4 py-2.5'
   const bg =
-    variant === 'primary' ? 'p' : variant === 'secondary' ? 'fg' : variant === 'background' ? 'bg' : undefined
-  const isLight = variant === 'primary' || variant === 'danger'
+    variant === 'primary' ? 'p' : variant === 'secondary' ? 'fg' : variant === 'secondaryBrand' ? undefined : variant === 'background' ? 'bg' : undefined
+  const isLight = variant === 'primary' || variant === 'danger' || variant === 'secondaryBrand'
   const dangerStyle =
     variant === 'danger'
       ? { backgroundColor: current?.system?.error, color: 'white' }
-      : {}
+      : variant === 'secondaryBrand'
+        ? { backgroundColor: current?.brand?.secondary, color: 'white' }
+        : {}
   const textColor =
     variant === 'danger'
       ? 'white'

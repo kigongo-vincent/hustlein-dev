@@ -10,16 +10,15 @@ export interface Props extends HTMLAttributes<HTMLParagraphElement> {
 
 export const baseFontSize = 12.5
 
+/** 80% for small text; max size is base (no larger). */
 const getSize = (fontSize: fontSize): number => {
   switch (fontSize) {
-    case "lg":
-      return baseFontSize * 1.5
-    case "md":
-      return baseFontSize * 1.2
     case "sm":
-      return baseFontSize * 0.875
+      return baseFontSize * 0.8
+    case "md":
+    case "lg":
     case "xl":
-      return baseFontSize * 1.75
+      return baseFontSize
     default:
       return baseFontSize
   }

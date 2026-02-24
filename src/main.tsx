@@ -14,10 +14,14 @@ const app = (
   </BrowserRouter>
 )
 
-createRoot(document.getElementById('root')!).render(
-  googleClientId ? (
-    <GoogleOAuthProvider clientId={googleClientId}>{app}</GoogleOAuthProvider>
-  ) : (
-    app
-  ),
-)
+const rootEl = document.getElementById('root')
+if (rootEl) {
+  const root = createRoot(rootEl)
+  root.render(
+    googleClientId ? (
+      <GoogleOAuthProvider clientId={googleClientId}>{app}</GoogleOAuthProvider>
+    ) : (
+      app
+    )
+  )
+}

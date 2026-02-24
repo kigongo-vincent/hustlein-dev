@@ -8,12 +8,15 @@ import ProjectList from '../pages/projects/ProjectList'
 import ProjectDetail from '../pages/projects/ProjectDetail'
 import TaskList from '../pages/tasks/TaskList'
 import MilestoneList from '../pages/milestones/MilestoneList'
+import MilestoneTasksPage from '../pages/milestones/MilestoneTasksPage'
 import CalendarPage from '../pages/calendar/CalendarPage'
 import ReportsPage from '../pages/reports/ReportsPage'
 import FocusPage from '../pages/focus/FocusPage'
 import ConsultantsPage from '../pages/consultants/ConsultantsPage'
+import InvoicesPage from '../pages/invoices/InvoicesPage'
 import ProfilePage from '../pages/profile/ProfilePage'
 import SettingsPage from '../pages/settings/SettingsPage'
+import NotesPage from '../pages/notes/NotesPage'
 
 const RootRedirect = () => {
   const user = Authstore((s) => s.user)
@@ -29,6 +32,7 @@ const __init__ = () => {
         <Route element={<AppShell />}>
           <Route index Component={Dashboard} />
           <Route path="projects" Component={ProjectList} />
+          <Route path="projects/:projectId/milestones/:milestoneId" Component={MilestoneTasksPage} />
           <Route path="projects/:id" Component={ProjectDetail} />
           <Route path="tasks" Component={TaskList} />
           <Route path="milestones" Component={MilestoneList} />
@@ -36,8 +40,10 @@ const __init__ = () => {
           <Route path="reports" Component={ReportsPage} />
           <Route path="focus" Component={FocusPage} />
           <Route path="consultants" Component={ConsultantsPage} />
+          <Route path="invoices" Component={InvoicesPage} />
           <Route path="profile" Component={ProfilePage} />
           <Route path="settings" Component={SettingsPage} />
+          <Route path="notes" Component={NotesPage} />
         </Route>
       </Route>
       <Route path="*" element={<RootRedirect />} />
