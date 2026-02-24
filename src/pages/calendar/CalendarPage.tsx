@@ -248,10 +248,10 @@ const CalendarPage = () => {
       </View>
 
       {/* Main fg section: calendar + sidebar */}
-      <View bg="fg" className="rounded-base shadow-custom p-4 lg:p-6 flex flex-col gap-6 flex-1 min-h-0">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 flex-1 min-h-0">
+      <View bg="fg" className="rounded-base shadow-custom p-4 lg:p-6 flex flex-col gap-6 flex-1 min-h-0 w-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 flex-1 min-h-0 w-full">
           {/* Calendar area */}
-          <div className="lg:col-span-2 min-w-0 flex flex-col flex-1 min-h-0">
+          <div className="min-w-0 flex flex-col lg:w-[60%]">
             <div
               className="rounded-base p-4 overflow-auto flex flex-col min-h-0 flex-1 max-h-[45vh]"
               style={{
@@ -421,7 +421,7 @@ const CalendarPage = () => {
                                   <Text variant="sm" className="truncate block" style={{ fontSize: 11, color: dark }}>
                                     {ev.title}
                                   </Text>
-                                  <Text variant="sm" className="opacity-80" style={{ fontSize: 10, color: dark }}>
+                                  <Text variant="sm" className="opacity-80" style={{ fontSize: 11, color: dark }}>
                                     {formatTime(ev.start)}
                                   </Text>
                                 </div>
@@ -476,7 +476,7 @@ const CalendarPage = () => {
                               }}
                             >
                               <span className="block truncate" style={{ fontSize: 11 }}>{ev.title}</span>
-                              <span className="block opacity-80" style={{ fontSize: 10 }}>{formatTime(ev.start)}</span>
+                              <span className="block opacity-80" style={{ fontSize: 11 }}>{formatTime(ev.start)}</span>
                             </button>
                           )
                         })}
@@ -490,7 +490,7 @@ const CalendarPage = () => {
           </div>
 
           {/* Selected day panel */}
-          <div className="lg:col-span-1 flex flex-col gap-4 min-w-0">
+          <div className="flex flex-col gap-4 min-w-0 lg:w-[40%] w-full">
           <Card
             title={selectedDate ? new Date(selectedDate + 'T12:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) : 'Pick a day'}
             subtitle={selectedDate ? `${selectedEvents.length} event${selectedEvents.length !== 1 ? 's' : ''}` : undefined}

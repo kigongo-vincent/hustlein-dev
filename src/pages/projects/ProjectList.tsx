@@ -324,7 +324,7 @@ const ProjectList = () => {
                   rightIcon={<s.icon className="w-5 h-5 opacity-80" />}
                   className="min-h-[7rem] py-4 px-4"
                 >
-                  <Text variant="lg" className="font-medium">
+                  <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
                     {s.value}
                   </Text>
                   <Text variant="sm" className="opacity-55 mt-0.5">

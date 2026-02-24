@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
-import Text from '../../components/base/Text'
+import Text, { baseFontSize } from '../../components/base/Text'
 import { Card, Button, Skeleton, AddConsultantModal } from '../../components/ui'
 import { reportService, projectService } from '../../services'
 import { Themestore } from '../../data/Themestore'
@@ -153,7 +153,7 @@ const Dashboard = () => {
                 rightIcon={getStatIcon(s.label)}
                 className="min-h-[7rem] py-4 px-4"
               >
-                <Text variant="lg" className="font-medium">{s.value}</Text>
+                <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>{s.value}</Text>
                 <div className="flex items-baseline justify-between gap-2 mt-0.5">
                   <Text variant="sm" className="opacity-55">{STAT_CAPTIONS[s.label]}</Text>
                   {s.trend != null && s.trend !== 'neutral' && s.trendPercent != null && (
@@ -170,7 +170,7 @@ const Dashboard = () => {
               rightIcon={<FolderKanban />}
               className="min-h-[7rem] py-4 px-4"
             >
-              <Text variant="lg" className="font-medium">{projectCount}</Text>
+              <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>{projectCount}</Text>
               <div className="flex items-baseline justify-between gap-2 mt-0.5">
                 <Text variant="sm" className="opacity-55">{STAT_CAPTIONS['Projects']}</Text>
                 <span className="flex items-center gap-0.5 text-sm shrink-0 opacity-70" style={{ color: current?.system?.dark }}>

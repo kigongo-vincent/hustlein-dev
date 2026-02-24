@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Modal, AlertModal, Input, RichTextEditor, NoteCard } from '../../components/ui'
+import { Card, Button, Modal, AlertModal, Input, RichTextEditor, NoteCard, Skeleton } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { noteService } from '../../services'
 import type { Note } from '../../types'
@@ -304,21 +304,31 @@ export default function NotesPage() {
         </View>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {statCards.map((s) => (
-            <Card
-              key={s.label}
-              title={s.label}
-              rightIcon={<StickyNote className="w-5 h-5 opacity-80" />}
-              className="min-h-[7rem] py-4 px-4"
-            >
-              <Text variant="lg" className="font-medium">
-                {s.value}
-              </Text>
-              <Text variant="sm" className="opacity-55 mt-0.5">
-                {s.caption}
-              </Text>
-            </Card>
-          ))}
+          {loading ? (
+            [1, 2, 3].map((i) => (
+              <Card key={i} className="min-h-[7rem] py-4 px-4">
+                <Skeleton height="h-4" width="w-24" className="mb-2" />
+                <Skeleton height="h-4" width="w-16" className="mb-1" />
+                <Skeleton height="h-8" width="w-12" />
+              </Card>
+            ))
+          ) : (
+            statCards.map((s) => (
+              <Card
+                key={s.label}
+                title={s.label}
+                rightIcon={<StickyNote className="w-5 h-5 opacity-80" />}
+                className="min-h-[7rem] py-4 px-4"
+              >
+                <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
+                  {s.value}
+                </Text>
+                <Text variant="sm" className="opacity-55 mt-0.5">
+                  {s.caption}
+                </Text>
+              </Card>
+            ))
+          )}
         </div>
       </div>
 
@@ -345,11 +355,29 @@ export default function NotesPage() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-center opacity-70" style={{ color: dark }}>
-                      Loading…
-                    </td>
-                  </tr>
+                  [1, 2, 3, 4, 5].map((i) => (
+                    <tr
+                      key={i}
+                      className="border-t"
+                      style={{ borderColor, backgroundColor: current?.system?.foreground }}
+                    >
+                      <td className="py-2 px-3 align-middle">
+                        <div className="flex items-center gap-3 max-w-[280px]">
+                          <Skeleton height="h-10" width="w-10" rounded="base" className="shrink-0" />
+                          <div className="flex-1 space-y-1 min-w-0">
+                            <Skeleton height="h-4" width="w-32" />
+                            <Skeleton height="h-3" width="w-48" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-2 px-3">
+                        <Skeleton height="h-4" width="w-20" />
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <Skeleton height="h-6" width="w-16" className="ml-auto" />
+                      </td>
+                    </tr>
+                  ))
                 ) : notes.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="py-8 text-center opacity-70" style={{ color: dark }}>

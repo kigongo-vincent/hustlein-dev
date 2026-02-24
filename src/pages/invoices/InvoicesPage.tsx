@@ -16,7 +16,7 @@ import {
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
-import { Card, Button, Skeleton, Modal, CustomSelect, DatePicker } from '../../components/ui'
+import { Card, Button, Skeleton, Modal, CustomSelect, DatePicker, Input } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import type { Invoice, InvoiceStatus, InvoiceLineItem } from '../../types'
 import {
@@ -26,7 +26,6 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  Search,
   SlidersHorizontal,
   X,
   CheckCircle,
@@ -644,7 +643,7 @@ const InvoicesPage = () => {
               rightIcon={getStatIcon(s.label)}
               className="min-h-[7rem] py-4 px-4"
             >
-              <Text variant="lg" className="font-medium">
+              <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
                 {s.value}
               </Text>
               <Text variant="sm" className="opacity-55 mt-0.5">
@@ -771,21 +770,12 @@ const InvoicesPage = () => {
               border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.12)'}`,
             }}
           >
-            <div className="flex-1 min-w-0 relative flex items-center">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-60 pointer-events-none shrink-0"
-                style={{ color: current?.system?.dark }}
-              />
-              <input
+            <div className="flex-1 min-w-0">
+              <Input
+                label="Search"
+                placeholder="Search by invoice number or client…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by invoice number or client…"
-                className="w-full py-2 pl-9 pr-3 bg-transparent focus:outline-none focus:ring-0 border-0 placeholder:opacity-60"
-                style={{
-                  fontSize: baseFontSize,
-                  lineHeight: 1.5,
-                  color: dark,
-                }}
                 aria-label="Search invoices"
               />
             </div>
@@ -1168,42 +1158,24 @@ const InvoicesPage = () => {
                   mode="outline"
                 />
               </div>
-              <div>
-                <Text variant="sm" className="font-medium opacity-90 mb-1.5 block">Amount min</Text>
-                <input
-                  type="number"
-                  min={0}
-                  value={filterAmountMin}
-                  onChange={(e) => setFilterAmountMin(e.target.value)}
-                  placeholder="Min amount"
-                  className="w-full px-3 py-2 rounded-base border"
-                  style={{
-                    borderColor: current?.system?.border,
-                    backgroundColor: current?.system?.background,
-                    color: dark,
-                    fontSize: baseFontSize,
-                  }}
-                  aria-label="Amount minimum"
-                />
-              </div>
-              <div>
-                <Text variant="sm" className="font-medium opacity-90 mb-1.5 block">Amount max</Text>
-                <input
-                  type="number"
-                  min={0}
-                  value={filterAmountMax}
-                  onChange={(e) => setFilterAmountMax(e.target.value)}
-                  placeholder="Max amount"
-                  className="w-full px-3 py-2 rounded-base border"
-                  style={{
-                    borderColor: current?.system?.border,
-                    backgroundColor: current?.system?.background,
-                    color: dark,
-                    fontSize: baseFontSize,
-                  }}
-                  aria-label="Amount maximum"
-                />
-              </div>
+              <Input
+                label="Amount min"
+                type="number"
+                min={0}
+                value={filterAmountMin}
+                onChange={(e) => setFilterAmountMin(e.target.value)}
+                placeholder="Min amount"
+                aria-label="Amount minimum"
+              />
+              <Input
+                label="Amount max"
+                type="number"
+                min={0}
+                value={filterAmountMax}
+                onChange={(e) => setFilterAmountMax(e.target.value)}
+                placeholder="Max amount"
+                aria-label="Amount maximum"
+              />
               <CustomSelect
                 label="Sort by"
                 options={SORT_OPTIONS}

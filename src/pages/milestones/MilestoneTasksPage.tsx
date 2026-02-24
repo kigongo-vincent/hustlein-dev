@@ -243,7 +243,7 @@ const MilestoneTasksPage = () => {
           rightIcon={<ListTodo className="w-4 h-4" />}
           className="min-h-[7rem] py-4 px-4"
         >
-          <Text variant="lg" className="font-medium">
+          <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
             {tasks.length}
           </Text>
           <Text variant="sm" className="opacity-55 mt-0.5">
@@ -255,7 +255,7 @@ const MilestoneTasksPage = () => {
           rightIcon={<CheckCircle className="w-4 h-4" />}
           className="min-h-[7rem] py-4 px-4"
         >
-          <Text variant="lg" className="font-medium">
+          <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
             {completedCount}
           </Text>
           <Text variant="sm" className="opacity-55 mt-0.5">
@@ -267,7 +267,7 @@ const MilestoneTasksPage = () => {
           rightIcon={<Loader2 className="w-4 h-4" />}
           className="min-h-[7rem] py-4 px-4"
         >
-          <Text variant="lg" className="font-medium">
+          <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
             {inProgressCount}
           </Text>
           <Text variant="sm" className="opacity-55 mt-0.5">
@@ -279,7 +279,7 @@ const MilestoneTasksPage = () => {
           rightIcon={<Users className="w-4 h-4" />}
           className="min-h-[7rem] py-4 px-4"
         >
-          <Text variant="lg" className="font-medium">
+          <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
             {assigneeIds.length}
           </Text>
           <Text variant="sm" className="opacity-55 mt-0.5">

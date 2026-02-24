@@ -1,54 +1,95 @@
-# React + TypeScript + Vite
+# Hustle In — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React frontend for **Hustle In**, a project and consulting management app. Built with Vite, TypeScript, and Tailwind CSS.
 
-Currently, two official plugins are available:
+## Tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** + **TypeScript**
+- **Vite 6** — dev server and build
+- **React Router 7** — routing
+- **Tailwind CSS 4** — styling
+- **Zustand** — state
+- **Framer Motion** — animations
+- **Recharts** — charts (reports/dashboard)
+- **TipTap** — rich text / mentions (notes, chat)
+- **@react-oauth/google** — Google sign-in
+- **Lucide React** — icons
 
-## Expanding the ESLint configuration
+## Prerequisites
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Node.js** 18+ (20+ recommended)
+- **npm** (or pnpm/yarn)
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Setup
+
+1. **Clone and install**
+
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+2. **Environment**
+
+   Create a `.env` in the project root (or copy from `.env.example` if present):
+
+   ```env
+   VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
+   ```
+
+   Google sign-in is optional; the app runs without it (with a message that it’s not configured).
+
+3. **Run locally**
+
+   ```bash
+   npm run dev
+   ```
+
+   App is available at `http://localhost:5173` (or the port Vite prints).
+
+## Scripts
+
+| Command | Description |
+|--------|-------------|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | TypeScript check + production build |
+| `npm run preview` | Serve production build locally |
+| `npm run lint` | Run ESLint |
+
+## App structure
+
+- **`/`** — Redirects to `/app` if logged in, else `/auth`
+- **`/auth/*`** — Login, signup, forgot/reset password, verify/check email
+- **`/app`** — Protected app (requires auth)
+  - **Dashboard** — `/app`
+  - **Projects** — `/app/projects`, `/app/projects/:id`, milestone tasks
+  - **Tasks** — `/app/tasks`
+  - **Milestones** — `/app/milestones`
+  - **Calendar** — `/app/calendar`
+  - **Reports** — `/app/reports`
+  - **Focus** — `/app/focus`
+  - **Consultants** — `/app/consultants`
+  - **Invoices** — `/app/invoices`
+  - **Profile** — `/app/profile`
+  - **Settings** — `/app/settings`
+  - **Notes** — `/app/notes`
+
+## Project layout
+
+```
+frontend/
+├── src/
+│   ├── components/   # Shared UI (base, layout, ui)
+│   ├── data/        # Stores (e.g. Authstore)
+│   ├── pages/       # Route-level pages
+│   ├── routes/      # Router setup and auth/protected routes
+│   ├── App.tsx
+│   └── main.tsx
+├── index.html
+├── vite.config.ts
+└── package.json
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## License
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+Private — see repository root for license and usage terms.

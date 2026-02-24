@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import Avatar from '../../components/base/Avatar'
-import Text, { baseFontSize } from '../../components/base/Text'
+import Text, { baseFontSize, minFontSize } from '../../components/base/Text'
 import { MessageSquare, FileText, Shield, UserStar, CheckCheck } from 'lucide-react'
 import type { Comment } from '../../types'
 import { formatLastSeen, formatTimeShort } from './utils'
@@ -121,14 +121,14 @@ export default function ProjectChatMessageList({
                       <FileText className="w-4 h-4 shrink-0" />
                       <span
                         className="truncate"
-                        style={{ fontSize: baseFontSize * 0.875, lineHeight: 1.7 }}
+                        style={{ fontSize: Math.max(minFontSize, baseFontSize * 0.875), lineHeight: 1.7 }}
                       >
                         Document{c.attachmentSize ? ` · ${c.attachmentSize}` : ''}
                       </span>
                     </a>
                   )}
                   <div className="flex items-center justify-end gap-1 mt-1.5 opacity-80" style={{ color: dark }}>
-                    <span style={{ fontSize: baseFontSize * 0.75 }}>{formatTimeShort(c.createdAt)}</span>
+                    <span style={{ fontSize: minFontSize }}>{formatTimeShort(c.createdAt)}</span>
                     {isOwn && <CheckCheck className="w-3.5 h-3.5 shrink-0" aria-label="Sent" />}
                   </div>
                 </div>

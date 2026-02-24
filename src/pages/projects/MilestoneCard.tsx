@@ -1,5 +1,5 @@
 import Avatar from '../../components/base/Avatar'
-import { baseFontSize } from '../../components/base/Text'
+import { baseFontSize, minFontSize } from '../../components/base/Text'
 import { CalendarClock, Target } from 'lucide-react'
 import type { Milestone } from '../../types'
 import { formatDate } from './utils'
@@ -97,7 +97,7 @@ export default function MilestoneCard({
         <p className="font-medium truncate" style={{ color: dark }}>{m.name}</p>
         <PriorityIcon priority={m.priority} className="w-6 h-6 shrink-0" />
       </div>
-      <div className={`flex flex-wrap items-start justify-between gap-x-4 gap-y-2 ${compact ? '' : 'flex-1 min-h-0'}`} style={{ fontSize: Math.min(base * 0.875, base) }}>
+      <div className={`flex flex-wrap items-start justify-between gap-x-4 gap-y-2 ${compact ? '' : 'flex-1 min-h-0'}`} style={{ fontSize: Math.max(minFontSize, Math.min(base * 0.875, base)) }}>
         <div className="flex flex-col gap-y-1">
           <div className="flex items-center gap-2 opacity-80" style={{ color: dark }}>
             <CalendarClock className="w-4 h-4 shrink-0" />

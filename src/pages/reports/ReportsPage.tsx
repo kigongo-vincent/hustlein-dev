@@ -70,7 +70,7 @@ const ReportsPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {stats.map((s) => (
           <Card key={s.label} title={s.label} rightIcon={getStatIcon(s.label)}>
-            <Text className="font-medium">
+            <Text className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
               {s.value}
             </Text>
           </Card>

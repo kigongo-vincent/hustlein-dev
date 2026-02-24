@@ -9,12 +9,14 @@ export interface Props extends HTMLAttributes<HTMLParagraphElement> {
 }
 
 export const baseFontSize = 12.5
+/** Smallest allowed font size (px) for the whole app. */
+export const minFontSize = 11
 
-/** 80% for small text; max size is base (no larger). */
+/** 80% for small text; never below minFontSize. */
 const getSize = (fontSize: fontSize): number => {
   switch (fontSize) {
     case "sm":
-      return baseFontSize * 0.8
+      return Math.max(minFontSize, baseFontSize * 0.8)
     case "md":
     case "lg":
     case "xl":
@@ -40,14 +42,19 @@ const getLineHeight = (fontSize: fontSize): number => {
   }
 }
 
-const Text = ({ className, children, variant = "", mode = "dark", color }: Props) => {
+const Text = ({ className, children, variant = "", mode = "dark", color, style, ...rest }: Props) => {
   const { current } = Themestore()
   return (
-    <p className={`${className}`} style={{
-      fontSize: getSize(variant),
-      lineHeight: getLineHeight(variant),
-      color: color ? color : mode == "light" ? "white" : current?.system?.dark
-    }}>
+    <p
+      className={`${className}`}
+      style={{
+        fontSize: getSize(variant),
+        lineHeight: getLineHeight(variant),
+        color: color ? color : mode == "light" ? "white" : current?.system?.dark,
+        ...style,
+      }}
+      {...rest}
+    >
       {children}
     </p>
   )

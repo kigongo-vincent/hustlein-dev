@@ -53,7 +53,6 @@ export default function DatePicker({
 
   const displayValue = value ? formatDisplay(value) : ''
   const hasValue = displayValue.length > 0
-  const floated = open || hasValue
 
   useEffect(() => {
     if (value) {
@@ -116,13 +115,21 @@ export default function DatePicker({
         ['--input-border' as string]: darkPaled,
       }}
     >
+      {label && (
+        <label
+          className="block mb-1.5 font-medium"
+          style={{ fontSize: 11, lineHeight: 1.5, color: current?.system?.dark ? `${current.system.dark}99` : undefined }}
+        >
+          {label}
+        </label>
+      )}
       <div className="relative">
         <button
           ref={triggerRef}
           type="button"
           onClick={() => !disabled && setOpen((o) => !o)}
           disabled={disabled}
-          className={`input-base input-other input-floating input-mode-${mode} w-full rounded-base pt-3 pb-2 pl-3 pr-10 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${open ? 'border-[var(--focus-border)]' : ''} ${error ? '!border-red-500' : ''}`}
+          className={`input-base input-mode-${mode} w-full rounded-base py-2.5 pl-3 pr-10 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${open ? 'border-[var(--focus-border)]' : ''} ${error ? '!border-red-500' : ''}`}
           style={{
             fontSize: baseFontSize,
             lineHeight: 1.5,
@@ -138,21 +145,6 @@ export default function DatePicker({
         >
           <Calendar size={18} strokeWidth={1.8} />
         </span>
-        {label && (
-          <label
-            className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out origin-left ${floated ? 'top-0 -translate-y-1/2 text-xs' : 'top-1/2 -translate-y-1/2'}`}
-            style={{
-              fontSize: floated ? 11 : baseFontSize,
-              lineHeight: 1.5,
-              color: floated ? (current?.system?.dark ?? 'inherit') : (current?.system?.dark ? `${current.system.dark}99` : 'inherit'),
-              backgroundColor: floated ? (mode === 'fill' ? (current?.system?.background ?? 'transparent') : (current?.system?.foreground ?? 'transparent')) : 'transparent',
-              paddingLeft: floated ? 2 : 0,
-              paddingRight: floated ? 2 : 0,
-            }}
-          >
-            {label}
-          </label>
-        )}
       </div>
 
       {open &&
@@ -160,7 +152,7 @@ export default function DatePicker({
         createPortal(
           <div
             ref={dropdownRef}
-            className="rounded-base shadow-lg border overflow-hidden"
+            className="rounded-base shadow-lg overflow-hidden"
             style={{
               position: 'fixed',
               top: dropdownRect.top,
@@ -168,7 +160,6 @@ export default function DatePicker({
               width: dropdownRect.width,
               zIndex: 99999,
               backgroundColor: current?.system?.foreground ?? '#fff',
-              borderColor: current?.system?.border ?? 'rgba(0,0,0,0.1)',
             }}
           >
             <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: current?.system?.border }}>

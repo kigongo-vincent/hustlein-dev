@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
-import Text, { baseFontSize } from '../../components/base/Text'
+import Text, { baseFontSize, minFontSize } from '../../components/base/Text'
 import Avatar from '../../components/base/Avatar'
-import { Card, Button, Badge, Modal, CustomSelect, DateSelectInput, Input } from '../../components/ui'
+import { Card, Button, Badge, Modal, CustomSelect, DateSelectInput, Input, Skeleton } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { useProjectDetailModal } from '../../data/ModalStore'
@@ -408,7 +408,92 @@ const ProjectDetail = () => {
   )
 
   if (!id) return <Text>Invalid project</Text>
-  if (loading && !project) return <Text className="p-4">Loading…</Text>
+  if (loading && !project) {
+    return (
+      <div
+        className="flex h-full max-h-full min-h-0 gap-1 w-full overflow-hidden"
+        style={{ fontSize: baseFontSize }}
+      >
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden scroll-slim">
+          <header
+            className="shrink-0 py-3 flex items-center gap-2 border-b px-3"
+            style={{ borderColor, backgroundColor: fg }}
+          >
+            <div className="min-w-0 flex-1 space-y-1">
+              <Skeleton height="h-5" width="w-48" />
+              <Skeleton height="h-4" width="w-36" />
+            </div>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} height="h-9" width="w-9" rounded="base" className="shrink-0" />
+            ))}
+          </header>
+          <div className="flex-1 min-h-0 overflow-y-auto scroll-slim pr-2 py-4" style={{ backgroundColor: bg }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Skeleton height="h-4" width="w-20" />
+              <Skeleton height="h-4" width="w-4" />
+              <Skeleton height="h-4" width="w-32" />
+            </div>
+            <section className="mb-6">
+              <Card className="p-5" style={{ backgroundColor: fg }}>
+                <div className="flex flex-col gap-5">
+                  <div className="space-y-2">
+                    <Skeleton height="h-3" width="w-12" />
+                    <Skeleton height="h-5" width="w-56" className="mb-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton height="h-3" width="w-14" />
+                    <Skeleton height="h-4" width="w-full" />
+                    <Skeleton height="h-4" width="w-4/5" />
+                  </div>
+                  <div className="space-y-3">
+                    <Skeleton height="h-3" width="w-16" />
+                    <div className="flex gap-4">
+                      <Skeleton height="h-4" width="w-24" />
+                      <Skeleton height="h-4" width="w-28" />
+                      <Skeleton height="h-4" width="w-20" />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </section>
+            <div className="space-y-3">
+              <Skeleton height="h-5" width="w-28" />
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="p-4" style={{ backgroundColor: fg }}>
+                  <div className="flex items-center gap-3">
+                    <Skeleton height="h-10" width="w-10" rounded="base" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton height="h-4" width="w-40" />
+                      <Skeleton height="h-3" width="w-24" />
+                    </div>
+                    <Skeleton height="h-8" width="w-16" />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+        <aside
+          className="w-72 shrink-0 border-l hidden lg:flex flex-col overflow-hidden"
+          style={{ borderColor, backgroundColor: fg }}
+        >
+          <div className="p-3 border-b" style={{ borderColor }}>
+            <Skeleton height="h-5" width="w-24" className="mb-2" />
+            <Skeleton height="h-4" width="w-full" />
+            <Skeleton height="h-4" width="w-3/4" />
+          </div>
+          <div className="flex-1 p-3 space-y-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Skeleton height="h-8" width="w-8" rounded="full" className="shrink-0" />
+                <Skeleton height="h-4" width="w-24" className="flex-1" />
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
+    )
+  }
   if (!project) return <Text className="p-4">Project not found.</Text>
 
   return (
@@ -542,7 +627,7 @@ const ProjectDetail = () => {
               <div className="flex flex-col sm:flex-row sm:items-start gap-5">
                 <div className="min-w-0 flex-1 space-y-4">
                   <div>
-                    <p className="text-sm opacity-70 mb-0.5" style={{ fontSize: baseFontSize * 0.8, color: dark }}>
+                    <p className="text-sm opacity-70 mb-0.5" style={{ fontSize: Math.max(minFontSize, baseFontSize * 0.8), color: dark }}>
                       Title
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
@@ -557,7 +642,7 @@ const ProjectDetail = () => {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm opacity-70 mb-0.5" style={{ fontSize: baseFontSize * 0.8, color: dark }}>
+                    <p className="text-sm opacity-70 mb-0.5" style={{ fontSize: Math.max(minFontSize, baseFontSize * 0.8), color: dark }}>
                       About
                     </p>
                     <p
@@ -585,10 +670,10 @@ const ProjectDetail = () => {
                     )}
                   </div>
                   <div>
-                    <p className="text-sm opacity-70 mb-2" style={{ fontSize: baseFontSize * 0.8, color: dark }}>
+                    <p className="text-sm opacity-70 mb-2" style={{ fontSize: Math.max(minFontSize, baseFontSize * 0.8), color: dark }}>
                       Details
                     </p>
-                    <div className="space-y-3" style={{ fontSize: baseFontSize * 0.875 }}>
+                    <div className="space-y-3" style={{ fontSize: Math.max(minFontSize, baseFontSize * 0.875) }}>
                       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="opacity-70 shrink-0" style={{ color: dark }}>Lead</span>
