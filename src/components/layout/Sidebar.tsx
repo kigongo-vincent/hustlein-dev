@@ -56,7 +56,8 @@ const Sidebar = ({ open }: SidebarProps) => {
       initial={false}
       animate={{ width: open ? SIDEBAR_WIDTH : 0 }}
       transition={{ type: 'tween', duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className="h-screen flex flex-col shrink-0 overflow-hidden"
+      className="flex flex-col shrink-0 overflow-hidden"
+      style={{ height: 'var(--app-viewport-height)' }}
     >
       <View
           bg="fg"

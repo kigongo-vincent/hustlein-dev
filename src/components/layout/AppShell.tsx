@@ -19,7 +19,7 @@ const AppShell = () => {
   }, [current])
 
   return (
-    <View bg="bg" className="h-screen flex overflow-hidden">
+    <View bg="bg" className="flex overflow-hidden" style={{ height: 'var(--app-viewport-height)' }}>
       <Sidebar open={sidebarOpen} />
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <Header

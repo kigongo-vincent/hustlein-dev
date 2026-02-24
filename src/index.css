@@ -8,11 +8,33 @@
   --background: #fffaf2;
   --foreground: #ffffff;
   --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --app-viewport-height: 100vh;
+}
+html.platform-windows {
+  --app-viewport-height: calc(100vh / 0.75);
 }
 
 body {
   font-family: var(--font-sans);
   font-weight: 400;
+  /* Match Mac-like rendering on Windows: antialiased text, consistent appearance */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Windows: scale full app to 75% so it fits viewport; root laid out larger then scaled down */
+html.platform-windows body {
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+html.platform-windows #root {
+  width: calc(100vw / 0.75);
+  height: calc(100vh / 0.75);
+  transform: scale(0.75);
+  transform-origin: 0 0;
+  overflow: hidden;
 }
 
 /* Inputs: --input-border from theme (dark paled); --focus-border for focus */

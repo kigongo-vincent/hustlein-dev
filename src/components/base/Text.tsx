@@ -8,9 +8,16 @@ export interface Props extends HTMLAttributes<HTMLParagraphElement> {
   color?: string
 }
 
-export const baseFontSize = 12.5
+/** Scale factor on Windows so text matches Mac visual size (Windows often renders px smaller). */
+const isWindows =
+  typeof navigator !== "undefined" && /Win/i.test(navigator.userAgent)
+const FONT_SCALE_WINDOWS = 1.12
+
+const _base = 12.5
+const _min = 11
+export const baseFontSize = isWindows ? _base * FONT_SCALE_WINDOWS : _base
 /** Smallest allowed font size (px) for the whole app. */
-export const minFontSize = 11
+export const minFontSize = isWindows ? _min * FONT_SCALE_WINDOWS : _min
 
 /** 80% for small text; never below minFontSize. */
 const getSize = (fontSize: fontSize): number => {
