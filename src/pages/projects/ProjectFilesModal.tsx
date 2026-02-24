@@ -24,6 +24,7 @@ import { Modal, Button, Input, RichTextEditor, NoteCard } from '../../components
 import Text, { baseFontSize } from '../../components/base/Text'
 import { Themestore } from '../../data/Themestore'
 import { NOTE_COLORS } from '../../types'
+import type { NoteColor } from '../../types'
 import type { FolderNode } from './projectFilesData'
 import { DEMO_FOLDER_TREE } from './projectFilesData'
 import FileNodeIcon from './FileNodeIcon'
@@ -160,7 +161,7 @@ export default function ProjectFilesModal({ open, onClose }: ProjectFilesModalPr
   const [editingNoteNodeId, setEditingNoteNodeId] = useState<string | null>(null)
   const [noteTitle, setNoteTitle] = useState('')
   const [noteBody, setNoteBody] = useState('')
-  const [noteColor, setNoteColor] = useState(NOTE_COLORS[0])
+  const [noteColor, setNoteColor] = useState<NoteColor>(NOTE_COLORS[0])
   const pathSearchRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const contextMenuRef = useRef<HTMLDivElement>(null)
@@ -400,7 +401,7 @@ export default function ProjectFilesModal({ open, onClose }: ProjectFilesModalPr
     setEditingNoteNodeId(node.id)
     setNoteTitle(node.name)
     setNoteBody(node.content ?? '')
-    setNoteColor(node.noteColor ?? NOTE_COLORS[0])
+    setNoteColor((node.noteColor ?? NOTE_COLORS[0]) as NoteColor)
     setNoteModalOpen(true)
   }
 

@@ -4,7 +4,6 @@ import View from '../../components/base/View'
 import Text from '../../components/base/Text'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
 import { Button } from '../../components/ui'
-import { Themestore } from '../../data/Themestore'
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams()
@@ -12,8 +11,7 @@ const VerifyEmail = () => {
   const email = searchParams.get('email') ?? ''
   const [resending, setResending] = useState(false)
   const [resent, setResent] = useState(false)
-  const [verified, setVerified] = useState(!!token)
-  const { current } = Themestore()
+  const [verified] = useState(!!token)
 
   const handleResend = async () => {
     setResending(true)

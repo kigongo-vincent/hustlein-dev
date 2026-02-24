@@ -52,7 +52,6 @@ export default function DatePicker({
   const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null)
 
   const displayValue = value ? formatDisplay(value) : ''
-  const hasValue = displayValue.length > 0
 
   useEffect(() => {
     if (value) {

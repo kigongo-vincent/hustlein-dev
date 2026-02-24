@@ -4,7 +4,6 @@ import View from '../../components/base/View'
 import Text from '../../components/base/Text'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
 import { Input, Button, AlertModal } from '../../components/ui'
-import { Themestore } from '../../data/Themestore'
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams()
@@ -14,7 +13,6 @@ const ResetPassword = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const { current } = Themestore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

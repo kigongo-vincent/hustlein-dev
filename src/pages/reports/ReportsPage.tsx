@@ -95,7 +95,7 @@ const ReportsPage = () => {
                 <XAxis dataKey="date" tick={chartTickStyle} tickFormatter={(v) => v.slice(5)} />
                 <YAxis tick={chartTickStyle} allowDecimals={false} />
                 <Tooltip
-                  formatter={(value: number) => [value, 'Completed']}
+                  formatter={(value: number | undefined) => [value ?? 0, 'Completed']}
                   labelFormatter={(label) => `Date: ${label}`}
                   contentStyle={{ fontSize: baseFontSize }}
                 />
@@ -128,7 +128,7 @@ const ReportsPage = () => {
                 <XAxis type="number" tick={chartTickStyle} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" width={90} tick={chartTickStyle} />
                 <Tooltip
-                  formatter={(value: number, name: string) => [value, name === 'completed' ? 'Completed' : 'Total']}
+                  formatter={(value: number | undefined, name?: string) => [value ?? 0, name === 'completed' ? 'Completed' : 'Total']}
                   contentStyle={{ fontSize: baseFontSize }}
                 />
                 <Bar dataKey="completed" name="completed" fill={primaryColor} radius={[0, 4, 4, 0]} />

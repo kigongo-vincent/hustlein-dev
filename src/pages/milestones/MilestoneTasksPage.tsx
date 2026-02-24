@@ -318,7 +318,7 @@ const MilestoneTasksPage = () => {
                     tickFormatter={(v) => (v.length > 12 ? v.slice(0, 11) + '…' : v)}
                   />
                   <Tooltip
-                    formatter={(value: number) => [value, 'Tasks']}
+                    formatter={(value: number | undefined) => [value ?? 0, 'Tasks']}
                     contentStyle={{
                       fontSize: 13.5,
                       backgroundColor: fg ?? undefined,
@@ -364,7 +364,7 @@ const MilestoneTasksPage = () => {
                   />
                   <YAxis tick={chartTickStyle} allowDecimals={false} />
                   <Tooltip
-                    formatter={(value: number) => [value, 'Tasks']}
+                    formatter={(value: number | undefined) => [value ?? 0, 'Tasks']}
                     contentStyle={{
                       fontSize: 13.5,
                       backgroundColor: fg ?? undefined,

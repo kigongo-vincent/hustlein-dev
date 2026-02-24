@@ -165,13 +165,11 @@ function InvoiceStatusBadge({
   systemSuccess,
   systemError,
   systemDark,
-  brandPrimary,
 }: {
   status: InvoiceStatus
   systemSuccess?: string
   systemError?: string
   systemDark?: string
-  brandPrimary?: string
 }) {
   const isPaid = status === 'paid'
   const isOverdue = status === 'overdue'
@@ -340,7 +338,7 @@ function getStatIcon(label: string) {
 const InvoicesPage = () => {
   const { current } = Themestore()
   const [invoices, setInvoices] = useState<Invoice[]>(() => [...MOCK_INVOICES])
-  const [loading, setLoading] = useState(false)
+  const [loading] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
   const [markPaidIds, setMarkPaidIds] = useState<string[] | null>(null)
@@ -725,8 +723,8 @@ const InvoicesPage = () => {
                   <XAxis dataKey="month" tick={chartTickStyle} />
                   <YAxis tick={chartTickStyle} allowDecimals={false} />
                   <Tooltip
-                    formatter={(value: number, name: string) =>
-                      [name === 'Amount' ? formatCurrency(Number(value), 'UGX') : value, name]
+                    formatter={(value: number | undefined, name?: string) =>
+                      [name === 'Amount' ? formatCurrency(Number(value ?? 0), 'UGX') : (value ?? 0), name ?? '']
                     }
                     contentStyle={{
                       fontSize: baseFontSize * 1.08,
@@ -964,7 +962,6 @@ const InvoicesPage = () => {
                         systemSuccess={current?.system?.success}
                         systemError={current?.system?.error}
                         systemDark={dark}
-                        brandPrimary={current?.brand?.primary}
                       />
                     </td>
                     <td className="px-4 py-3 text-right">

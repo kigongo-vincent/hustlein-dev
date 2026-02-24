@@ -21,7 +21,7 @@ import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { userService } from '../../services'
 import type { User, UserRole, ConsultantDetailsSource, ConsultantProfile } from '../../types'
-import { UserPlus, Users, UserCog, Briefcase, TrendingUp, Eye, Pencil, Trash2, CalendarOff, UserCheck, Phone, MapPin, Building2, Users as UsersIcon, DollarSign, FileText, Calendar, CircleDot, X, ListTodo, Receipt, ChevronLeft, ChevronRight, Search, SlidersHorizontal } from 'lucide-react'
+import { UserPlus, Users, UserCog, Briefcase, TrendingUp, Eye, Pencil, Trash2, CalendarOff, UserCheck, MapPin, Building2, Users as UsersIcon, DollarSign, FileText, Calendar, X, ListTodo, Receipt, ChevronLeft, ChevronRight, Search, SlidersHorizontal } from 'lucide-react'
 
 function isConsultantProfile(p: ConsultantDetailsSource): p is ConsultantProfile {
   return 'fullName' in p || 'jobTitle' in p || 'firstName' in p
@@ -55,21 +55,6 @@ function formatDate(iso?: string | null): string {
   if (!iso) return '—'
   const d = new Date(iso)
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-}
-
-function toUser(p: ConsultantDetailsSource): User {
-  if (isConsultantProfile(p)) {
-    return {
-      id: p.id,
-      name: getDisplayName(p),
-      email: p.email,
-      role: 'consultant',
-      companyId: p.company?.id ?? '',
-      avatarUrl: p.profileImage ?? undefined,
-      status: (p.status === 'on_leave' ? 'on_leave' : 'active') as User['status'],
-    }
-  }
-  return p
 }
 
 const chartTickStyle = { fontSize: 12 }
@@ -905,12 +890,12 @@ const ConsultantsPage = () => {
                       <span
                         className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-normal"
                         style={{
-                          backgroundColor: (p as User).status === 'on_leave' || (p as ConsultantProfile).status === 'inactive'
+                          backgroundColor: (p as unknown as User).status === 'on_leave' || (p as ConsultantProfile).status === 'inactive'
                             ? 'rgba(0,0,0,0.05)'
                             : (current?.system?.success && /^#[0-9A-Fa-f]{6}$/.test(current.system.success)
                               ? `${current.system.success}12`
                               : 'rgba(34, 197, 94, 0.1)'),
-                          color: (p as User).status === 'on_leave' || (p as ConsultantProfile).status === 'inactive' ? dark : (current?.system?.success ?? dark),
+                          color: (p as unknown as User).status === 'on_leave' || (p as ConsultantProfile).status === 'inactive' ? dark : (current?.system?.success ?? dark),
                         }}
                       >
                         {getStatusDisplay(p)}

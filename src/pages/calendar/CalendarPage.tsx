@@ -128,8 +128,6 @@ const CalendarPage = () => {
   const bg = current?.system?.background
   const fg = current?.system?.foreground || '#f9f9f9'
   const dark = current?.system?.dark || 'black'
-  const borderColor = current?.system?.border || (dark ? `${dark}18` : 'rgba(0,0,0,0.08)')
-
   useEffect(() => {
     if (!user?.id) return
     calendarService.listByUser(user.id).then(setEvents)
@@ -608,6 +606,7 @@ const CalendarPage = () => {
         message={eventToDelete ? `Delete "${eventToDelete.title}"? This can't be undone.` : ''}
         confirmLabel="Delete"
         variant="error"
+        onConfirm={handleDeleteConfirm}
         onClose={() => setEventToDelete(null)}
       />
     </div>

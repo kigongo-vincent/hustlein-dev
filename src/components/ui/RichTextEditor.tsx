@@ -22,13 +22,6 @@ import {
 import type { Editor } from '@tiptap/core'
 import type { UserRole } from '../../types'
 
-const ROLE_LABEL: Record<UserRole, string> = {
-  super_admin: 'Super Admin',
-  company_admin: 'Company Admin',
-  project_lead: 'Project Lead',
-  consultant: 'Consultant',
-}
-
 /** Lighten (t 0..1 mix with white) or darken (t 0..1 mix with black) a hex color */
 function mixHex(hex: string, t: number, darken = false): string {
   let s = hex.replace(/^#/, '')
@@ -93,7 +86,7 @@ function formatLastSeenMention(value: string): string {
 function createMentionSuggestion(
   dark: string | undefined,
   borderColor: string,
-  secondary: string | undefined,
+  _secondary: string | undefined,
   primary: string | undefined,
   themeFg: string,
   themeBg: string
@@ -221,7 +214,7 @@ function createMentionSuggestion(
       lastSeenEl.textContent = item.lastSeen ? formatLastSeenMention(item.lastSeen) : 'Last seen —'
       details.appendChild(lastSeenEl)
       row.appendChild(details)
-      listEl.appendChild(row)
+      if (listEl) listEl.appendChild(row)
     })
   }
 
@@ -352,7 +345,7 @@ const RichTextEditor = ({
     const html = editor.getHTML()
     const normalized = html === '<p></p>' ? '' : html
     if (value !== normalized) {
-      editor.commands.setContent(value || '<p></p>', false)
+      editor.commands.setContent(value || '<p></p>', { emitUpdate: false })
     }
   }, [value, editor])
 
@@ -363,7 +356,9 @@ const RichTextEditor = ({
       onChange(html === '<p></p>' ? '' : html)
     }
     editor.on('update', handleUpdate)
-    return () => editor.off('update', handleUpdate)
+    return () => {
+      editor.off('update', handleUpdate)
+    }
   }, [editor, onChange])
 
   if (!editor) return null
@@ -456,7 +451,7 @@ const RichTextEditor = ({
                 <span className="text-xs font-medium">H3</span>
               </ToolbarButton>
               <ToolbarButton
-                onClick={() => editor.chain().focus().toggleParagraph().run()}
+                onClick={() => editor.chain().focus().setParagraph().run()}
                 active={editor.isActive('paragraph')}
                 title="Paragraph"
                 style={{ color: dark }}

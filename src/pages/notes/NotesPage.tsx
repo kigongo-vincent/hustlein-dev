@@ -16,7 +16,7 @@ import View from '../../components/base/View'
 import { Card, Button, Modal, AlertModal, Input, RichTextEditor, NoteCard, Skeleton } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { noteService } from '../../services'
-import type { Note } from '../../types'
+import type { Note, NoteColor } from '../../types'
 import { NOTE_COLORS } from '../../types'
 import { StickyNote, Plus, Pencil, Trash2, BarChart3 } from 'lucide-react'
 
@@ -47,7 +47,7 @@ export default function NotesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [formTitle, setFormTitle] = useState('')
   const [formContent, setFormContent] = useState('')
-  const [formColor, setFormColor] = useState(NOTE_COLORS[0])
+  const [formColor, setFormColor] = useState<NoteColor>(NOTE_COLORS[0])
   const [saving, setSaving] = useState(false)
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
 
@@ -75,7 +75,7 @@ export default function NotesPage() {
     setEditingId(n.id)
     setFormTitle(n.title)
     setFormContent(n.content)
-    setFormColor(n.color)
+    setFormColor((NOTE_COLORS as readonly string[]).includes(n.color) ? (n.color as NoteColor) : NOTE_COLORS[0])
     setFormOpen(true)
   }
 
@@ -202,7 +202,6 @@ export default function NotesPage() {
   }, [notes])
 
   const gridColor = dark ? `${dark}18` : 'rgba(0,0,0,0.08)'
-  const bg = current?.system?.background
   const fg = current?.system?.foreground ?? '#fff'
   const tooltipStyle = {
     fontSize: 13.5,
@@ -239,7 +238,7 @@ export default function NotesPage() {
           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
           <XAxis dataKey="name" hide />
           <YAxis tick={{ ...chartTickStyle, fill: dark }} allowDecimals={false} />
-          <Tooltip formatter={(v: number) => [v, 'Notes']} contentStyle={tooltipStyle} />
+          <Tooltip formatter={(v: number | undefined) => [v ?? 0, 'Notes']} contentStyle={tooltipStyle} />
           <Bar dataKey="count" radius={[4, 4, 0, 0]}>
             {chartDataByColor.map((entry) => (
               <Cell key={entry.name} fill={entry.name} />
