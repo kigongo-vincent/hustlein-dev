@@ -5,8 +5,8 @@ import { Themestore } from '../../data/Themestore'
 export type ModalVariant = 'default' | 'wide' | 'fullscreen'
 
 const VARIANT_CLASSES: Record<ModalVariant, string> = {
-  default: 'max-w-md max-h-[90vh]',
-  wide: 'max-w-4xl max-h-[95vh]',
+  default: 'max-w-md max-h-[min(90vh,calc(100dvh-2rem))] min-h-0',
+  wide: 'max-w-4xl max-h-[min(95vh,calc(100dvh-2rem))] min-h-0',
   fullscreen: 'fixed inset-0 w-full h-full max-w-none max-h-none rounded-none',
 }
 
@@ -38,7 +38,7 @@ const Modal = ({
       {open && (
         <motion.div
           key="modal"
-          className={`fixed inset-0 z-50 flex items-center justify-center ${variant === 'fullscreen' ? 'p-0' : 'p-4'}`}
+          className={`fixed inset-0 z-50 flex items-center justify-center overflow-hidden ${variant === 'fullscreen' ? 'p-0' : 'p-4'}`}
           role="dialog"
           aria-modal="true"
           initial={{ opacity: 0 }}
