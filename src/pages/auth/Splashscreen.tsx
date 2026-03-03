@@ -6,7 +6,7 @@ import Logo from '../../components/base/Logo'
 import Text from '../../components/base/Text'
 import View from '../../components/base/View'
 
-const SPLASH_DURATION_MS = 1200
+const SPLASH_DURATION_MS = 12000
 
 const Splashscreen = () => {
   const user = Authstore((s) => s.user)
