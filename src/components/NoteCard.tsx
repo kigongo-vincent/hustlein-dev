@@ -4,6 +4,24 @@ import { Themestore } from '../data/Themestore'
 import { NOTE_COLORS } from '../types'
 import { Check, Palette } from 'lucide-react'
 
+/** Dark-mode variants for note card/editor backgrounds (muted, tinted). Export for note form modal. */
+export const NOTE_COLORS_DARK: Record<string, string> = {
+  '#fef3c7': '#3d3520',
+  '#d1fae5': '#1a2e26',
+  '#dbeafe': '#1a2435',
+  '#fce7f3': '#352530',
+  '#e9d5ff': '#2a2435',
+  '#fed7aa': '#3d3020',
+  '#e5e7eb': '#2a2a2a',
+  '#fff': '#252525',
+  '#ffffff': '#252525',
+}
+export function darkenNoteBg(hex: string, fallbackDarkBg: string): string {
+  const h = hex?.trim().toLowerCase()
+  if (!h || !h.startsWith('#')) return fallbackDarkBg
+  return NOTE_COLORS_DARK[h] ?? fallbackDarkBg
+}
+
 export interface NoteCardProps {
   title: string
   content: string
@@ -27,13 +45,15 @@ export default function NoteCard({
   onClick,
   className = '',
 }: NoteCardProps) {
-  const { current } = Themestore()
-  const dark = current?.system?.dark
+  const { current, mode } = Themestore()
+  const textOnDark = current?.system?.dark
   const [pickerOpen, setPickerOpen] = useState(false)
 
-  const bg = color || '#fef3c7'
-  const isLight = bg === '#fff' || bg === '#ffffff' || (bg.startsWith('#') && parseInt(bg.slice(1), 16) > 0xeeeeee)
-  const textColor = isLight ? (dark ?? '#111') : '#1f2937'
+  const isDarkMode = mode === 'dark'
+  const rawBg = color || '#fef3c7'
+  const bg = isDarkMode ? darkenNoteBg(rawBg, current?.system?.foreground ?? '#141414') : rawBg
+  const isLightBg = !isDarkMode && (rawBg === '#fff' || rawBg === '#ffffff' || (rawBg.startsWith('#') && parseInt(rawBg.slice(1), 16) > 0xeeeeee))
+  const textColor = isDarkMode ? (textOnDark ?? '#e0e0e0') : (isLightBg ? '#1f2937' : '#1f2937')
 
   const contentPreview = content?.replace(/\n/g, ' ').slice(0, variant === 'compact' ? 40 : 120) + (content?.length > (variant === 'compact' ? 40 : 120) ? '…' : '')
 
@@ -100,7 +120,7 @@ export default function NoteCard({
                         }}
                         aria-label={`Color ${c}`}
                       >
-                        {color === c && <Check size={14} style={{ color: current?.system?.dark }} />}
+                        {color === c && <Check size={14} style={{ color: '#1f2937' }} />}
                       </button>
                     ))}
                   </div>

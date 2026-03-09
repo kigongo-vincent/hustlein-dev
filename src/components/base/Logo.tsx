@@ -1,4 +1,5 @@
 import { HTMLAttributes } from 'react'
+import { Themestore } from '../../data/Themestore'
 
 const SIZE_STYLES = {
     sm: {
@@ -23,13 +24,18 @@ export type LogoSize = keyof typeof SIZE_STYLES
 
 const DEFAULT_LOGO_URL = 'https://res.cloudinary.com/dauv815j5/image/upload/v1771319637/Hustle_In_No_BG_Boxed_dnx3dv.png'
 export const LOGIN_LOGO_URL = 'https://res.cloudinary.com/dauv815j5/image/upload/v1771319637/Hustle_In_No_BG_Brown_b9cg7e.png'
+export const DARK_LOGO_URL = 'https://res.cloudinary.com/dauv815j5/image/upload/v1772111855/Hustle_In_No_BG_White_mrnrrl.png'
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
     size?: LogoSize | ''
     src?: string
+    /** Override logo in dark mode (default: DARK_LOGO_URL) */
+    darkSrc?: string
 }
 
-const Logo = ({ size = 'lg', src = DEFAULT_LOGO_URL, className, ...rest }: Props) => {
+const Logo = ({ size = 'lg', src = DEFAULT_LOGO_URL, darkSrc, className, ...rest }: Props) => {
+    const mode = Themestore((s) => s.mode)
+    const effectiveSrc = mode === 'dark' ? (darkSrc ?? DARK_LOGO_URL) : src
     const key = (size === '' ? 'lg' : size) as LogoSize
     const styles = SIZE_STYLES[key] ?? SIZE_STYLES.lg
 
@@ -41,7 +47,7 @@ const Logo = ({ size = 'lg', src = DEFAULT_LOGO_URL, className, ...rest }: Props
             <img
                 height={styles.img.height}
                 width={styles.img.width}
-                src={src}
+                src={effectiveSrc}
                 alt="Hustle In"
             />
         </div>

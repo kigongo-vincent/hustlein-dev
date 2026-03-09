@@ -140,9 +140,9 @@ export default function DatePicker({
         </button>
         <span
           className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-1.5 rounded-base pointer-events-none"
-          style={{ color: current?.system?.dark ? `${current.system.dark}99` : undefined }}
+          style={{ color: current?.system?.dark ?? undefined }}
         >
-          <Calendar size={18} strokeWidth={1.8} />
+          <Calendar size={18} strokeWidth={2.25} />
         </span>
       </div>
 
@@ -171,7 +171,7 @@ export default function DatePicker({
               >
                 ‹
               </button>
-              <Text className="font-medium" style={{ fontSize: baseFontSize * 1.1 }}>
+              <Text className="font-medium" style={{ fontSize: baseFontSize * 1.1, color: current?.system?.dark }}>
                 {monthName} {year}
               </Text>
               <button
@@ -210,7 +210,7 @@ export default function DatePicker({
                       onClick={() => handleSelect(day)}
                       className="rounded-base py-1.5 text-[13px] hover:opacity-90"
                       style={{
-                        color: isSelected ? '#fff' : current?.system?.dark,
+                        color: isSelected ? (current?.brand?.onPrimary ?? '#fff') : current?.system?.dark,
                         backgroundColor: isSelected ? (current?.brand?.primary ?? '#682308') : 'transparent',
                       }}
                     >

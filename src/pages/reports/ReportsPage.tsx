@@ -36,7 +36,16 @@ const ReportsPage = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [projectFilter, setProjectFilter] = useState<string>('')
   const primaryColor = current?.brand?.primary || '#682308'
-  const gridColor = current?.system?.dark ? `${current.system.dark}18` : 'rgba(0,0,0,0.08)'
+  const dark = current?.system?.dark
+  const mode = Themestore((s) => s.mode)
+  const chartPrimary = mode === 'dark' ? (dark ?? '#e0e0e0') : primaryColor
+  const gridColor = dark ? `${dark}40` : 'rgba(0,0,0,0.08)'
+  const barMuted = dark ? `${dark}60` : 'rgba(0,0,0,0.2)'
+  const tickProps = dark ? { ...chartTickStyle, fill: dark } : chartTickStyle
+  const tooltipCursor =
+    mode === 'dark'
+      ? { fill: dark ? `${dark}18` : 'rgba(255,255,255,0.06)', stroke: current?.system?.border ?? 'rgba(255,255,255,0.08)' }
+      : { fill: 'rgba(0,0,0,0.04)', stroke: current?.system?.border ?? 'rgba(0,0,0,0.1)' }
 
   useEffect(() => {
     projectService.list().then(setProjects)
@@ -87,22 +96,29 @@ const ReportsPage = () => {
               <AreaChart data={progressData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={primaryColor} stopOpacity={0.4} />
-                    <stop offset="100%" stopColor={primaryColor} stopOpacity={0} />
+                    <stop offset="0%" stopColor={chartPrimary} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={chartPrimary} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="date" tick={chartTickStyle} tickFormatter={(v) => v.slice(5)} />
-                <YAxis tick={chartTickStyle} allowDecimals={false} />
+                <XAxis dataKey="date" tick={tickProps} tickFormatter={(v) => v.slice(5)} />
+                <YAxis tick={tickProps} allowDecimals={false} />
                 <Tooltip
                   formatter={(value: number | undefined) => [value ?? 0, 'Completed']}
                   labelFormatter={(label) => `Date: ${label}`}
-                  contentStyle={{ fontSize: baseFontSize }}
+                  contentStyle={{
+                    fontSize: baseFontSize,
+                    backgroundColor: current?.system?.foreground,
+                    border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
+                    borderRadius: 4,
+                    color: current?.system?.dark,
+                  }}
+                  cursor={tooltipCursor}
                 />
                 <Area
                   type="monotone"
                   dataKey="completed"
-                  stroke={primaryColor}
+                  stroke={chartPrimary}
                   strokeWidth={2}
                   fill="url(#progressGradient)"
                 />
@@ -125,14 +141,21 @@ const ReportsPage = () => {
                 margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
-                <XAxis type="number" tick={chartTickStyle} allowDecimals={false} />
-                <YAxis type="category" dataKey="name" width={90} tick={chartTickStyle} />
+                <XAxis type="number" tick={tickProps} allowDecimals={false} />
+                <YAxis type="category" dataKey="name" width={90} tick={tickProps} />
                 <Tooltip
                   formatter={(value: number | undefined, name?: string) => [value ?? 0, name === 'completed' ? 'Completed' : 'Total']}
-                  contentStyle={{ fontSize: baseFontSize }}
+                  contentStyle={{
+                    fontSize: baseFontSize,
+                    backgroundColor: current?.system?.foreground,
+                    border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
+                    borderRadius: 4,
+                    color: current?.system?.dark,
+                  }}
+                  cursor={tooltipCursor}
                 />
-                <Bar dataKey="completed" name="completed" fill={primaryColor} radius={[0, 4, 4, 0]} />
-                <Bar dataKey="total" name="total" fill={gridColor} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="completed" name="completed" fill={chartPrimary} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="total" name="total" fill={barMuted} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -4,12 +4,14 @@ import Modal from './Modal'
 import AlertModal from './AlertModal'
 import Button from './Button'
 import Input from './Input'
+import CurrencyInput from './CurrencyInput'
 import CustomSelect from './CustomSelect'
 import DateSelectInput from './DateSelectInput'
 import { Authstore } from '../../data/Authstore'
 import { Themestore } from '../../data/Themestore'
-import { userService } from '../../services'
-import type { User, UserRole } from '../../types'
+import { departmentService, userService } from '../../services'
+import { notifyError, notifySuccess } from '../../data/NotificationStore'
+import type { User } from '../../types'
 import type { CreateConsultantPayload, ConsultantAddress, ConsultantBankDetails, ConsultantNextOfKin } from '../../types'
 import { User as UserIcon, Briefcase, DollarSign, MapPin, Users, Building2, FileCheck } from 'lucide-react'
 
@@ -24,18 +26,17 @@ const STEPS = [
 ] as const
 
 const OFFICE_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
-const STATUS_OPTIONS = [
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
-]
-const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
-  { value: 'consultant', label: 'Consultant' },
-  { value: 'project_lead', label: 'Project Lead' },
-]
-const CURRENCY_OPTIONS = [
-  { value: 'UGX', label: 'UGX' },
-  { value: 'USD', label: 'USD' },
-]
+/** Currency list from browser Intl API (supportedValuesOf('currency')) when available; fallback UGX, USD */
+function buildCurrencyOptions(): { value: string; label: string }[] {
+  const fromIntl =
+    typeof Intl !== 'undefined' && (Intl as any).supportedValuesOf
+      ? ((Intl as any).supportedValuesOf('currency') as string[])
+      : ['UGX', 'USD']
+  const unique = Array.from(new Set(['UGX', 'USD', ...fromIntl]))
+  return unique
+    .map((c) => ({ value: c, label: c }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
 
 const defaultAddress: ConsultantAddress = {
   street: '',
@@ -91,9 +92,18 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const isEdit = !!editUser
+  const [currencyOptions] = useState(() => buildCurrencyOptions())
+  const [departmentOptions, setDepartmentOptions] = useState<{ value: string; label: string }[]>([
+    { value: '', label: 'No department' },
+  ])
 
   useEffect(() => {
     if (!open) return
+    if (user?.companyId) {
+      departmentService.listByCompany(user.companyId).then((list) => {
+        setDepartmentOptions([{ value: '', label: 'No department' }, ...list.map((d) => ({ value: d.id, label: d.name }))])
+      })
+    }
     if (editUser) {
       const parts = editUser.name.trim().split(/\s+/)
       const firstName = parts[0] ?? ''
@@ -103,16 +113,28 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
         firstName,
         lastName,
         email: editUser.email,
-        role: editUser.role ?? 'consultant',
+        role: 'consultant',
+        departmentId: editUser.departmentId,
       }))
     } else {
       setForm(defaultFormState)
     }
     setStep(0)
-  }, [open, editUser])
+  }, [open, editUser, user?.companyId])
 
   const update = <K extends keyof CreateConsultantPayload>(key: K, value: CreateConsultantPayload[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }))
+    setForm((prev) => {
+      const next: CreateConsultantPayload = { ...prev, [key]: value }
+      if (key === 'grossPay' || key === 'totalHoursPerMonth') {
+        const gross = Number(next.grossPay.toString().replace(/[^0-9.]/g, ''))
+        const hours = Number(next.totalHoursPerMonth)
+        if (!Number.isNaN(gross) && gross > 0 && !Number.isNaN(hours) && hours > 0) {
+          const rate = gross / hours
+          next.hourlyRate = Math.round(rate).toString()
+        }
+      }
+      return next
+    })
     setError(null)
   }
 
@@ -194,7 +216,8 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
     }
   }
 
-  const goNext = () => {
+  const goNext = (e: any) => {
+    (e as { preventDefault: () => void })?.preventDefault()
     const err = validateStep(step)
     if (err) {
       setError(err)
@@ -227,26 +250,32 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
         const updated = await userService.update(editUser.id, {
           name: fullName,
           email: form.email.trim(),
-          role: form.role ?? 'consultant',
+          role: 'consultant',
+          departmentId: form.departmentId,
         })
         if (updated) {
           onSuccess?.(updated)
+          notifySuccess('Consultant updated.')
           handleClose()
         } else {
           setError('Failed to update consultant.')
+          notifyError('Failed to update consultant.')
         }
       } else {
         const created = await userService.create({
           name: fullName,
           email: form.email.trim(),
-          role: form.role ?? 'consultant',
+          role: 'consultant',
           companyId: user!.companyId,
+          departmentId: form.departmentId,
         })
         onSuccess?.(created)
+        notifySuccess('Consultant created.')
         handleClose()
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : isEdit ? 'Failed to update consultant.' : 'Failed to add consultant.')
+      notifyError(err instanceof Error ? err.message : isEdit ? 'Failed to update consultant.' : 'Failed to add consultant.')
     } finally {
       setSubmitting(false)
     }
@@ -292,7 +321,7 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
           onSubmit={(e) => {
             e.preventDefault()
             if (isLastStep) handleSubmit()
-            else goNext()
+            else goNext(e)
           }}
           className="space-y-4 pt-1"
         >
@@ -357,18 +386,13 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
                 disabled={submitting}
               />
               <CustomSelect
-                label="Status"
-                options={STATUS_OPTIONS}
-                value={form.status}
-                onChange={(v) => update('status', v as CreateConsultantPayload['status'])}
+                label="Department"
+                options={departmentOptions}
+                value={form.departmentId ?? ''}
+                onChange={(v) => update('departmentId', v || undefined)}
                 disabled={submitting}
-              />
-              <CustomSelect
-                label="Role"
-                options={ROLE_OPTIONS}
-                value={form.role ?? 'consultant'}
-                onChange={(v) => update('role', v as UserRole)}
-                disabled={submitting}
+                placeholder="Select department"
+                placement="below"
               />
               <div>
                 <Text variant="sm" className="mb-2 block opacity-80">Office days</Text>
@@ -404,24 +428,28 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
             <div className="space-y-4">
               <CustomSelect
                 label="Currency"
-                options={CURRENCY_OPTIONS}
+                options={currencyOptions}
                 value={form.currency}
                 onChange={(v) => update('currency', v)}
                 disabled={submitting}
               />
-              <Input
+              <CurrencyInput
                 label="Gross pay"
-                placeholder="e.g. 2200000"
+                placeholder="e.g. 2,200,000"
                 value={form.grossPay}
-                onChange={(e) => update('grossPay', e.target.value)}
+                currency={form.currency}
+                onChange={(raw) => update('grossPay', raw)}
                 disabled={submitting}
+                ariaLabel="Gross pay"
               />
-              <Input
+              <CurrencyInput
                 label="Hourly rate"
-                placeholder="e.g. 13750"
+                placeholder="Auto-computed from gross pay and hours"
                 value={form.hourlyRate}
-                onChange={(e) => update('hourlyRate', e.target.value)}
-                disabled={submitting}
+                currency={form.currency}
+                onChange={() => {}}
+                disabled
+                ariaLabel="Hourly rate"
               />
               <Input
                 label="Total hours per month"
@@ -545,8 +573,8 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
               <ReviewRow label="Phone" value={form.phoneNumber || '—'} />
               <ReviewRow label="DOB" value={form.dateOfBirth || '—'} />
               <ReviewRow label="Job title" value={form.jobTitle || '—'} />
-              <ReviewRow label="Role" value={form.role ? ROLE_OPTIONS.find((o) => o.value === form.role)?.label ?? form.role : '—'} />
-              <ReviewRow label="Status" value={form.status} />
+              {/* <ReviewRow label="Role" value={form.role ? ROLE_OPTIONS.find((o) => o.value === form.role)?.label ?? form.role : '—'} /> */}
+              {/* <ReviewRow label="Status" value={form.status} /> */}
               <ReviewRow label="Office days" value={form.officeDays.length ? form.officeDays.join(', ') : '—'} />
               <ReviewRow label="Gross pay" value={form.currency && form.grossPay ? `${form.currency} ${form.grossPay}` : form.grossPay || '—'} />
               <ReviewRow label="Hourly rate" value={form.hourlyRate ? `${form.currency} ${form.hourlyRate}` : '—'} />
@@ -567,9 +595,9 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
               className={step === 0 ? 'invisible' : ''}
             />
             <div className="flex gap-2 ml-auto">
-              <Button type="button" variant="secondary" label="Cancel" onClick={handleClose} disabled={submitting} />
+              <Button type="button" variant="background" label="Cancel" onClick={handleClose} disabled={submitting} />
               {canGoNext ? (
-                <Button type="submit" label="Next" onClick={goNext} disabled={submitting} />
+                <Button type="button" label="Next" onClick={(e) => { e.preventDefault(); goNext(e) }} disabled={submitting} />
               ) : (
                 <Button type="submit" label={submitting ? (isEdit ? 'Saving…' : 'Adding…') : (isEdit ? 'Save changes' : 'Add consultant')} disabled={submitting} />
               )}

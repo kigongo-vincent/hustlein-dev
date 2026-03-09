@@ -38,7 +38,7 @@ const Auth = () => {
     <AnimatePresence mode="wait">
       <motion.div
         key={location.pathname}
-        initial={pageTransition.initial}
+        initial={false}
         animate={pageTransition.animate}
         exit={pageTransition.exit}
         transition={pageTransition.transition}

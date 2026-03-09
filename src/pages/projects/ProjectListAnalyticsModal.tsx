@@ -33,10 +33,16 @@ const ProjectListAnalyticsModal = ({
   trendData,
   chartColors,
 }: ProjectListAnalyticsModalProps) => {
-  const { current } = Themestore()
+  const { current, mode } = Themestore()
   const dark = current?.system?.dark
   const primaryColor = current?.brand?.primary ?? '#682308'
-  const gridColor = current?.system?.dark ? `${current.system.dark}18` : 'rgba(0,0,0,0.08)'
+  const chartPrimary = mode === 'dark' ? (dark ?? '#e0e0e0') : primaryColor
+  const gridColor = current?.system?.dark ? `${current.system.dark}40` : 'rgba(0,0,0,0.08)'
+  const tickProps = current?.system?.dark ? { ...chartTickStyle, fill: current.system.dark } : chartTickStyle
+  const tooltipCursor =
+    mode === 'dark'
+      ? { fill: dark ? `${dark}18` : 'rgba(255,255,255,0.06)', stroke: current?.system?.border ?? 'rgba(255,255,255,0.08)' }
+      : { fill: 'rgba(0,0,0,0.04)', stroke: current?.system?.border ?? 'rgba(0,0,0,0.1)' }
 
   return (
     <Modal open={open} onClose={onClose} variant="wide">
@@ -55,17 +61,19 @@ const ProjectListAnalyticsModal = ({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartDataByProject} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                    <XAxis dataKey="name" tick={chartTickStyle} />
-                    <YAxis tick={chartTickStyle} allowDecimals={false} />
+                    <XAxis dataKey="name" tick={tickProps} />
+                    <YAxis tick={tickProps} allowDecimals={false} />
                     <Tooltip
                       formatter={(value) => [Number(value ?? 0), 'Tasks']}
                       labelFormatter={(_, payload) => payload[0]?.payload?.fullName ?? ''}
                       contentStyle={{
                         fontSize: baseFontSize * 1.08,
-                        backgroundColor: current?.system?.background ?? undefined,
+                        backgroundColor: current?.system?.foreground,
                         border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
                         borderRadius: 4,
+                        color: dark,
                       }}
+                      cursor={tooltipCursor}
                     />
                     <Bar key="tasks" dataKey="tasks" radius={[4, 4, 0, 0]}>
                       {chartDataByProject.map((_, index) => (
@@ -87,24 +95,26 @@ const ProjectListAnalyticsModal = ({
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                    <XAxis dataKey="month" tick={chartTickStyle} />
-                    <YAxis tick={chartTickStyle} allowDecimals={false} />
+                    <XAxis dataKey="month" tick={tickProps} />
+                    <YAxis tick={tickProps} allowDecimals={false} />
                     <Tooltip
                       formatter={(value) => [Number(value ?? 0), 'Projects']}
                       contentStyle={{
                         fontSize: baseFontSize * 1.08,
-                        backgroundColor: current?.system?.background ?? undefined,
+                        backgroundColor: current?.system?.foreground,
                         border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
                         borderRadius: 4,
+                        color: dark,
                       }}
+                      cursor={tooltipCursor}
                     />
                     <Line
                       type="monotone"
                       dataKey="projects"
-                      stroke={primaryColor}
+                      stroke={chartPrimary}
                       strokeWidth={2}
                       name="Projects"
-                      dot={{ fill: primaryColor, r: 4 }}
+                      dot={{ fill: chartPrimary, r: 4 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -113,7 +123,7 @@ const ProjectListAnalyticsModal = ({
           </Card>
         </div>
         <footer className="flex justify-end pt-4 mt-4 border-t shrink-0" style={{ borderColor: current?.system?.border }}>
-          <Button variant="secondary" label="Close" onClick={onClose} />
+          <Button variant="background" label="Close" onClick={onClose} />
         </footer>
       </div>
     </Modal>

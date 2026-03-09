@@ -30,8 +30,15 @@ const Modal = ({
   closeOnBackdrop = true,
   variant = 'default',
 }: Props) => {
-  const { current } = Themestore()
+  const { current, mode } = Themestore()
   const panelClass = VARIANT_CLASSES[variant]
+  const isDark = mode === 'dark'
+  const overlayStyle = isDark
+    ? { backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'saturate(1.2)' }
+    : { backgroundColor: 'rgba(0,0,0,0.25)', backdropFilter: 'saturate(1.5)' }
+  const panelShadow = isDark
+    ? '0 25px 50px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)'
+    : undefined
 
   return (
     <AnimatePresence>
@@ -47,7 +54,8 @@ const Modal = ({
           transition={overlayTransition}
         >
           <motion.div
-            className="absolute inset-0 bg-neutral-400/30  backdrop-saturate-150"
+            className="absolute inset-0"
+            style={overlayStyle}
             aria-hidden
             initial={{ opacity: 0.7 }}
             animate={{ opacity: 1 }}
@@ -59,6 +67,7 @@ const Modal = ({
             className={`relative rounded-base shadow-lg w-full overflow-auto scroll-slim ${panelClass}`}
             style={{
               backgroundColor: current?.system?.foreground ?? undefined,
+              ...(isDark ? { boxShadow: panelShadow } : {}),
             }}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}

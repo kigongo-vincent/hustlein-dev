@@ -1,16 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router'
-import { useGoogleLogin } from '@react-oauth/google'
 import View from '../../components/base/View'
 import Text from '../../components/base/Text'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
 import { Input, Button, AlertModal } from '../../components/ui'
-import { userService } from '../../services'
-import { Authstore } from '../../data/Authstore'
+import { authService } from '../../services/authService'
 import { Themestore } from '../../data/Themestore'
-import type { AuthUser } from '../../types'
-
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden>
@@ -33,88 +28,25 @@ const GoogleIcon = () => (
   </svg>
 )
 
-function GoogleSignInButton({
-  onSuccess,
-  onError,
-}: {
-  onSuccess: (accessToken: string, userInfo: { sub: string; email?: string; name?: string; picture?: string }) => Promise<void>
-  onError: () => void
-}) {
-  const loginWithGoogle = useGoogleLogin({
-    flow: 'implicit',
-    scope: 'openid email profile',
-    onSuccess: async ({ access_token }) => {
-      try {
-        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: { Authorization: `Bearer ${access_token}` },
-        })
-        if (!res.ok) throw new Error('Userinfo failed')
-        const payload = (await res.json()) as { sub: string; email?: string; name?: string; picture?: string }
-        await onSuccess(access_token, payload)
-      } catch {
-        onError()
-      }
-    },
-    onError,
-  })
-  return (
-    <Button
-      type="button"
-      variant="background"
-      fullWidth
-      label="Continue with Google"
-      startIcon={<GoogleIcon />}
-      onClick={() => loginWithGoogle()}
-    />
-  )
-}
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { setUser } = Authstore()
   const { current } = Themestore()
   const navigate = useNavigate()
-
-  const handleGoogleSuccess = async (
-    access_token: string,
-    payload: { sub: string; email?: string; name?: string; picture?: string },
-  ) => {
-    setError('')
-    const existing = await userService.getByEmail(payload.email ?? '')
-    const authUser: AuthUser = existing
-      ? { ...existing, token: access_token }
-      : {
-        id: payload.sub,
-        email: payload.email ?? '',
-        name: payload.name ?? 'Google User',
-        role: 'consultant',
-        companyId: 'c1',
-        avatarUrl: payload.picture,
-        token: access_token,
-      }
-    setUser(authUser)
-    navigate('/app')
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const user = await userService.getByEmail(email)
-      if (!user) {
-        setError('User not found. Demo: super@acme.com (super_admin), admin@acme.com (company_admin), lead@acme.com (project_lead), consultant@acme.com (consultant).')
-        setLoading(false)
-        return
-      }
-      const authUser: AuthUser = { ...user }
-      setUser(authUser)
+      await authService.login({ email, password })
       navigate('/app')
-    } catch {
-      setError('Something went wrong.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password.')
     } finally {
       setLoading(false)
     }
@@ -130,9 +62,7 @@ const Login = () => {
           <Text variant='md' className="font-bold  text-center">
             Sign in
           </Text>
-          {/* <hr className='opacity-3 ' /> */}
-          <Text variant='sm' className='text-center px-10'>welcome back to your account, if you're not yet registered, <Link to="/auth/signup" className='underline' style={{ color: current?.brand?.secondary }}>get started</Link></Text>
-          {/* <Text variant='sm' className='text-center opacity-60 mt-1'>Demo: super@acme.com · admin@acme.com · lead@acme.com · consultant@acme.com</Text> */}
+          <Text variant='sm' className='text-center px-10'>Welcome back. If you&apos;re not yet registered, <Link to="/auth/signup" className='underline' style={{ color: current?.brand?.secondary }}>get started</Link></Text>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -155,7 +85,6 @@ const Login = () => {
               <Link
                 to="/auth/forgot-password"
                 className="text-xs opacity-50 mt-3 hover:opacity-100 underline"
-              // style={{ color: current?.brand?.secondary }}
               >
                 Forgot password?
               </Link>
@@ -166,29 +95,26 @@ const Login = () => {
             label={loading ? 'Signing in…' : 'Sign in'}
             fullWidth
             disabled={loading}
+            loading={loading}
           />
-          <div className="flex items-center gap-3 w-full py-1">
-            <div className='border-b flex-1 border-gray-200'></div>
-            <Text variant="sm" className="">or</Text>
-            <div className='border-b flex-1 border-gray-200'></div>
-            {/* <div className="flex-1 min-w-0 h- bg-black/25 dark:bg-white/25" aria-hidden /> */}
-          </div>
           {googleClientId ? (
-            <GoogleSignInButton
-              onSuccess={handleGoogleSuccess}
-              onError={() => setError('Google sign-in was cancelled or failed.')}
-            />
-          ) : (
-            <Button
-              type="button"
-              variant="background"
-              fullWidth
-              label="Continue with Google"
-              startIcon={<GoogleIcon />}
-              title="Add VITE_GOOGLE_CLIENT_ID to .env to enable"
-              onClick={() => setError('Google sign-in is not configured. Add VITE_GOOGLE_CLIENT_ID to your .env file.')}
-            />
-          )}
+            <>
+              <div className="flex items-center gap-3 w-full py-1">
+                <div className='border-b flex-1 border-gray-200'></div>
+                <Text variant="sm" className="">or</Text>
+                <div className='border-b flex-1 border-gray-200'></div>
+              </div>
+              <Button
+                type="button"
+                variant="background"
+                fullWidth
+                label="Continue with Google"
+                startIcon={<GoogleIcon />}
+                title="Google sign-in (optional)"
+                onClick={() => setError('Use email and password to sign in with the backend.')}
+              />
+            </>
+          ) : null}
         </form>
         <div className="mt-4 text-center space-y-3">
           <Link to="/">
@@ -196,7 +122,6 @@ const Login = () => {
               Back to splash
             </Text>
           </Link>
-
         </div>
       </View>
       <AlertModal

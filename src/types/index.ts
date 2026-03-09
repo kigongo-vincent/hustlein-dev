@@ -10,6 +10,8 @@ export interface User {
   role: UserRole
   companyId: string
   avatarUrl?: string
+  /** Optional department assignment for company admins */
+  departmentId?: string
   /** Optional; defaults to active when absent */
   status?: UserStatus
   /** 'online' or ISO date string for last seen (used in chat and mention dropdowns) */
@@ -137,6 +139,25 @@ export interface Company {
   name: string
   subscription: SubscriptionType
   createdAt: string
+  /** Optional company-wide tax rate (percentage, e.g. 18 for 18%) */
+  taxRate?: number
+  /** Optional storage limits & usage in MB for admin overview */
+  storageLimitMb?: number
+  storageUsedMb?: number
+  /** Optional company profile fields used in invoices & settings */
+  address?: string
+  phone?: string
+  email?: string
+}
+
+// Department (company admin)
+export interface Department {
+  id: string
+  companyId: string
+  name: string
+  description?: string
+  createdAt: string
+  updatedAt: string
 }
 
 // Project
@@ -153,6 +174,8 @@ export interface Project {
   createdAt: string
   /** Optional; defaults to active when absent */
   status?: ProjectStatus
+  /** Optional project due date (ISO date string) */
+  dueDate?: string
 }
 
 // Workflow

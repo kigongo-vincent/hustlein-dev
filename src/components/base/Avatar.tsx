@@ -26,7 +26,7 @@ const sizeStyles = {
 
 const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false }: AvatarProps) => {
   const sizeClass = sizeStyles[size] ?? sizeStyles.md
-  const { current } = Themestore()
+  const { current, mode } = Themestore()
   const [errored, setErrored] = useState(false)
   const showFallback = !src || errored
   const initials = getInitials(name || 'Guest')
@@ -34,6 +34,11 @@ const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false 
     ? 'rgba(255,255,255,0.25)'
     : (current?.system?.background ?? 'rgba(0,0,0,0.08)')
   const textColor = inverted ? '#fff' : current?.brand?.primary || current?.system?.dark || '#333'
+  const isDark = mode === 'dark'
+  const borderStyle =
+    isDark && !inverted
+      ? { border: `2px solid ${current?.system?.border ?? 'rgba(255,255,255,0.12)'}` }
+      : undefined
 
   return (
     <div
@@ -41,6 +46,7 @@ const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false 
       style={{
         backgroundColor: showFallback ? bgColor : undefined,
         color: showFallback ? textColor : undefined,
+        ...borderStyle,
       }}
       aria-hidden
     >

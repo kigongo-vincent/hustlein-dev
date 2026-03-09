@@ -10,6 +10,8 @@ export interface Props extends HTMLAttributes<HTMLDivElement> {
   titleSuffix?: ReactNode
   /** Icon shown on the right in a pale background (e.g. for stat cards) */
   rightIcon?: ReactNode
+  /** When true, card has no shadow (e.g. project list cards) */
+  noShadow?: boolean
 }
 
 const Card = ({
@@ -19,6 +21,7 @@ const Card = ({
   rightIcon,
   children,
   className = '',
+  noShadow,
   ...rest
 }: Props) => {
   const { current } = Themestore()
@@ -26,9 +29,9 @@ const Card = ({
   const paleBg = current?.system?.background
 
   return (
-    <View bg="fg" className={`rounded-base shadow-custom p-3 ${className}`} {...rest}>
+    <View bg="fg" noShadow={noShadow} className={`rounded-base  p-3 ${className}`} {...rest}>
       {(title || subtitle || titleSuffix || rightIcon) && (
-        <div className={`flex items-start justify-between gap-2 ${children ? 'mb-2' : ''}`}>
+        <div className={`flex items-center justify-between gap-2 ${children ? 'mb-2' : ''}`}>
           <div className="min-w-0 flex-1 flex items-baseline justify-between gap-2">
             <div className="min-w-0">
               {title && (
@@ -49,7 +52,7 @@ const Card = ({
               className="shrink-0 rounded-base flex items-center justify-center"
               style={{ backgroundColor: paleBg }}
             >
-              <span className="[&>svg]:size-4 p-2" style={{ color: current?.brand?.primary || current?.system?.dark }}>
+              <span className="inline-flex items-center justify-center [&>svg]:size-4 [&>svg]:shrink-0 p-2" style={{ color: current?.brand?.primary || current?.system?.dark }}>
                 {rightIcon}
               </span>
             </div>

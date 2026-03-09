@@ -16,6 +16,8 @@ const FONT_SCALE_WINDOWS = 1.12
 const _base = 12.5
 const _min = 11
 export const baseFontSize = isWindows ? _base * FONT_SCALE_WINDOWS : _base
+/** Max font size (px) for the app; lg/xl variants use this so body text never exceeds base. */
+export const maxFontSize = baseFontSize
 /** Smallest allowed font size (px) for the whole app. */
 export const minFontSize = isWindows ? _min * FONT_SCALE_WINDOWS : _min
 

@@ -1044,7 +1044,7 @@ export default function ProjectFilesModal({ open, onClose }: ProjectFilesModalPr
             ))}
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="secondary" label="Cancel" onClick={closeInputModal} />
+            <Button variant="background" label="Cancel" onClick={closeInputModal} />
             <Button
               label="Create"
               onClick={() => inputModal.onSubmit(inputModalValues)}
@@ -1108,7 +1108,7 @@ export default function ProjectFilesModal({ open, onClose }: ProjectFilesModalPr
           />
         </div>
         <div className="flex justify-end gap-2 pt-1 shrink-0">
-          <Button variant="secondaryBrand" label="Cancel" onClick={() => setNoteModalOpen(false)} />
+          <Button variant="background" label="Cancel" onClick={() => setNoteModalOpen(false)} />
           <Button label={editingNoteNodeId ? 'Save' : 'Create'} onClick={submitNote} />
         </div>
       </div>

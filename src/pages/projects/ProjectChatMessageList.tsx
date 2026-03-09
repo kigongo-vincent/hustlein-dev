@@ -18,6 +18,8 @@ export type ProjectChatMessageListProps = {
   primaryColor: string
   bubbleBg: string
   foreground: string
+  /** Theme border color for badge ring (dark mode friendly) */
+  borderColor?: string
 }
 
 export default function ProjectChatMessageList({
@@ -32,7 +34,9 @@ export default function ProjectChatMessageList({
   primaryColor,
   bubbleBg,
   foreground,
+  borderColor,
 }: ProjectChatMessageListProps) {
+  const badgeBorder = borderColor ?? 'rgba(255,255,255,0.5)'
   const messagesEndRef = useRef<HTMLLIElement>(null)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -64,8 +68,8 @@ export default function ProjectChatMessageList({
                 />
                 {leadUserIds.includes(c.authorId) && (
                   <span
-                    className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-6 h-6 rounded-full border-2 border-white shadow-sm"
-                    style={{ backgroundColor: foreground, color: primaryColor }}
+                    className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-6 h-6 rounded-full border-2 shadow-sm"
+                    style={{ backgroundColor: foreground, color: primaryColor, borderColor: badgeBorder }}
                     aria-hidden
                   >
                     <UserStar className="w-4 h-4" />
@@ -73,8 +77,8 @@ export default function ProjectChatMessageList({
                 )}
                 {!leadUserIds.includes(c.authorId) && adminUserIds.includes(c.authorId) && (
                   <span
-                    className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-6 h-6 rounded-full border-2 border-white shadow-sm"
-                    style={{ backgroundColor: foreground, color: primaryColor }}
+                    className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-6 h-6 rounded-full border-2 shadow-sm"
+                    style={{ backgroundColor: foreground, color: primaryColor, borderColor: badgeBorder }}
                     aria-hidden
                   >
                     <Shield className="w-4 h-4" />

@@ -588,7 +588,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
             ))}
           </ul>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
-            <Button size="sm" variant="ghost" label="Cancel" onClick={() => setWorkflowModalOpen(false)} />
+            <Button size="sm" variant="background" label="Cancel" onClick={() => setWorkflowModalOpen(false)} />
             <Button size="sm" variant="background" label="Add column" startIcon={<Plus className="w-4 h-4" />} onClick={addWorkflowState} />
             <Button size="sm" label="Save" onClick={saveWorkflow} disabled={saving} />
           </footer>
@@ -700,7 +700,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
             </div>
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
-            <Button variant="secondary" label="Cancel" onClick={() => !saving && setAddMilestoneOpen(false)} disabled={saving} />
+            <Button variant="background" label="Cancel" onClick={() => !saving && setAddMilestoneOpen(false)} disabled={saving} />
             <Button label="Add milestone" onClick={handleCreateMilestone} disabled={saving || !milestoneName.trim() || !milestoneTarget} />
           </footer>
         </div>
@@ -811,7 +811,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
             </div>
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
-            <Button variant="secondary" label="Cancel" onClick={() => !saving && setEditMilestoneId(null)} disabled={saving} />
+            <Button variant="background" label="Cancel" onClick={() => !saving && setEditMilestoneId(null)} disabled={saving} />
             <Button label="Save" onClick={handleUpdateMilestone} disabled={saving || !editName.trim() || !editTarget} />
           </footer>
         </div>
@@ -827,7 +827,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
               : 'This cannot be undone.'}
           </Text>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
-            <Button variant="secondary" label="Cancel" onClick={() => !saving && setDeleteMilestoneId(null)} disabled={saving} />
+            <Button variant="background" label="Cancel" onClick={() => !saving && setDeleteMilestoneId(null)} disabled={saving} />
             <Button variant="danger" label="Delete" onClick={handleDeleteMilestone} disabled={saving} />
           </footer>
         </div>

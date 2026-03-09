@@ -19,10 +19,12 @@
     "@tiptap/starter-kit": "^3.20.0",
     "@tiptap/suggestion": "^3.20.0",
     "framer-motion": "^12.34.0",
+    "jspdf": "^4.2.0",
     "lucide-react": "^0.564.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router": "^7.13.0",
+    "react-toastify": "^11.0.5",
     "recharts": "^3.7.0",
     "tailwindcss": "^4.1.18",
     "zustand": "^5.0.11"

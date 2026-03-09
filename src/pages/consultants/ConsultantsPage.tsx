@@ -16,12 +16,12 @@ import {
 import Text, { baseFontSize } from '../../components/base/Text'
 import Avatar from '../../components/base/Avatar'
 import View from '../../components/base/View'
-import { Card, Button, Skeleton, AddConsultantModal, Modal, CustomSelect } from '../../components/ui'
+import { Card, Button, Skeleton, AddConsultantModal, Modal, CustomSelect, Badge } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { userService } from '../../services'
 import type { User, UserRole, ConsultantDetailsSource, ConsultantProfile } from '../../types'
-import { UserPlus, Users, UserCog, Briefcase, TrendingUp, Eye, Pencil, Trash2, CalendarOff, UserCheck, MapPin, Building2, Users as UsersIcon, DollarSign, FileText, Calendar, X, ListTodo, Receipt, ChevronLeft, ChevronRight, Search, SlidersHorizontal } from 'lucide-react'
+import { UserPlus, Users, UserCog, Briefcase, TrendingUp, Eye, Pencil, Trash2, CalendarOff, UserCheck, MapPin, Building2, Users as UsersIcon, DollarSign, FileText, Calendar, X, ListTodo, Receipt, ChevronLeft, ChevronRight, Search, SlidersHorizontal, BarChart3 } from 'lucide-react'
 
 function isConsultantProfile(p: ConsultantDetailsSource): p is ConsultantProfile {
   return 'fullName' in p || 'jobTitle' in p || 'firstName' in p
@@ -222,6 +222,10 @@ const ConsultantsPage = () => {
   const [filterSort, setFilterSort] = useState<string>('name_asc')
   const [filterSidebarExiting, setFilterSidebarExiting] = useState(false)
   const [filterSidebarEntered, setFilterSidebarEntered] = useState(false)
+  const [analyticsOpen, setAnalyticsOpen] = useState(false)
+  const [draftFilterRole, setDraftFilterRole] = useState<UserRole | ''>('')
+  const [draftFilterStatus, setDraftFilterStatus] = useState<'active' | 'on_leave' | ''>('')
+  const [draftFilterSort, setDraftFilterSort] = useState<string>('name_asc')
   const PAGE_SIZE = 10
 
   const ROLE_OPTIONS = [
@@ -306,6 +310,14 @@ const ConsultantsPage = () => {
     }
   }, [filterOpen])
 
+  useEffect(() => {
+    if (filterOpen) {
+      setDraftFilterRole(filterRole)
+      setDraftFilterStatus(filterStatus)
+      setDraftFilterSort(filterSort)
+    }
+  }, [filterOpen, filterRole, filterStatus, filterSort])
+
   const closeFilterSidebar = useCallback(() => {
     setFilterSidebarExiting(true)
     const t = setTimeout(() => {
@@ -368,10 +380,24 @@ const ConsultantsPage = () => {
     { week: 'W4', headcount: total, joined: 0 },
   ]
 
-  const gridColor = current?.system?.dark ? `${current.system.dark}18` : 'rgba(0,0,0,0.08)'
-  const primaryColor = current?.brand?.primary ?? '#682308'
+  const dark = current?.system?.dark
+  const mode = Themestore((s) => s.mode)
+  const chartPrimary = mode === 'dark' ? (dark ?? '#e0e0e0') : (current?.brand?.primary ?? '#682308')
   const secondaryColor = current?.brand?.secondary ?? '#FF9600'
-  const chartColors = getChartColors(primaryColor, secondaryColor, Math.max(byRoleData.length, 2))
+  const chartColors = getChartColors(chartPrimary, secondaryColor, Math.max(byRoleData.length, 2))
+  const tickProps = dark ? { ...chartTickStyle, fill: dark } : chartTickStyle
+  const gridColor = dark ? `${dark}40` : 'rgba(0,0,0,0.08)'
+  const tooltipContentStyle = {
+    fontSize: 13.5,
+    backgroundColor: current?.system?.foreground,
+    border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
+    borderRadius: 4,
+    color: dark,
+  }
+  const tooltipCursor =
+    mode === 'dark'
+      ? { fill: dark ? `${dark}18` : 'rgba(255,255,255,0.06)', stroke: current?.system?.border ?? 'rgba(255,255,255,0.08)' }
+      : { fill: 'rgba(0,0,0,0.04)', stroke: current?.system?.border ?? 'rgba(0,0,0,0.1)' }
 
   return (
     <div className="w-full mx-auto space-y-4">
@@ -390,14 +416,25 @@ const ConsultantsPage = () => {
               startIcon={<UserPlus className="w-4 h-4 shrink-0" />}
               onClick={() => setAddModalOpen(true)}
             />
+            <Button
+              variant="secondaryBrand"
+              size="sm"
+              label="View analytics"
+              startIcon={<BarChart3 className="w-4 h-4 shrink-0" />}
+              onClick={() => setAnalyticsOpen(true)}
+              disabled={loading || consultants.length === 0}
+            />
           </div>
         </div>
         <AddConsultantModal
           open={addModalOpen || !!editUser}
           onClose={handleCloseAddOrEdit}
-          onSuccess={() => {
+          onSuccess={(createdOrUpdated) => {
             fetchConsultants()
             handleCloseAddOrEdit()
+            if (createdOrUpdated && !editUser) {
+              setViewUser(createdOrUpdated)
+            }
           }}
           editUser={editUser}
         />
@@ -457,16 +494,12 @@ const ConsultantsPage = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={byRoleData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                  <XAxis dataKey="name" tick={chartTickStyle} />
-                  <YAxis tick={chartTickStyle} allowDecimals={false} />
+                  <XAxis dataKey="name" tick={tickProps} />
+                  <YAxis tick={tickProps} allowDecimals={false} />
                   <Tooltip
                     formatter={(value: number | undefined) => [value ?? 0, 'Count']}
-                    contentStyle={{
-                      fontSize: 13.5,
-                      backgroundColor: current?.system?.background ?? undefined,
-                      border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
-                      borderRadius: 4,
-                    }}
+                    contentStyle={tooltipContentStyle}
+                    cursor={tooltipCursor}
                   />
                   <Bar key="count" dataKey="count" radius={[4, 4, 0, 0]}>
                     {byRoleData.map((entry, index) => (
@@ -495,21 +528,14 @@ const ConsultantsPage = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                  <XAxis dataKey="week" tick={chartTickStyle} />
-                  <YAxis tick={chartTickStyle} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{
-                      fontSize: 13.5,
-                      backgroundColor: current?.system?.background ?? undefined,
-                      border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
-                      borderRadius: 4,
-                    }}
-                  />
+                  <XAxis dataKey="week" tick={tickProps} />
+                  <YAxis tick={tickProps} allowDecimals={false} />
+                  <Tooltip contentStyle={tooltipContentStyle} cursor={tooltipCursor} />
                   <Legend wrapperStyle={legendStyle} />
                   <Line
                     type="monotone"
                     dataKey="headcount"
-                    stroke={primaryColor}
+                    stroke={chartPrimary}
                     strokeWidth={2}
                     dot={{ r: 4 }}
                     name="Headcount"
@@ -600,7 +626,7 @@ const ConsultantsPage = () => {
           <div className="overflow-x-auto scroll-slim">
             <table className="w-full">
               <thead>
-                <tr style={{ backgroundColor: current?.system?.background }}>
+                <tr style={{ borderBottom: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}` }}>
                   <th className="text-left px-4 py-3">
                     <Text variant="sm" className="font-medium">Name</Text>
                   </th>
@@ -621,6 +647,7 @@ const ConsultantsPage = () => {
                     key={u.id}
                     style={{
                       backgroundColor: index % 2 === 0 ? current?.system?.foreground : current?.system?.background,
+                      ...(mode === 'dark' && { borderBottom: `1px solid ${current?.system?.border ?? 'rgba(255,255,255,0.08)'}` }),
                     }}
                   >
                     <td className="px-4 py-3">
@@ -635,20 +662,14 @@ const ConsultantsPage = () => {
                       </Text>
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className="inline-flex rounded-base px-2.5 py-1 text-[12px] font-medium"
-                        style={{
-                          backgroundColor: current?.brand?.primary ?? undefined,
-                          color: current?.brand?.primary ? '#fff' : current?.system?.dark,
-                        }}
-                      >
-                        {roleLabel[u.role]}
-                      </span>
-                      {u.status === 'on_leave' && (
-                        <span className="ml-1.5 inline-flex rounded-base px-2 py-0.5 text-[11px] opacity-80" style={{ backgroundColor: current?.system?.border, color: current?.system?.dark }}>
-                          On leave
-                        </span>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant={u.role === 'project_lead' ? 'success' : 'default'}>
+                          {roleLabel[u.role]}
+                        </Badge>
+                        {u.status === 'on_leave' && (
+                          <Badge variant="warning">On leave</Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -780,8 +801,8 @@ const ConsultantsPage = () => {
               <CustomSelect
                 label="Role"
                 options={ROLE_OPTIONS}
-                value={filterRole}
-                onChange={(v) => setFilterRole((v || '') as UserRole | '')}
+                value={draftFilterRole}
+                onChange={(v) => setDraftFilterRole((v || '') as UserRole | '')}
                 placeholder="All roles"
                 aria-label="Filter by role"
                 placement="below"
@@ -789,8 +810,8 @@ const ConsultantsPage = () => {
               <CustomSelect
                 label="Status"
                 options={STATUS_OPTIONS}
-                value={filterStatus}
-                onChange={(v) => setFilterStatus((v || '') as 'active' | 'on_leave' | '')}
+                value={draftFilterStatus}
+                onChange={(v) => setDraftFilterStatus((v || '') as 'active' | 'on_leave' | '')}
                 placeholder="All statuses"
                 aria-label="Filter by status"
                 placement="below"
@@ -798,16 +819,29 @@ const ConsultantsPage = () => {
               <CustomSelect
                 label="Sort by"
                 options={SORT_OPTIONS}
-                value={filterSort}
-                onChange={(v) => setFilterSort(v || 'name_asc')}
+                value={draftFilterSort}
+                onChange={(v) => setDraftFilterSort(v || 'name_asc')}
                 placeholder="Sort by"
                 aria-label="Sort consultants"
                 placement="below"
               />
               <Button
                 size="sm"
+                label="Apply filters"
+                onClick={() => {
+                  setFilterRole(draftFilterRole)
+                  setFilterStatus(draftFilterStatus)
+                  setFilterSort(draftFilterSort || 'name_asc')
+                  closeFilterSidebar()
+                }}
+              />
+              <Button
+                size="sm"
                 label="Reset filters"
                 onClick={() => {
+                  setDraftFilterRole('')
+                  setDraftFilterStatus('')
+                  setDraftFilterSort('name_asc')
                   setFilterRole('')
                   setFilterStatus('')
                   setFilterSort('name_asc')
@@ -1045,7 +1079,7 @@ const ConsultantsPage = () => {
             {deleteUser ? `Are you sure you want to delete ${deleteUser.name}? This cannot be undone.` : ''}
           </Text>
           <div className="flex justify-end gap-2">
-            <Button label="Cancel" variant="secondary" onClick={() => setDeleteUser(null)} />
+            <Button label="Cancel" variant="background" onClick={() => setDeleteUser(null)} />
             <Button variant="danger" label="Delete" onClick={handleDeleteConfirm} disabled={saving} />
           </div>
         </div>
@@ -1065,8 +1099,101 @@ const ConsultantsPage = () => {
             )}
           </Text>
           <div className="flex justify-end gap-2">
-            <Button label="Cancel" variant="secondary" onClick={() => setLeaveUser(null)} />
+            <Button label="Cancel" variant="background" onClick={() => setLeaveUser(null)} />
             <Button label={leaveUser?.status === 'on_leave' ? 'Reactivate' : 'Put on leave'} onClick={handleLeaveConfirm} disabled={saving} />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Analytics modal */}
+      <Modal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} variant="wide">
+        <div className="p-6 flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
+          <Text className="font-semibold" style={{ fontSize: baseFontSize * 1.15 }}>
+            Team analytics
+          </Text>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card
+              key="by-role"
+              title="By role"
+              subtitle="Headcount per role"
+              className="px-4 pb-4"
+            >
+              <div className="h-[260px] w-full">
+                {loading ? (
+                  <div className="h-full w-full flex flex-col justify-end gap-3 pb-8">
+                    {[60, 80].map((pct, i) => (
+                      <Skeleton key={i} height="h-6" className="max-w-full" style={{ width: `${pct}%` }} />
+                    ))}
+                  </div>
+                ) : byRoleData.length === 0 ? (
+                  <div className="h-full flex items-center justify-center">
+                    <Text variant="sm" className="opacity-70">
+                      No consultants yet
+                    </Text>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={byRoleData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                      <XAxis dataKey="name" tick={tickProps} />
+                      <YAxis tick={tickProps} allowDecimals={false} />
+                  <Tooltip
+                    formatter={(value: number | undefined) => [value ?? 0, 'Count']}
+                    contentStyle={tooltipContentStyle}
+                    cursor={tooltipCursor}
+                  />
+                      <Bar key="count" dataKey="count" radius={[4, 4, 0, 0]}>
+                        {byRoleData.map((entry, index) => (
+                          <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </Card>
+            <Card
+              key="team-trend"
+              title="Team trend"
+              subtitle="Headcount over recent weeks"
+              className="px-4 pb-4"
+            >
+              <div className="h-[260px] w-full">
+                {loading ? (
+                  <div className="h-full w-full flex flex-col justify-end gap-3 pb-8">
+                    {[50, 70, 60, 85].map((pct, i) => (
+                      <Skeleton key={i} height="h-6" className="max-w-full" style={{ width: `${pct}%` }} />
+                    ))}
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                      <XAxis dataKey="week" tick={tickProps} />
+                      <YAxis tick={tickProps} allowDecimals={false} />
+                      <Tooltip contentStyle={tooltipContentStyle} cursor={tooltipCursor} />
+                      <Legend wrapperStyle={legendStyle} />
+                      <Line
+                        type="monotone"
+                        dataKey="headcount"
+                        stroke={chartPrimary}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        name="Headcount"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="joined"
+                        stroke={secondaryColor}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        name="Joined"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </Card>
           </div>
         </div>
       </Modal>

@@ -1,56 +1,18 @@
-import { taskRepo, userRepo } from '../repos'
+import { api, endpoints, assertOk } from '../api'
 import type { StatCard, TaskCompletionByOwner } from '../types'
-
-const doneStateId = 's6'
 
 export const reportService = {
   async getStatCards(projectId?: string): Promise<StatCard[]> {
-    const tasks = projectId
-      ? await taskRepo.getByProject(projectId)
-      : await taskRepo.getAll()
-    const total = tasks.length
-    const completed = tasks.filter((t) => t.workflowStateId === doneStateId).length
-    const overdue = tasks.filter((t) => {
-      if (!t.dueDate) return false
-      return t.workflowStateId !== doneStateId && new Date(t.dueDate) < new Date()
-    }).length
-    return [
-      { label: 'Total tasks', value: total, trend: 'up', trendPercent: 8 },
-      { label: 'Completed', value: completed, trend: 'up', trendPercent: 12 },
-      { label: 'Overdue', value: overdue, trend: overdue > 0 ? 'down' : 'neutral', trendPercent: overdue > 0 ? -5 : 0 },
-    ]
+    const res = await api.get<StatCard[]>(endpoints.reportsStatCards(projectId))
+    const data = assertOk(res) as StatCard[]
+    return data.map((s) => ({ ...s, value: typeof s.value === 'number' ? s.value : Number(s.value) ?? 0 }))
   },
   async getCompletionByOwner(projectId?: string): Promise<TaskCompletionByOwner[]> {
-    const tasks = projectId
-      ? await taskRepo.getByProject(projectId)
-      : await taskRepo.getAll()
-    const users = await userRepo.getAll()
-    const byOwner = new Map<string, { completed: number; total: number }>()
-    for (const t of tasks) {
-      const cur = byOwner.get(t.ownerId) ?? { completed: 0, total: 0 }
-      cur.total += 1
-      if (t.workflowStateId === doneStateId) cur.completed += 1
-      byOwner.set(t.ownerId, cur)
-    }
-    return Array.from(byOwner.entries()).map(([ownerId, { completed, total }]) => ({
-      ownerId,
-      ownerName: users.find((u) => u.id === ownerId)?.name ?? 'Unknown',
-      completed,
-      total,
-    }))
+    const res = await api.get<TaskCompletionByOwner[]>(endpoints.reportsCompletionByOwner(projectId))
+    return assertOk(res) as TaskCompletionByOwner[]
   },
   async getProgressOverTime(projectId?: string): Promise<{ date: string; completed: number }[]> {
-    const tasks = projectId
-      ? await taskRepo.getByProject(projectId)
-      : await taskRepo.getAll()
-    const done = tasks.filter((t) => t.workflowStateId === doneStateId)
-    const byDate = new Map<string, number>()
-    for (const t of done) {
-      const d = t.updatedAt.slice(0, 10)
-      byDate.set(d, (byDate.get(d) ?? 0) + 1)
-    }
-    return Array.from(byDate.entries())
-      .map(([date, completed]) => ({ date, completed }))
-      .sort((a, b) => a.date.localeCompare(b.date))
+    const res = await api.get<{ date: string; completed: number }[]>(endpoints.reportsProgressOverTime(projectId))
+    return assertOk(res) as { date: string; completed: number }[]
   },
 }

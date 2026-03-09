@@ -12,7 +12,7 @@ export interface AppPageLayoutProps {
 
 const AppPageLayout = ({ children, title, subtitle, fullWidth }: AppPageLayoutProps) => {
   return (
-    <div className={`w-full ${fullWidth ? '' : 'max-w-6xl mx-auto'} space-y-6`}>
+    <div className={`w-full ${fullWidth ? '' : 'max-w-6xl mx-auto'} space-y-4`}>
       {(title || subtitle) && (
         <View bg="fg" className="p-4">
           {title && <Text className="font-medium">{title}</Text>}

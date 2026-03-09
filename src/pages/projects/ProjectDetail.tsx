@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import Text, { baseFontSize, minFontSize } from '../../components/base/Text'
@@ -17,7 +17,6 @@ import {
 import type { Project, Task, Milestone, Comment, UserRole } from '../../types'
 import {
   ChevronLeft,
-  ChevronRight,
   Calendar,
   CalendarClock,
   Target,
@@ -42,15 +41,17 @@ import DeleteProjectModal from './DeleteProjectModal'
 import SuspendProjectModal from './SuspendProjectModal'
 import ProjectListAnalyticsModal from './ProjectListAnalyticsModal'
 import BoardModal from '../../components/layout/BoardModal'
-import MilestoneCard from './MilestoneCard'
+import ProjectTimelineGantt from './ProjectTimelineGantt'
+import LogTimeModal from '../../components/ui/LogTimeModal'
 
 const DONE_STATE_ID = 's6'
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>()
-  const { current } = Themestore()
+  const { current, mode: themeMode } = Themestore()
   const user = Authstore((s) => s.user)
   const dark = current?.system?.dark
+  const darkMode = themeMode === 'dark'
   const primaryColor = current?.brand?.primary ?? '#682308'
   const secondaryColor = current?.brand?.secondary ?? '#FF9600'
   const borderColor = current?.system?.border
@@ -61,7 +62,7 @@ const ProjectDetail = () => {
   const [tasks, setTasks] = useState<Task[]>([])
   const [milestones, setMilestones] = useState<Milestone[]>([])
   const [comments, setComments] = useState<Comment[]>([])
-  const [users, setUsers] = useState<{ id: string; name: string; avatarUrl?: string; role?: UserRole }[]>([])
+  const [users, setUsers] = useState<{ id: string; name: string; avatarUrl?: string; role?: UserRole; lastSeen?: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [commentSending, setCommentSending] = useState(false)
@@ -81,17 +82,19 @@ const ProjectDetail = () => {
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editLeadId, setEditLeadId] = useState('')
+  const [editDueDate, setEditDueDate] = useState('')
   const [editSaving, setEditSaving] = useState(false)
   const [deleteOpen, setDeleteOpen] = useProjectDetailModal(id, 'delete')
   const [suspendOpen, setSuspendOpen] = useProjectDetailModal(id, 'suspend')
   const [analyticsOpen, setAnalyticsOpen] = useProjectDetailModal(id, 'analytics')
   const [boardOpen, setBoardOpen] = useProjectDetailModal(id, 'board')
   const [actionSaving, setActionSaving] = useState(false)
-  const [chatSidebarOpen, setChatSidebarOpen] = useState(true)
-  const [aboutModalOpen, setAboutModalOpen] = useProjectDetailModal(id, 'about')
+  const [chatSidebarOpen, setChatSidebarOpen] = useState(false)
   const [folderModalOpen, setFolderModalOpen] = useProjectDetailModal(id, 'folder')
+  const [logTimeModalOpen, setLogTimeModalOpen] = useState(false)
 
   const navigate = useNavigate()
+  const isConsultant = user?.role === 'consultant'
 
   const loadData = useCallback(async () => {
     if (!id) return
@@ -108,7 +111,7 @@ const ProjectDetail = () => {
       setTasks(taskList)
       setMilestones(milestoneList)
       setComments(commentList)
-      setUsers(userList.map((u) => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl, role: u.role })))
+      setUsers(userList.map((u) => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl, role: u.role, lastSeen: u.lastSeen })))
     } finally {
       setLoading(false)
     }
@@ -141,71 +144,23 @@ const ProjectDetail = () => {
 
   const leadName = project ? userMap[project.projectLeadId] ?? project.projectLeadId : ''
 
-  const tasksDone = useMemo(
-    () => tasks.filter((t) => t.workflowStateId === DONE_STATE_ID).length,
-    [tasks]
+  const milestonesDone = useMemo(
+    () => milestones.filter((m) => m.workflowStateId === DONE_STATE_ID).length,
+    [milestones]
   )
-  const progressPct = tasks.length ? Math.round((tasksDone / tasks.length) * 100) : 0
+  const progressPct = milestones.length
+    ? Math.round((milestonesDone / milestones.length) * 100)
+    : 0
 
   const projectDueLabel = useMemo(() => {
-    if (!milestones.length) return null
-    const sorted = [...milestones].sort((a, b) => new Date(b.targetDate).getTime() - new Date(a.targetDate).getTime())
-    return formatDate(sorted[0].targetDate)
-  }, [milestones])
-
-  const milestoneCardsData = useMemo(() => {
-    return milestones.map((m) => {
-      const tasksInMilestone = tasks.filter((t) => t.milestoneId === m.id)
-      const fromTasks = tasksInMilestone.map((t) => t.ownerId)
-      const fromMilestone = m.assigneeIds ?? []
-      const assigneeIds = [...new Set([...fromMilestone, ...fromTasks])]
-      return {
-        milestone: m,
-        taskCount: tasksInMilestone.length,
-        deliverableTitles: tasksInMilestone.map((t) => t.title),
-        assigneeIds,
-      }
-    })
-  }, [milestones, tasks])
+    if (!project?.dueDate) return null
+    return formatDate(project.dueDate)
+  }, [project?.dueDate])
 
   const assignedEmployeeIds = useMemo(
     () => [...new Set(tasks.map((t) => t.ownerId).filter(Boolean))],
     [tasks]
   )
-
-  const milestonesScrollRef = useRef<HTMLDivElement>(null)
-  const scrollMilestones = (dir: 'left' | 'right') => {
-    const el = milestonesScrollRef.current
-    if (!el) return
-    const step = 280
-    el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' })
-  }
-
-  const milestonesAutoScrollId = useRef<ReturnType<typeof setInterval> | null>(null)
-  useEffect(() => {
-    if (milestoneCardsData.length <= 1) return
-    const t = setTimeout(() => {
-      const el = milestonesScrollRef.current
-      if (!el) return
-      const step = Math.min(320, el.clientWidth * 0.8)
-      milestonesAutoScrollId.current = setInterval(() => {
-        const { scrollLeft, clientWidth, scrollWidth } = el
-        const atEnd = scrollLeft + clientWidth >= scrollWidth - 8
-        if (atEnd) {
-          el.scrollTo({ left: 0, behavior: 'smooth' })
-        } else {
-          el.scrollBy({ left: step, behavior: 'smooth' })
-        }
-      }, 4000)
-    }, 100)
-    return () => {
-      clearTimeout(t)
-      if (milestonesAutoScrollId.current) {
-        clearInterval(milestonesAutoScrollId.current)
-        milestonesAutoScrollId.current = null
-      }
-    }
-  }, [milestoneCardsData.length])
 
   const userOptions = useMemo(
     () => users.map((u) => ({ value: u.id, label: u.name })),
@@ -301,12 +256,17 @@ const ProjectDetail = () => {
   const chatLastSeenByAuthor = useMemo(() => {
     const m: Record<string, string> = {}
     chatParticipantIds.forEach((authorId) => {
-      if (authorId === user?.id) m[authorId] = 'online'
-      else if (authorId === '__demo__') m[authorId] = 'online'
-      else m[authorId] = new Date(Date.now() - 5 * 60000).toISOString()
+      const u = users.find((usr) => usr.id === authorId)
+      if (authorId === user?.id || u?.lastSeen === 'online') {
+        m[authorId] = 'online'
+      } else if (u?.lastSeen) {
+        m[authorId] = u.lastSeen
+      } else {
+        m[authorId] = new Date(Date.now() - 10 * 60000).toISOString()
+      }
     })
     return m
-  }, [chatParticipantIds, user?.id])
+  }, [chatParticipantIds, user?.id, users])
 
   const chatAdminUserIds = useMemo(
     () => users.filter((u) => u.role === 'company_admin' || u.role === 'super_admin').map((u) => u.id),
@@ -342,6 +302,7 @@ const ProjectDetail = () => {
       setEditName(project.name)
       setEditDescription(project.description ?? '')
       setEditLeadId(project.projectLeadId)
+      setEditDueDate(project.dueDate ?? '')
     }
   }, [editOpen, project])
 
@@ -353,13 +314,14 @@ const ProjectDetail = () => {
         name: editName.trim(),
         description: editDescription.trim() || undefined,
         projectLeadId: editLeadId,
+        dueDate: editDueDate.trim() || undefined,
       })
       setEditOpen(false)
       loadData()
     } finally {
       setEditSaving(false)
     }
-  }, [id, editName, editDescription, editLeadId, loadData])
+  }, [id, editName, editDescription, editLeadId, editDueDate, loadData])
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!id) return
@@ -505,7 +467,7 @@ const ProjectDetail = () => {
       <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden scroll-slim">
         <header
           className="shrink-0 py-3 flex items-center gap-2 border-b"
-          style={{ borderColor, backgroundColor: fg, paddingLeft: 12, paddingRight: 8 }}
+          style={{ borderColor, paddingLeft: 12, paddingRight: 8 }}
         >
           <div className="min-w-0 flex-1" style={{ paddingLeft: 4 }}>
             <p className="font-medium truncate" style={{ color: dark }}>{project.name}</p>
@@ -513,11 +475,15 @@ const ProjectDetail = () => {
               Lead: {leadName} · {tasks.length} task{tasks.length !== 1 ? 's' : ''}
             </Text>
           </div>
+          <div
+            className="flex items-center gap-2 shrink-0 py-1 px-1 rounded-base"
+            style={{ backgroundColor: `${fg}99`, backdropFilter: 'blur(8px)' }}
+          >
           <button
             type="button"
             onClick={() => setFolderModalOpen(true)}
             className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: bg }}
+            style={{ color: dark, backgroundColor: 'transparent' }}
             title="Project files"
             aria-label="Open files and folders"
           >
@@ -525,11 +491,11 @@ const ProjectDetail = () => {
           </button>
           <button
             type="button"
-            onClick={() => setAddMilestoneOpen(true)}
+            onClick={() => (isConsultant ? setLogTimeModalOpen(true) : setAddMilestoneOpen(true))}
             className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: bg }}
-            title="Add milestone"
-            aria-label="Add milestone"
+            style={{ color: dark, backgroundColor: 'transparent' }}
+            title={isConsultant ? 'Log time' : 'Add milestone'}
+            aria-label={isConsultant ? 'Log time' : 'Add milestone'}
           >
             <Plus className="w-5 h-5" />
           </button>
@@ -537,7 +503,7 @@ const ProjectDetail = () => {
             type="button"
             onClick={() => setAnalyticsOpen(true)}
             className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: bg }}
+            style={{ color: dark, backgroundColor: 'transparent' }}
             title="View analytics"
             aria-label="View analytics"
           >
@@ -547,17 +513,19 @@ const ProjectDetail = () => {
             type="button"
             onClick={() => setBoardOpen(true)}
             className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: bg }}
+            style={{ color: dark, backgroundColor: 'transparent' }}
             title="Board"
             aria-label="Open board"
           >
             <LayoutGrid className="w-5 h-5" />
           </button>
+          {!isConsultant && (
+            <>
           <button
             type="button"
             onClick={() => setEditOpen(true)}
             className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: bg }}
+            style={{ color: dark, backgroundColor: 'transparent' }}
             title="Edit project"
             aria-label="Edit project"
           >
@@ -567,7 +535,7 @@ const ProjectDetail = () => {
             type="button"
             onClick={() => setSuspendOpen(true)}
             className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: bg }}
+            style={{ color: dark, backgroundColor: 'transparent' }}
             title={project?.status === 'suspended' ? 'Resume project' : 'Suspend project'}
             aria-label={project?.status === 'suspended' ? 'Resume project' : 'Suspend project'}
           >
@@ -581,17 +549,19 @@ const ProjectDetail = () => {
             type="button"
             onClick={() => setDeleteOpen(true)}
             className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: bg }}
+            style={{ color: dark, backgroundColor: 'transparent' }}
             title="Delete project"
             aria-label="Delete project"
           >
             <Trash2 className="w-5 h-5" />
           </button>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setChatSidebarOpen((prev) => !prev)}
             className="relative shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: bg }}
+            style={{ color: dark, backgroundColor: 'transparent' }}
             title={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
             aria-label={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
           >
@@ -605,6 +575,7 @@ const ProjectDetail = () => {
               </span>
             )}
           </button>
+          </div>
         </header>
 
         <div className="flex-1 min-h-0 overflow-y-auto scroll-slim pr-2 py-4" style={{ backgroundColor: bg }}>
@@ -643,7 +614,7 @@ const ProjectDetail = () => {
                   </div>
                   <div>
                     <p className="text-sm opacity-70 mb-0.5" style={{ fontSize: Math.max(minFontSize, baseFontSize * 0.8), color: dark }}>
-                      About
+                      Description
                     </p>
                     <p
                       className="opacity-90 overflow-hidden"
@@ -658,16 +629,6 @@ const ProjectDetail = () => {
                     >
                       {project.description || '—'}
                     </p>
-                    {project.description && (
-                      <button
-                        type="button"
-                        onClick={() => setAboutModalOpen(true)}
-                        className="mt-1 text-left opacity-80 hover:opacity-100 transition-opacity"
-                        style={{ fontSize: baseFontSize * 0.9, color: primaryColor }}
-                      >
-                        … more
-                      </button>
-                    )}
                   </div>
                   <div>
                     <p className="text-sm opacity-70 mb-2" style={{ fontSize: Math.max(minFontSize, baseFontSize * 0.8), color: dark }}>
@@ -687,7 +648,7 @@ const ProjectDetail = () => {
                           <span className="truncate font-medium" style={{ color: dark }}>{leadName}</span>
                         </div>
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="opacity-70 shrink-0" style={{ color: dark }}>Members</span>
+                          <span className="opacity-70 shrink-0" style={{ color: dark }}>Assigned consultants</span>
                           {projectWithMeta && projectWithMeta.members.length > 0 ? (
                             <>
                               <span className="flex -space-x-2">
@@ -743,7 +704,7 @@ const ProjectDetail = () => {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="opacity-70 shrink-0" style={{ color: dark }}>Assigned employees</span>
+                          <span className="opacity-70 shrink-0" style={{ color: dark }}>Assigned consultants</span>
                           {assignedEmployeeIds.length > 0 ? (
                             <>
                               <span className="flex -space-x-2">
@@ -787,7 +748,10 @@ const ProjectDetail = () => {
                     </div>
                   </div>
                 </div>
-                <div className="shrink-0 flex items-center gap-3 sm:border-l sm:pl-5" style={{ borderColor: borderColor ? `1px solid ${borderColor}` : undefined }}>
+                <div
+                  className="shrink-0 flex items-center gap-3 sm:pl-5"
+                  style={{ borderLeft: borderColor ? `1px solid ${borderColor}` : undefined }}
+                >
                   <div className="relative w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: bg }}>
                     <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.5" fill="none" stroke={borderColor} strokeWidth="3" />
@@ -807,71 +771,38 @@ const ProjectDetail = () => {
                     </span>
                   </div>
                   <div>
-                    <Text variant="sm" className="opacity-80">Tasks complete</Text>
-                    <Text className="font-medium" style={{ color: dark }}>{tasksDone} of {tasks.length}</Text>
+                    <Text variant="sm" className="opacity-80" style={{ color: dark }}>Milestones complete</Text>
+                    <Text className="font-medium" style={{ color: dark }}>{milestonesDone} of {milestones.length}</Text>
                   </div>
                 </div>
               </div>
             </Card>
           </section>
 
-          {/* Milestones — horizontal scroll cards */}
-          <section className="mb-6">
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-sm opacity-70 font-medium" style={{ fontSize: baseFontSize * 0.9, color: dark }}>
-                Milestones
-              </p>
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => scrollMilestones('left')}
-                  className="p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity"
-                  style={{ color: dark, backgroundColor: fg }}
-                  aria-label="Scroll milestones left"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollMilestones('right')}
-                  className="p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity"
-                  style={{ color: dark, backgroundColor: fg }}
-                  aria-label="Scroll milestones right"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+          {/* Timeline — Gantt-style diagram (phases / milestones by date); fills remaining space */}
+          <section className="flex-1 min-h-0 flex flex-col mb-6 rounded-base overflow-hidden" style={{ backgroundColor: fg }}>
+            <p className="text-sm opacity-70 font-medium mb-4 shrink-0 px-4 pt-4" style={{ fontSize: baseFontSize * 0.9, color: dark }}>
+              Timeline
+            </p>
+            <div className="flex-1 min-h-0 flex flex-col rounded-base overflow-hidden px-4 pb-4">
+              <ProjectTimelineGantt
+                project={project}
+                milestones={milestones}
+                tasks={tasks}
+                userMap={userMap}
+                users={users}
+                primaryColor={primaryColor}
+                secondaryColor={secondaryColor}
+                dark={dark ?? '#111'}
+                fg={fg ?? '#fff'}
+                bg={bg ?? '#f4f4f4'}
+                borderColor={borderColor}
+                darkMode={darkMode}
+                doneStateId={DONE_STATE_ID}
+                successColor={current?.system?.success}
+                currentUserId={user?.id}
+              />
             </div>
-            {milestoneCardsData.length === 0 ? (
-              <div
-                className="flex items-center justify-center gap-2 py-8 rounded-base"
-                style={{ backgroundColor: fg }}
-              >
-                <Target className="w-8 h-8 opacity-40" style={{ color: dark }} />
-                <Text variant="sm" className="opacity-70" style={{ color: dark }}>No milestones yet</Text>
-                <Button size="sm" label="Add milestone" startIcon={<Plus className="w-4 h-4" />} onClick={() => setAddMilestoneOpen(true)} />
-              </div>
-            ) : (
-              <div
-                ref={milestonesScrollRef}
-                className="flex gap-3 overflow-x-auto overflow-y-hidden pb-2 scroll-slim snap-x snap-mandatory"
-                style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}
-              >
-                {milestoneCardsData.map(({ milestone: m, assigneeIds: aIds }) => (
-                  <div key={m.id} className="flex-shrink-0 snap-start" style={{ width: '70%', minWidth: '70%' }}>
-                    <MilestoneCard
-                      milestone={m}
-                      assigneeIds={aIds}
-                      userMap={userMap}
-                      users={users}
-                      fg={fg}
-                      dark={dark}
-                      borderColor={borderColor}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
           </section>
         </div>
       </div>
@@ -882,11 +813,11 @@ const ProjectDetail = () => {
           <motion.div
             key="sidebar"
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: '28vw', opacity: 1 }}
+            animate={{ width: '30vw', opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ type: 'tween', duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="min-w-0 shrink-0 overflow-hidden flex flex-col h-full"
-            style={{ maxWidth: '28vw' }}
+            style={{ maxWidth: '30vw', minWidth: '30vw' }}
           >
             <ProjectChatSidebar
               projectName={project.name}
@@ -914,27 +845,15 @@ const ProjectDetail = () => {
                 await projectService.update(id, { name: payload.name, description: payload.description || undefined })
                 loadData()
               }}
+              onMarkAllAgreed={async () => {
+                if (!id) return
+                // Stub: when backend supports mark-all-agreed, call commentService.markAllAgreed(id) and loadData()
+              }}
               onLeaveGroup={() => setChatSidebarOpen(false)}
             />
           </motion.div>
         ) : null}
       </AnimatePresence>
-
-      {/* Add milestone modal */}
-      <Modal open={aboutModalOpen} onClose={() => setAboutModalOpen(false)}>
-        <div className="p-6 flex flex-col max-h-[85vh] overflow-hidden flex-1 min-h-0" style={{ backgroundColor: current?.system?.foreground }}>
-          <h2 className="font-medium shrink-0 mb-1" style={{ fontSize: baseFontSize * 1.1, color: dark }}>
-            {project.name}
-          </h2>
-          <p className="text-sm opacity-70 shrink-0 mb-3" style={{ color: dark }}>About</p>
-          <div className="flex-1 min-h-0 overflow-y-auto scroll-slim" style={{ fontSize: baseFontSize, color: dark, lineHeight: 1.55 }}>
-            {project.description || '—'}
-          </div>
-          <footer className="flex justify-end pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
-            <Button variant="secondary" label="Close" onClick={() => setAboutModalOpen(false)} />
-          </footer>
-        </div>
-      </Modal>
 
       <Modal open={addMilestoneOpen} onClose={() => !saving && setAddMilestoneOpen(false)}>
         <div className="p-6 flex flex-col" style={{ backgroundColor: current?.system?.foreground }}>
@@ -1028,7 +947,7 @@ const ProjectDetail = () => {
             </div>
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor }}>
-            <Button variant="secondary" label="Cancel" onClick={() => !saving && setAddMilestoneOpen(false)} disabled={saving} />
+            <Button variant="background" label="Cancel" onClick={() => !saving && setAddMilestoneOpen(false)} disabled={saving} />
             <Button label="Add milestone" onClick={handleAddMilestone} disabled={saving || !milestoneName.trim() || !milestoneTarget} />
           </footer>
         </div>
@@ -1083,7 +1002,7 @@ const ProjectDetail = () => {
             </div>
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor }}>
-            <Button variant="secondary" label="Cancel" onClick={() => !saving && setAddTaskOpen(false)} disabled={saving} />
+            <Button variant="background" label="Cancel" onClick={() => !saving && setAddTaskOpen(false)} disabled={saving} />
             <Button label="Add task" onClick={handleAddTask} disabled={saving || !taskTitle.trim() || !taskOwnerId} />
           </footer>
         </div>
@@ -1096,6 +1015,8 @@ const ProjectDetail = () => {
         name={editName}
         description={editDescription}
         leadId={editLeadId}
+        dueDate={editDueDate}
+        onDueDateChange={setEditDueDate}
         onNameChange={setEditName}
         onDescriptionChange={setEditDescription}
         onLeadIdChange={setEditLeadId}
@@ -1132,6 +1053,16 @@ const ProjectDetail = () => {
       </Modal>
 
       <ProjectFilesModal open={folderModalOpen} onClose={() => setFolderModalOpen(false)} />
+
+      {isConsultant && (
+        <LogTimeModal
+          open={logTimeModalOpen}
+          onClose={() => setLogTimeModalOpen(false)}
+          onSaved={() => loadData()}
+          initialProjectId={id ?? undefined}
+          initialMilestoneId={milestones[0]?.id ?? undefined}
+        />
+      )}
     </div>
   )
 }

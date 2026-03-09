@@ -302,15 +302,17 @@ const RichTextEditor = ({
   contentFontSize,
   enableMentions = false,
 }: RichTextEditorProps) => {
-  const { current } = Themestore()
+  const { current, mode: themeMode } = Themestore()
   const dark = current?.system?.dark
-  const secondary = current?.brand?.secondary
+  const secondary = current?.brand?.secondary ?? '#FF9600'
   const borderColor = current?.system?.border ?? 'rgba(0,0,0,0.15)'
   const themeBg = mode === 'fill' ? (current?.system?.background ?? undefined) : undefined
   const bg = contentBackgroundColor ?? themeBg
   const mentionListFg = current?.system?.foreground ?? '#fff'
   const mentionListBg = current?.system?.background ?? '#fff'
   const primary = current?.brand?.primary
+  /** Non-active tools use theme text color; active state uses activeColor (secondary). */
+  const toolbarInactiveColor = dark
   const fontSize = contentFontSize ?? baseFontSize
   const contentStyle = `font-size: ${fontSize}px; line-height: 1.5; color: ${dark ?? '#333'};${contentFontFamily ? ` font-family: ${contentFontFamily};` : ''}`
   const extensions = useMemo(
@@ -364,7 +366,12 @@ const RichTextEditor = ({
   if (!editor) return null
 
   const isHex = contentBackgroundColor?.startsWith('#')
-  const toolbarBg = contentBackgroundColor && isHex ? mixHex(contentBackgroundColor, 0.12) : contentBackgroundColor
+  const hexOnly = contentBackgroundColor && /^#[0-9A-Fa-f]{6}/.test(contentBackgroundColor) ? contentBackgroundColor.slice(0, 7) : null
+  const toolbarBgFromContent = hexOnly ? (themeMode === 'dark' ? mixHex(hexOnly, 0.25, true) : mixHex(hexOnly, 0.12)) : null
+  const toolbarBg = contentBackgroundColor
+    ? (themeMode === 'dark' && dark ? `${dark}28` : toolbarBgFromContent ?? contentBackgroundColor)
+    : undefined
+  const toolbarBgResolved = toolbarBg ?? (borderless ? (bg ? `${dark}12` : 'transparent') : (bg ? `${dark}08` : 'transparent'))
   const scrollbarTrack = contentBackgroundColor && isHex ? mixHex(contentBackgroundColor, 0.28) : (contentBackgroundColor ? `${contentBackgroundColor}30` : undefined)
   const scrollbarThumb = contentBackgroundColor && isHex ? mixHex(contentBackgroundColor, 0.25, true) : (contentBackgroundColor ? `${contentBackgroundColor}99` : undefined)
 
@@ -390,14 +397,14 @@ const RichTextEditor = ({
           className="flex items-center gap-0.5 border-b px-1 py-1 flex-wrap shrink-0"
           style={{
             borderColor,
-            backgroundColor: contentBackgroundColor ? (toolbarBg ?? contentBackgroundColor) : (borderless ? (bg ? `${dark}12` : 'transparent') : (bg ? `${dark}08` : 'transparent')),
+            backgroundColor: toolbarBgResolved,
           }}
         >
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBold().run()}
             active={editor.isActive('bold')}
             title="Bold"
-            style={{ color: dark }}
+            style={{ color: toolbarInactiveColor }}
             activeColor={secondary}
           >
             <Bold className="w-4 h-4" />
@@ -406,7 +413,7 @@ const RichTextEditor = ({
             onClick={() => editor.chain().focus().toggleItalic().run()}
             active={editor.isActive('italic')}
             title="Italic"
-            style={{ color: dark }}
+            style={{ color: toolbarInactiveColor }}
             activeColor={secondary}
           >
             <Italic className="w-4 h-4" />
@@ -417,17 +424,17 @@ const RichTextEditor = ({
                 onClick={() => editor.chain().focus().toggleStrike().run()}
                 active={editor.isActive('strike')}
                 title="Strikethrough"
-                style={{ color: dark }}
+                style={{ color: toolbarInactiveColor }}
                 activeColor={secondary}
               >
                 <Strikethrough className="w-4 h-4" />
               </ToolbarButton>
-              <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: dark }} />
+              <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: toolbarInactiveColor }} />
               <ToolbarButton
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                 active={editor.isActive('heading', { level: 1 })}
                 title="Heading 1"
-                style={{ color: dark }}
+                style={{ color: toolbarInactiveColor }}
                 activeColor={secondary}
               >
                 <span className="text-xs font-medium">H1</span>
@@ -436,7 +443,7 @@ const RichTextEditor = ({
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                 active={editor.isActive('heading', { level: 2 })}
                 title="Heading 2"
-                style={{ color: dark }}
+                style={{ color: toolbarInactiveColor }}
                 activeColor={secondary}
               >
                 <span className="text-xs font-medium">H2</span>
@@ -445,7 +452,7 @@ const RichTextEditor = ({
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
                 active={editor.isActive('heading', { level: 3 })}
                 title="Heading 3"
-                style={{ color: dark }}
+                style={{ color: toolbarInactiveColor }}
                 activeColor={secondary}
               >
                 <span className="text-xs font-medium">H3</span>
@@ -454,7 +461,7 @@ const RichTextEditor = ({
                 onClick={() => editor.chain().focus().setParagraph().run()}
                 active={editor.isActive('paragraph')}
                 title="Paragraph"
-                style={{ color: dark }}
+                style={{ color: toolbarInactiveColor }}
                 activeColor={secondary}
               >
                 <span className="text-xs">P</span>
@@ -463,7 +470,7 @@ const RichTextEditor = ({
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
                 active={editor.isActive('blockquote')}
                 title="Quote"
-                style={{ color: dark }}
+                style={{ color: toolbarInactiveColor }}
                 activeColor={secondary}
               >
                 <Quote className="w-4 h-4" />
@@ -472,7 +479,7 @@ const RichTextEditor = ({
                 onClick={() => editor.chain().focus().toggleCodeBlock().run()}
                 active={editor.isActive('codeBlock')}
                 title="Code block"
-                style={{ color: dark }}
+                style={{ color: toolbarInactiveColor }}
                 activeColor={secondary}
               >
                 <Code className="w-4 h-4" />
@@ -480,21 +487,21 @@ const RichTextEditor = ({
               <ToolbarButton
                 onClick={() => editor.chain().focus().setHorizontalRule().run()}
                 title="Horizontal rule"
-                style={{ color: dark }}
+                style={{ color: toolbarInactiveColor }}
                 activeColor={secondary}
               >
                 <Minus className="w-4 h-4" />
               </ToolbarButton>
-              <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: dark }} />
-              <LinkToolbarButton editor={editor} dark={dark} activeColor={secondary} />
-              <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: dark }} />
+              <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: toolbarInactiveColor }} />
+              <LinkToolbarButton editor={editor} dark={dark} toolbarIconColor={toolbarInactiveColor} activeColor={secondary} />
+              <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: toolbarInactiveColor }} />
             </>
           )}
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             active={editor.isActive('bulletList')}
             title="Bullet list"
-            style={{ color: dark }}
+            style={{ color: toolbarInactiveColor }}
             activeColor={secondary}
           >
             <List className="w-4 h-4" />
@@ -503,17 +510,17 @@ const RichTextEditor = ({
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
             active={editor.isActive('orderedList')}
             title="Numbered list"
-            style={{ color: dark }}
+            style={{ color: toolbarInactiveColor }}
             activeColor={secondary}
           >
             <ListOrdered className="w-4 h-4" />
           </ToolbarButton>
-          <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: dark }} />
+          <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: toolbarInactiveColor }} />
           <ToolbarButton
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
             title="Undo"
-            style={{ color: dark }}
+            style={{ color: toolbarInactiveColor }}
             activeColor={secondary}
           >
             <Undo className="w-4 h-4" />
@@ -522,7 +529,7 @@ const RichTextEditor = ({
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
             title="Redo"
-            style={{ color: dark }}
+            style={{ color: toolbarInactiveColor }}
             activeColor={secondary}
           >
             <Redo className="w-4 h-4" />
@@ -602,10 +609,12 @@ function ToolbarButton({
 function LinkToolbarButton({
   editor,
   dark,
+  toolbarIconColor,
   activeColor,
 }: {
   editor: Editor
   dark: string | undefined
+  toolbarIconColor?: string
   activeColor?: string
 }) {
   const handleClick = useCallback(() => {
@@ -625,7 +634,7 @@ function LinkToolbarButton({
       onClick={handleClick}
       active={editor.isActive('link')}
       title="Insert link"
-      style={{ color: dark }}
+      style={{ color: toolbarIconColor ?? dark }}
       activeColor={activeColor}
     >
       <Link2 className="w-4 h-4" />

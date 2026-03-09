@@ -146,7 +146,7 @@ const MilestoneDetailModal = ({
         </div>
 
         <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
-          <Button variant="secondary" label="Close" onClick={onClose} disabled={deleting} />
+          <Button variant="background" label="Close" onClick={onClose} disabled={deleting} />
           <Button label="Edit" startIcon={<Pencil className="w-4 h-4" />} onClick={onEdit} disabled={deleting} />
           <Button variant="danger" label="Delete" startIcon={<Trash2 className="w-4 h-4" />} onClick={onDelete} disabled={deleting} />
         </footer>

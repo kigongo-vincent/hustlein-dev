@@ -1,15 +1,22 @@
-import { create } from "zustand";
-import type { AuthUser } from "../types";
-import { defaultCompanyAdmin } from "../repos/mock/userRepo";
+import { create } from "zustand"
+import type { AuthUser } from "../types"
+import { setStoredToken } from "../api"
 
 interface AuthstoreI {
-  user: AuthUser | null;
-  setUser: (user: AuthUser | null) => void;
-  logout: () => void;
+  user: AuthUser | null
+  setUser: (user: AuthUser | null) => void
+  logout: () => void
 }
 
 export const Authstore = create<AuthstoreI>((set) => ({
-  user: defaultCompanyAdmin as AuthUser,
-  setUser: (user) => set({ user }),
-  logout: () => set({ user: null }),
-}));
+  user: null,
+  setUser: (user) => {
+    if (user?.token) setStoredToken(user.token)
+    else if (user == null) setStoredToken(null)
+    set({ user })
+  },
+  logout: () => {
+    setStoredToken(null)
+    set({ user: null })
+  },
+}))

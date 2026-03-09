@@ -16,6 +16,8 @@ export interface ThemeI {
   brand: {
     primary: string;
     secondary: string;
+    /** Text/icon color on primary background (e.g. dark mode when primary is white) */
+    onPrimary?: string;
   };
 }
 
@@ -34,19 +36,20 @@ export interface ThemestoreI {
   getThemeByName: (theme: themeMode) => ThemeI;
 }
 
-/** Dark theme grounds benchmarked from IG: black base, elevated surfaces, light text */
+/** Dark theme: white primary, muted white text, improved background hierarchy */
 const darkTheme: ThemeI = {
   system: {
-    background: "#000000",
-    foreground: "#121212",
-    border: "rgba(255,255,255,0.08)",
+    background: "#0a0a0a",
+    foreground: "#141414",
+    border: "rgba(255,255,255,0.14)",
     error: "#ff6b6b",
     success: "#51cf66",
-    dark: "#f5f5f5",
+    dark: "#e0e0e0",
   },
   brand: {
-    primary: "#682308",
+    primary: "#ffffff",
     secondary: "#FF9600",
+    onPrimary: "#0a0a0a",
   },
 };
 

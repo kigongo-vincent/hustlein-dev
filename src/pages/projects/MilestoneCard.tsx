@@ -95,7 +95,10 @@ export default function MilestoneCard({
     >
       <div className="flex items-start justify-between gap-3 min-w-0">
         <p className="font-medium truncate" style={{ color: dark }}>{m.name}</p>
-        <PriorityIcon priority={m.priority} className="w-6 h-6 shrink-0" />
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <PriorityIcon priority={m.priority} className="w-6 h-6" />
+          <span className="text-xs capitalize opacity-80" style={{ color: dark }}>{m.priority}</span>
+        </div>
       </div>
       <div className={`flex flex-wrap items-start justify-between gap-x-4 gap-y-2 ${compact ? '' : 'flex-1 min-h-0'}`} style={{ fontSize: Math.max(minFontSize, Math.min(base * 0.875, base)) }}>
         <div className="flex flex-col gap-y-1">

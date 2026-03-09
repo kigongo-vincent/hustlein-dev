@@ -27,8 +27,8 @@ const DeleteProjectModal = ({ project, open, onClose, saving, onConfirm }: Delet
             : ''}
         </Text>
         <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor: current?.system?.border }}>
-          <Button variant="secondary" label="Cancel" onClick={() => !saving && onClose()} disabled={saving} />
-          <Button variant="danger" label="Delete" onClick={onConfirm} disabled={saving} />
+          <Button variant="background" label="Cancel" onClick={() => !saving && onClose()} disabled={saving} />
+          <Button variant="danger" label="Delete" onClick={onConfirm} disabled={saving} loading={saving} />
         </footer>
       </div>
     </Modal>

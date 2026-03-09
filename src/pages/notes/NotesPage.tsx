@@ -13,11 +13,12 @@ import {
 } from 'recharts'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Modal, AlertModal, Input, RichTextEditor, NoteCard, Skeleton } from '../../components/ui'
+import { Card, Button, Modal, AlertModal, Input, RichTextEditor, NoteCard, Skeleton, LogTimeModal } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { noteService } from '../../services'
 import type { Note, NoteColor } from '../../types'
 import { NOTE_COLORS } from '../../types'
+import { darkenNoteBg } from '../../components/NoteCard'
 import { StickyNote, Plus, Pencil, Trash2, BarChart3 } from 'lucide-react'
 
 const chartTickStyle = { fontSize: 12 }
@@ -34,11 +35,13 @@ function getWeekKey(iso: string): string {
 }
 
 export default function NotesPage() {
-  const { current } = Themestore()
+  const { current, mode } = Themestore()
   const dark = current?.system?.dark
   const borderColor = current?.system?.border ?? 'rgba(0,0,0,0.1)'
   const primary = current?.brand?.primary ?? '#682308'
   const secondary = current?.brand?.secondary ?? '#FF9600'
+  const chartPrimary = mode === 'dark' ? (dark ?? '#e0e0e0') : primary
+  const chartSecondary = mode === 'dark' ? (secondary ?? '#FF9600') : secondary
 
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
@@ -50,13 +53,23 @@ export default function NotesPage() {
   const [formColor, setFormColor] = useState<NoteColor>(NOTE_COLORS[0])
   const [saving, setSaving] = useState(false)
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
+  const [createTaskFromSelection, setCreateTaskFromSelection] = useState<string | null>(null)
+  const [logTimeModalOpen, setLogTimeModalOpen] = useState(false)
+  const [logTimeInitialDescription, setLogTimeInitialDescription] = useState('')
 
   const fetchNotes = useCallback(() => {
     setLoading(true)
-    noteService.list().then((list) => {
-      setNotes(list)
-      setLoading(false)
-    })
+    noteService
+      .list()
+      .then((list) => {
+        setNotes(list ?? [])
+      })
+      .catch(() => {
+        setNotes([])
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }, [])
 
   useEffect(() => {
@@ -116,6 +129,22 @@ export default function NotesPage() {
       if (updated) setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)))
     })
   }, [])
+
+  useEffect(() => {
+    if (!formOpen) return
+    const onMouseUp = () => {
+      const sel = window.getSelection()
+      if (!sel || sel.isCollapsed) return
+      const text = sel.toString().trim()
+      if (!text) return
+      const anchor = sel.anchorNode
+      if (!anchor) return
+      const el = anchor.nodeType === Node.ELEMENT_NODE ? (anchor as Element) : anchor.parentElement
+      if (el?.closest?.('.ProseMirror') ?? el?.closest?.('[data-tiptap-editor]')) setCreateTaskFromSelection(text)
+    }
+    document.addEventListener('mouseup', onMouseUp, true)
+    return () => document.removeEventListener('mouseup', onMouseUp, true)
+  }, [formOpen])
 
   const statCards = useMemo(() => {
     const total = notes.length
@@ -201,76 +230,90 @@ export default function NotesPage() {
     return out
   }, [notes])
 
-  const gridColor = dark ? `${dark}18` : 'rgba(0,0,0,0.08)'
+  const gridColor = dark ? `${dark}40` : 'rgba(0,0,0,0.08)'
   const fg = current?.system?.foreground ?? '#fff'
   const tooltipStyle = {
     fontSize: 13.5,
     backgroundColor: fg,
     border: `1px solid ${borderColor}`,
     borderRadius: 4,
+    color: dark,
   }
+  const tooltipCursor =
+    mode === 'dark'
+      ? { fill: dark ? `${dark}18` : 'rgba(255,255,255,0.06)', stroke: borderColor ?? 'rgba(255,255,255,0.08)' }
+      : { fill: 'rgba(0,0,0,0.04)', stroke: borderColor ?? 'rgba(0,0,0,0.1)' }
 
+  const chartPaleBg = mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'
   const renderChartByWeek = () =>
     chartDataByWeek.length === 0 ? (
-      <div className="h-[200px] flex items-center justify-center">
+      <div className="h-[200px] flex items-center justify-center rounded-base" style={{ backgroundColor: chartPaleBg }}>
         <Text variant="sm" className="opacity-70" style={{ color: dark }}>No data yet</Text>
       </div>
     ) : (
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={chartDataByWeek} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-          <XAxis dataKey="week" tick={{ ...chartTickStyle, fill: dark }} />
-          <YAxis tick={{ ...chartTickStyle, fill: dark }} allowDecimals={false} />
-          <Tooltip contentStyle={tooltipStyle} />
-          <Bar dataKey="count" fill={primary} radius={[4, 4, 0, 0]} name="Notes" />
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="rounded-base p-2" style={{ backgroundColor: chartPaleBg }}>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={chartDataByWeek} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+            <XAxis dataKey="week" tick={{ ...chartTickStyle, fill: dark }} />
+            <YAxis tick={{ ...chartTickStyle, fill: dark }} allowDecimals={false} />
+            <Tooltip contentStyle={tooltipStyle} cursor={tooltipCursor} />
+            <Bar dataKey="count" fill={chartPrimary} radius={[4, 4, 0, 0]} name="Notes" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     )
 
   const renderChartByColor = () =>
     notes.length === 0 ? (
-      <div className="h-[200px] flex items-center justify-center">
+      <div className="h-[200px] flex items-center justify-center rounded-base" style={{ backgroundColor: chartPaleBg }}>
         <Text variant="sm" className="opacity-70" style={{ color: dark }}>No data yet</Text>
       </div>
     ) : (
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={chartDataByColor} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-          <XAxis dataKey="name" hide />
-          <YAxis tick={{ ...chartTickStyle, fill: dark }} allowDecimals={false} />
-          <Tooltip formatter={(v: number | undefined) => [v ?? 0, 'Notes']} contentStyle={tooltipStyle} />
-          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-            {chartDataByColor.map((entry) => (
-              <Cell key={entry.name} fill={entry.name} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="rounded-base p-2" style={{ backgroundColor: chartPaleBg }}>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={chartDataByColor} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+            <XAxis dataKey="name" hide />
+            <YAxis tick={{ ...chartTickStyle, fill: dark }} allowDecimals={false} />
+            <Tooltip formatter={(v: number | undefined) => [v ?? 0, 'Notes']} contentStyle={tooltipStyle} cursor={tooltipCursor} />
+            <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              {chartDataByColor.map((entry) => (
+                <Cell key={entry.name} fill={entry.name} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     )
 
   const renderChartByDayLast7 = () => (
-    <ResponsiveContainer width="100%" height={200}>
-      <BarChart data={chartDataByDayLast7} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-        <XAxis dataKey="day" tick={{ ...chartTickStyle, fill: dark }} />
-        <YAxis tick={{ ...chartTickStyle, fill: dark }} allowDecimals={false} />
-        <Tooltip contentStyle={tooltipStyle} />
-        <Bar dataKey="count" fill={secondary} radius={[4, 4, 0, 0]} name="Created" />
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="rounded-base p-2" style={{ backgroundColor: chartPaleBg }}>
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={chartDataByDayLast7} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+          <XAxis dataKey="day" tick={{ ...chartTickStyle, fill: dark }} />
+          <YAxis tick={{ ...chartTickStyle, fill: dark }} allowDecimals={false} />
+          <Tooltip contentStyle={tooltipStyle} cursor={tooltipCursor} />
+          <Bar dataKey="count" fill={chartSecondary} radius={[4, 4, 0, 0]} name="Created" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   )
 
   const renderChartLast14Days = () => (
-    <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={chartDataLast14Days} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-        <XAxis dataKey="date" tick={{ ...chartTickStyle, fill: dark }} />
-        <YAxis tick={{ ...chartTickStyle, fill: dark }} allowDecimals={false} />
-        <Tooltip contentStyle={tooltipStyle} />
-        <Line type="monotone" dataKey="created" stroke={primary} strokeWidth={2} dot={{ r: 3 }} name="Created" />
-        <Line type="monotone" dataKey="updated" stroke={secondary} strokeWidth={2} dot={{ r: 3 }} name="Updated" />
-      </LineChart>
-    </ResponsiveContainer>
+    <div className="rounded-base p-2" style={{ backgroundColor: chartPaleBg }}>
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={chartDataLast14Days} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+          <XAxis dataKey="date" tick={{ ...chartTickStyle, fill: dark }} />
+          <YAxis tick={{ ...chartTickStyle, fill: dark }} allowDecimals={false} />
+          <Tooltip contentStyle={tooltipStyle} cursor={tooltipCursor} />
+          <Line type="monotone" dataKey="created" stroke={chartPrimary} strokeWidth={2} dot={{ r: 3 }} name="Created" />
+          <Line type="monotone" dataKey="updated" stroke={chartSecondary} strokeWidth={2} dot={{ r: 3 }} name="Updated" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   )
 
   return (
@@ -340,7 +383,7 @@ export default function NotesPage() {
           <div className="overflow-x-auto scroll-slim">
             <table className="w-full border-collapse" style={{ borderColor }}>
               <thead>
-                <tr style={{ backgroundColor: current?.system?.background }}>
+                <tr style={{ borderBottom: `1px solid ${borderColor}` }}>
                   <th className="text-left py-2.5 px-3 font-medium" style={{ fontSize: baseFontSize, color: dark }}>
                     Note
                   </th>
@@ -438,7 +481,7 @@ export default function NotesPage() {
       </Card>
 
       <Modal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} closeOnBackdrop variant="wide">
-        <div className="p-6 flex flex-col gap-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: fg }}>
+        <div className="p-6 flex flex-col gap-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: fg, color: dark }}>
           <h3 className="font-semibold shrink-0" style={{ fontSize: baseFontSize * 1.15, color: dark }}>
             Notes analytics
           </h3>
@@ -456,13 +499,16 @@ export default function NotesPage() {
               {renderChartLast14Days()}
             </Card>
           </div>
+          <footer className="flex justify-end pt-4 border-t shrink-0" style={{ borderColor }}>
+            <Button variant="secondary" label="Close" onClick={() => setAnalyticsOpen(false)} />
+          </footer>
         </div>
       </Modal>
 
       <Modal open={formOpen} onClose={() => !saving && setFormOpen(false)} closeOnBackdrop variant="wide">
         <div
           className="p-6 flex flex-col gap-4 min-h-0 max-h-[85vh] overflow-y-auto scroll-slim"
-          style={{ backgroundColor: fg }}
+          style={{ backgroundColor: fg, color: dark }}
         >
           <h3 className="font-semibold shrink-0" style={{ fontSize: baseFontSize * 1.15, color: dark }}>
             {editingId ? 'Edit note' : 'New note'}
@@ -480,21 +526,25 @@ export default function NotesPage() {
                 Background
               </Text>
               <div className="flex flex-wrap gap-1.5">
-                {NOTE_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setFormColor(c)}
-                    className="w-7 h-7 rounded-base border-2 shrink-0"
-                    style={{
-                      backgroundColor: c,
-                      borderColor: formColor === c ? primary : 'transparent',
-                    }}
-                    aria-label={`Color ${c}`}
-                  >
-                    {formColor === c && <span className="text-xs">✓</span>}
-                  </button>
-                ))}
+                {NOTE_COLORS.map((c) => {
+                  const swatchBg = mode === 'dark' ? darkenNoteBg(c, fg ?? '#141414') : c
+                  const checkColor = mode === 'dark' ? dark : '#1f2937'
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setFormColor(c)}
+                      className="w-7 h-7 rounded-base border-2 shrink-0"
+                      style={{
+                        backgroundColor: swatchBg,
+                        borderColor: formColor === c ? chartPrimary : 'transparent',
+                      }}
+                      aria-label={`Color ${c}`}
+                    >
+                      {formColor === c && <span className="text-xs" style={{ color: checkColor }}>✓</span>}
+                    </button>
+                  )
+                })}
               </div>
             </div>
             <RichTextEditor
@@ -506,7 +556,7 @@ export default function NotesPage() {
               toolbarPreset="full"
               mode="fill"
               borderless
-              contentBackgroundColor={formColor}
+              contentBackgroundColor={mode === 'dark' ? darkenNoteBg(formColor, fg ?? '#141414') : formColor}
               contentFontFamily="'Comic Sans MS', 'Comic Neue', Chalkboard, cursive"
               contentFontSize={16}
               enableMentions
@@ -514,7 +564,7 @@ export default function NotesPage() {
             />
           </div>
           <div className="flex justify-end gap-2 pt-2 shrink-0">
-            <Button variant="secondaryBrand" label="Cancel" onClick={() => !saving && setFormOpen(false)} disabled={saving} />
+            <Button variant="secondary" label="Cancel" onClick={() => !saving && setFormOpen(false)} disabled={saving} />
             <Button label={saving ? 'Saving…' : editingId ? 'Save' : 'Create'} onClick={handleSave} disabled={saving || !formTitle.trim()} />
           </div>
         </div>
@@ -528,6 +578,31 @@ export default function NotesPage() {
         variant="error"
         onConfirm={handleDeleteConfirm}
         onClose={() => setDeleteId(null)}
+      />
+
+      <AlertModal
+        open={!!createTaskFromSelection}
+        title="Create task from selected text?"
+        message={createTaskFromSelection ? 'Would you like to create a task from the selected text? The selection will be used as the task description.' : ''}
+        confirmLabel="Create task"
+        onConfirm={() => {
+          if (createTaskFromSelection) {
+            setLogTimeInitialDescription(createTaskFromSelection)
+            setCreateTaskFromSelection(null)
+            setFormOpen(false)
+            setLogTimeModalOpen(true)
+          }
+        }}
+        onClose={() => setCreateTaskFromSelection(null)}
+      />
+
+      <LogTimeModal
+        open={logTimeModalOpen}
+        onClose={() => {
+          setLogTimeModalOpen(false)
+          setLogTimeInitialDescription('')
+        }}
+        initialDescription={logTimeInitialDescription}
       />
     </div>
   )

@@ -23,6 +23,24 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Recharts graphs: remove default focus outline from SVG elements */
+.recharts-wrapper *:focus {
+  outline: none;
+}
+
+/* Dark theme: no white chart surface or wrapper background so cards stay dark */
+[data-theme="dark"] .recharts-responsive-container,
+[data-theme="dark"] .recharts-wrapper {
+  background: transparent !important;
+}
+[data-theme="dark"] .recharts-surface {
+  fill: transparent;
+}
+[data-theme="dark"] .recharts-tooltip-wrapper {
+  outline: none;
+  background: transparent !important;
+}
+
 /* Windows: scale full app to 75% so it fits viewport; root laid out larger then scaled down */
 html.platform-windows body {
   overflow: hidden;
@@ -98,10 +116,11 @@ html.platform-windows #root {
   box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.01);
 }
 
-/* Slim scrollbars – use theme vars when set by app (Themestore), fallback neutral */
+/* Slim scrollbars – use theme vars when set by app (Themestore), fallback by data-theme */
 .scroll-slim {
   scrollbar-width: thin;
   scrollbar-gutter: stable;
+  scrollbar-color: var(--scrollbar-thumb, rgba(0, 0, 0, 0.18)) var(--scrollbar-track, rgba(0, 0, 0, 0.04));
 }
 .scroll-slim::-webkit-scrollbar {
   width: 6px;
@@ -118,10 +137,25 @@ html.platform-windows #root {
   background: var(--scrollbar-thumb-hover, rgba(0, 0, 0, 0.28));
 }
 
+/* Dark mode: ensure scrollbars use dark styling (sync with AppShell vars) */
+[data-theme="dark"] .scroll-slim {
+  scrollbar-color: rgba(255, 255, 255, 0.22) rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .scroll-slim::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .scroll-slim::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+[data-theme="dark"] .scroll-slim::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 /* Overlay scrollbar – does not reserve layout space (e.g. mention dropdown) */
 .scroll-slim-overlay {
   scrollbar-width: thin;
   overflow-y: auto;
+  scrollbar-color: var(--scrollbar-thumb, rgba(0, 0, 0, 0.18)) var(--scrollbar-track, rgba(0, 0, 0, 0.04));
 }
 .scroll-slim-overlay::-webkit-scrollbar {
   width: 6px;
@@ -136,6 +170,18 @@ html.platform-windows #root {
 }
 .scroll-slim-overlay::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover, rgba(0, 0, 0, 0.28));
+}
+[data-theme="dark"] .scroll-slim-overlay {
+  scrollbar-color: rgba(255, 255, 255, 0.22) rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .scroll-slim-overlay::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .scroll-slim-overlay::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+[data-theme="dark"] .scroll-slim-overlay::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 @supports (overflow: overlay) {
   .scroll-slim-overlay {

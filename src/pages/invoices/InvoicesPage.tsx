@@ -16,9 +16,12 @@ import {
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
-import { Card, Button, Skeleton, Modal, CustomSelect, DatePicker, Input } from '../../components/ui'
+import { Card, Button, Skeleton, Modal, CustomSelect, DatePicker, Input, CurrencyInput } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
-import type { Invoice, InvoiceStatus, InvoiceLineItem } from '../../types'
+import { Authstore } from '../../data/Authstore'
+import { companyService } from '../../services'
+import type { Invoice, InvoiceStatus, InvoiceLineItem, Company } from '../../types'
+import { downloadInvoicePdf } from '../../utils/invoicePdf'
 import {
   Receipt,
   Eye,
@@ -89,7 +92,7 @@ function formatDateShort(iso?: string | null): string {
  * Max is always the gross.
  */
 function computeConsultantLine(
-  consultantName: string,
+  _consultantName: string,
   hoursLogged: number,
   hoursPerMonth: number,
   gross: number,
@@ -98,9 +101,8 @@ function computeConsultantLine(
   const rate = hoursPerMonth > 0 ? gross / hoursPerMonth : 0
   const uncapped = hoursLogged * rate
   const total = Math.min(uncapped, gross)
-  const description = periodLabel
-    ? `${consultantName} – ${periodLabel}`
-    : consultantName
+  // Period display should not include consultant names (avoid duplicates / multi-name strings)
+  const description = periodLabel ? periodLabel : 'Services'
   return {
     description,
     quantity: hoursLogged,
@@ -197,10 +199,10 @@ function InvoiceStatusBadge({
 
 /** Default issuer/bank when invoice has no data (invoices will come with data) */
 const DEFAULT_ISSUER = {
-  name: 'Hustle In',
-  email: 'billing@hustlein.com',
+  name: 'Your company',
+  email: 'billing@company.com',
   phone: '+256 700 000 000',
-  address: 'Kampala, Uganda',
+  address: 'Company address',
   abn: undefined,
 }
 
@@ -208,7 +210,7 @@ const DEFAULT_BANK = {
   bankName: 'Stanbic Bank',
   bsb: undefined,
   accountNumber: '9030001234567',
-  accountName: 'Hustle In Ltd',
+  accountName: 'Company account',
 }
 
 /** Mock data: consultant-based billing (rate = gross / hoursPerMonth, total = min(hoursLogged × rate, gross)) */
@@ -241,7 +243,7 @@ const MOCK_INVOICES: Invoice[] = (() => {
       issuedDate: '2025-02-01',
       status: 'unpaid',
       description: 'Consultant services – January 2025',
-      issuer: { ...DEFAULT_ISSUER, name: 'Hustle In' },
+      issuer: { ...DEFAULT_ISSUER },
       bank: DEFAULT_BANK,
       lineItems: inv1Lines,
     },
@@ -317,14 +319,6 @@ const STATUS_OPTIONS = [
   { value: 'overdue', label: 'Overdue' },
 ]
 
-const SORT_OPTIONS = [
-  { value: 'due_asc', label: 'Due date (earliest)' },
-  { value: 'due_desc', label: 'Due date (latest)' },
-  { value: 'amount_desc', label: 'Amount (high–low)' },
-  { value: 'amount_asc', label: 'Amount (low–high)' },
-  { value: 'number', label: 'Invoice number' },
-]
-
 const FILTER_SIDEBAR_DURATION_MS = 220
 
 function getStatIcon(label: string) {
@@ -336,7 +330,8 @@ function getStatIcon(label: string) {
 }
 
 const InvoicesPage = () => {
-  const { current } = Themestore()
+  const { current, mode } = Themestore()
+  const { user } = Authstore()
   const [invoices, setInvoices] = useState<Invoice[]>(() => [...MOCK_INVOICES])
   const [loading] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -348,7 +343,6 @@ const InvoicesPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState<InvoiceStatus | ''>('')
-  const [filterSort, setFilterSort] = useState<string>('due_asc')
   const [filterIssuedFrom, setFilterIssuedFrom] = useState('')
   const [filterIssuedTo, setFilterIssuedTo] = useState('')
   const [filterDueFrom, setFilterDueFrom] = useState('')
@@ -358,7 +352,30 @@ const InvoicesPage = () => {
   const [filterCurrency, setFilterCurrency] = useState('')
   const [filterSidebarExiting, setFilterSidebarExiting] = useState(false)
   const [filterSidebarEntered, setFilterSidebarEntered] = useState(false)
+  const [activeTab, setActiveTab] = useState<'all' | 'processing' | 'pending' | 'paid'>('all')
+  const [analyticsOpen, setAnalyticsOpen] = useState(false)
+  const [company, setCompany] = useState<Company | null>(null)
+  const [draftStatus, setDraftStatus] = useState<InvoiceStatus | ''>('')
+  const [draftIssuedFrom, setDraftIssuedFrom] = useState('')
+  const [draftIssuedTo, setDraftIssuedTo] = useState('')
+  const [draftDueFrom, setDraftDueFrom] = useState('')
+  const [draftDueTo, setDraftDueTo] = useState('')
+  const [draftAmountMin, setDraftAmountMin] = useState('')
+  const [draftAmountMax, setDraftAmountMax] = useState('')
+  const [draftCurrency, setDraftCurrency] = useState('')
   const PAGE_SIZE = 10
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!user?.companyId) return
+      const c = await companyService.get(user.companyId)
+      if (!cancelled) setCompany(c)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [user?.companyId])
 
   const searchLower = searchQuery.trim().toLowerCase()
   const filteredInvoices = invoices.filter((inv) => {
@@ -376,6 +393,14 @@ const InvoicesPage = () => {
     const matchAmountMin = isNaN(amountMin) || inv.amount >= amountMin
     const matchAmountMax = isNaN(amountMax) || inv.amount <= amountMax
     const matchCurrency = !filterCurrency || inv.currency === filterCurrency
+    const matchTab =
+      activeTab === 'all'
+        ? true
+        : activeTab === 'paid'
+          ? inv.status === 'paid'
+          : activeTab === 'processing'
+            ? inv.status === 'unpaid'
+            : inv.status === 'overdue'
     return (
       matchSearch &&
       matchStatus &&
@@ -385,18 +410,15 @@ const InvoicesPage = () => {
       matchDueTo &&
       matchAmountMin &&
       matchAmountMax &&
-      matchCurrency
+      matchCurrency &&
+      matchTab
     )
   })
 
-  const sortedInvoices = [...filteredInvoices].sort((a, b) => {
-    if (filterSort === 'due_asc') return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    if (filterSort === 'due_desc') return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
-    if (filterSort === 'amount_desc') return b.amount - a.amount
-    if (filterSort === 'amount_asc') return a.amount - b.amount
-    if (filterSort === 'number') return a.number.localeCompare(b.number)
-    return 0
-  })
+  // Sorting removed from filter UI; keep a consistent default ordering (due date earliest first)
+  const sortedInvoices = [...filteredInvoices].sort(
+    (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+  )
 
   const totalInvoices = sortedInvoices.length
   const totalPages = Math.max(1, Math.ceil(totalInvoices / PAGE_SIZE))
@@ -413,7 +435,6 @@ const InvoicesPage = () => {
   }, [
     searchQuery,
     filterStatus,
-    filterSort,
     filterIssuedFrom,
     filterIssuedTo,
     filterDueFrom,
@@ -435,6 +456,28 @@ const InvoicesPage = () => {
       setFilterSidebarEntered(false)
     }
   }, [filterOpen])
+
+  useEffect(() => {
+    if (!filterOpen) return
+    setDraftStatus(filterStatus)
+    setDraftIssuedFrom(filterIssuedFrom)
+    setDraftIssuedTo(filterIssuedTo)
+    setDraftDueFrom(filterDueFrom)
+    setDraftDueTo(filterDueTo)
+    setDraftAmountMin(filterAmountMin)
+    setDraftAmountMax(filterAmountMax)
+    setDraftCurrency(filterCurrency)
+  }, [
+    filterOpen,
+    filterStatus,
+    filterIssuedFrom,
+    filterIssuedTo,
+    filterDueFrom,
+    filterDueTo,
+    filterAmountMin,
+    filterAmountMax,
+    filterCurrency,
+  ])
 
   const closeFilterSidebar = useCallback(() => {
     setFilterSidebarExiting(true)
@@ -521,12 +564,19 @@ const InvoicesPage = () => {
   const paidCount = invoices.filter((i) => i.status === 'paid').length
   const unpaidCount = invoices.filter((i) => i.status === 'unpaid').length
   const overdueCount = invoices.filter((i) => i.status === 'overdue').length
+  const amountSpent = invoices
+    .filter((i) => i.status === 'paid')
+    .reduce((sum, inv) => sum + inv.amount, 0)
 
   const statCards = [
     { label: 'Total invoices', value: total, caption: 'All time' },
     { label: 'Paid', value: paidCount, caption: 'Completed' },
     { label: 'Unpaid', value: unpaidCount, caption: 'Pending' },
-    { label: 'Overdue', value: overdueCount, caption: 'Past due' },
+    {
+      label: 'Amount spent',
+      value: formatCurrency(amountSpent, 'UGX'),
+      caption: 'Total paid so far',
+    },
   ]
 
   const byStatusData = [
@@ -555,10 +605,23 @@ const InvoicesPage = () => {
     return months
   }, [invoices])
 
-  const gridColor = current?.system?.dark ? `${current.system.dark}18` : 'rgba(0,0,0,0.08)'
+  const dark = current?.system?.dark
+  const gridColor = dark ? `${dark}40` : 'rgba(0,0,0,0.08)'
   const primaryColor = current?.brand?.primary ?? '#682308'
   const secondaryColor = current?.brand?.secondary ?? '#FF9600'
   const chartColors = getChartColors(primaryColor, secondaryColor, Math.max(byStatusData.length, 2))
+  const tickProps = dark ? { ...chartTickStyle, fill: dark } : chartTickStyle
+  const tooltipContentStyle = {
+    fontSize: baseFontSize * 1.08,
+    backgroundColor: current?.system?.foreground,
+    border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
+    borderRadius: 4,
+    color: dark,
+  }
+  const tooltipCursor =
+    mode === 'dark'
+      ? { fill: dark ? `${dark}18` : 'rgba(255,255,255,0.06)', stroke: current?.system?.border ?? 'rgba(255,255,255,0.08)' }
+      : { fill: 'rgba(0,0,0,0.04)', stroke: current?.system?.border ?? 'rgba(0,0,0,0.1)' }
 
   const selectedUnpaidCount = markPaidIds
     ? markPaidIds.length
@@ -566,7 +629,6 @@ const InvoicesPage = () => {
   const selectedPaidCount = unmarkPaidIds
     ? unmarkPaidIds.length
     : [...selectedIds].filter((id) => invoices.find((i) => i.id === id)?.status === 'paid').length
-  const dark = current?.system?.dark
 
   const currencyOptions = useMemo(() => {
     const set = new Set(invoices.map((i) => i.currency).filter(Boolean))
@@ -575,7 +637,6 @@ const InvoicesPage = () => {
 
   const hasActiveFilters =
     !!filterStatus ||
-    filterSort !== 'due_asc' ||
     !!filterIssuedFrom ||
     !!filterIssuedTo ||
     !!filterDueFrom ||
@@ -594,8 +655,14 @@ const InvoicesPage = () => {
     exportInvoicesToCsv(invoicesForCurrentMonth, `invoices-${currentYearMonth}.csv`)
   }
 
-  const handleExportInvoice = (inv: Invoice) => {
-    exportInvoicesToCsv([inv], `invoice-${inv.number.replace(/\s+/g, '-')}.csv`)
+  const handleDownloadInvoicePdf = (inv: Invoice) => {
+    const items = getInvoiceLineItems(inv)
+    downloadInvoicePdf({
+      invoice: inv,
+      company,
+      taxRate: company?.taxRate ?? 0,
+      lineItems: items,
+    })
   }
 
   const handleExportSelected = () => {
@@ -614,13 +681,23 @@ const InvoicesPage = () => {
               Track consultant hours and billing
             </Text>
           </div>
-          <Button
-            size="sm"
-            label="Export for current month"
-            startIcon={<Download className="w-4 h-4 shrink-0" />}
-            onClick={handleExportCurrentMonth}
-            disabled={invoicesForCurrentMonth.length === 0}
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="secondaryBrand"
+              size="sm"
+              label="View analytics"
+              startIcon={<BarChart className="w-4 h-4 shrink-0" />}
+              onClick={() => setAnalyticsOpen(true)}
+              disabled={loading || invoices.length === 0}
+            />
+            <Button
+              size="sm"
+              label="Export for current month"
+              startIcon={<Download className="w-4 h-4 shrink-0" />}
+              onClick={handleExportCurrentMonth}
+              disabled={invoicesForCurrentMonth.length === 0}
+            />
+          </div>
         </div>
       </View>
 
@@ -652,109 +729,37 @@ const InvoicesPage = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <Card
-          key="by-status"
-          title="By status"
-          subtitle="Invoice count by status"
-          className="px-4 pb-4"
-        >
-          <div className="h-[280px] w-full">
-            {loading ? (
-              <div className="h-full w-full flex flex-col justify-end gap-3 pb-8">
-                {[60, 80].map((pct, i) => (
-                  <Skeleton key={i} height="h-6" className="max-w-full" style={{ width: `${pct}%` }} />
-                ))}
-              </div>
-            ) : byStatusData.length === 0 ? (
-              <div className="h-full flex items-center justify-center">
-                <Text variant="sm" className="opacity-70">
-                  No invoices yet
-                </Text>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byStatusData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                  <XAxis dataKey="name" tick={chartTickStyle} />
-                  <YAxis tick={chartTickStyle} allowDecimals={false} />
-                  <Tooltip
-                    formatter={(value: number | undefined) => [value ?? 0, 'Count']}
-                    contentStyle={{
-                      fontSize: baseFontSize * 1.08,
-                      backgroundColor: current?.system?.background ?? undefined,
-                      border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
-                      borderRadius: 4,
-                    }}
-                  />
-                  <Bar key="count" dataKey="count" radius={[4, 4, 0, 0]}>
-                    {byStatusData.map((entry, index) => (
-                      <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Card>
-        <Card
-          key="invoice-trend"
-          title="Invoice trend"
-          subtitle="Amount & count by month"
-          className="px-4 pb-4"
-        >
-          <div className="h-[280px] w-full">
-            {loading ? (
-              <div className="h-full w-full flex flex-col justify-end gap-3 pb-8">
-                {[50, 70, 60, 85].map((pct, i) => (
-                  <Skeleton key={i} height="h-6" className="max-w-full" style={{ width: `${pct}%` }} />
-                ))}
-              </div>
-            ) : trendData.length === 0 ? (
-              <div className="h-full flex items-center justify-center">
-                <Text variant="sm" className="opacity-70">
-                  No data yet
-                </Text>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                  <XAxis dataKey="month" tick={chartTickStyle} />
-                  <YAxis tick={chartTickStyle} allowDecimals={false} />
-                  <Tooltip
-                    formatter={(value: number | undefined, name?: string) =>
-                      [name === 'Amount' ? formatCurrency(Number(value ?? 0), 'UGX') : (value ?? 0), name ?? '']
-                    }
-                    contentStyle={{
-                      fontSize: baseFontSize * 1.08,
-                      backgroundColor: current?.system?.background ?? undefined,
-                      border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
-                      borderRadius: 4,
-                    }}
-                  />
-                  <Legend wrapperStyle={legendStyle} />
-                  <Line
-                    type="monotone"
-                    dataKey="amount"
-                    stroke={primaryColor}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    name="Amount"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="count"
-                    stroke={secondaryColor}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    name="Count"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Card>
+      {/* Top charts moved to analytics modal */}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {(
+          [
+            { id: 'all', label: 'All' },
+            { id: 'processing', label: 'Processing' },
+            { id: 'pending', label: 'Pending' },
+            { id: 'paid', label: 'Paid' },
+          ] as const
+        ).map((t) => {
+          const selected = activeTab === t.id
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActiveTab(t.id)}
+              className="px-3 py-2 rounded-base text-sm opacity-90 hover:opacity-100 transition"
+              style={{
+                backgroundColor: selected
+                  ? `${current?.brand?.primary ?? '#682308'}14`
+                  : (current?.system?.foreground ?? '#fff'),
+                color: selected ? (current?.brand?.primary ?? current?.system?.dark) : current?.system?.dark,
+                border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.12)'}`,
+              }}
+              aria-pressed={selected}
+            >
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
       <Card
@@ -862,7 +867,7 @@ const InvoicesPage = () => {
 
             <table className="w-full">
               <thead>
-                <tr style={{ backgroundColor: current?.system?.background }}>
+                <tr style={{ borderBottom: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}` }}>
                   <th className="text-left px-4 py-3 w-10">
                     <input
                       type="checkbox"
@@ -923,6 +928,7 @@ const InvoicesPage = () => {
                     style={{
                       backgroundColor:
                         index % 2 === 0 ? current?.system?.foreground : current?.system?.background,
+                      ...(mode === 'dark' && { borderBottom: `1px solid ${current?.system?.border ?? 'rgba(255,255,255,0.08)'}` }),
                     }}
                   >
                     <td className="px-4 py-3">
@@ -968,11 +974,11 @@ const InvoicesPage = () => {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           type="button"
-                          onClick={() => handleExportInvoice(inv)}
+                          onClick={() => handleDownloadInvoicePdf(inv)}
                           className="p-2 rounded-base opacity-80 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-1"
                           style={{ color: dark }}
-                          title="Export"
-                          aria-label="Export invoice"
+                          title="Download PDF"
+                          aria-label="Download invoice PDF"
                         >
                           <Download className="w-4 h-4" />
                         </button>
@@ -1104,8 +1110,8 @@ const InvoicesPage = () => {
               <CustomSelect
                 label="Status"
                 options={STATUS_OPTIONS}
-                value={filterStatus}
-                onChange={(v) => setFilterStatus((v || '') as InvoiceStatus | '')}
+                value={draftStatus}
+                onChange={(v) => setDraftStatus((v || '') as InvoiceStatus | '')}
                 placeholder="All statuses"
                 aria-label="Filter by status"
                 placement="below"
@@ -1113,8 +1119,8 @@ const InvoicesPage = () => {
               <CustomSelect
                 label="Currency"
                 options={currencyOptions}
-                value={filterCurrency}
-                onChange={(v) => setFilterCurrency(v || '')}
+                value={draftCurrency}
+                onChange={(v) => setDraftCurrency(v || '')}
                 placeholder="All currencies"
                 aria-label="Filter by currency"
                 placement="below"
@@ -1122,8 +1128,8 @@ const InvoicesPage = () => {
               <div className="relative min-h-[3.5rem]">
                 <DatePicker
                   label="Issued date from"
-                  value={filterIssuedFrom}
-                  onChange={setFilterIssuedFrom}
+                  value={draftIssuedFrom}
+                  onChange={setDraftIssuedFrom}
                   placeholder="dd/mm/yyyy"
                   mode="outline"
                 />
@@ -1131,8 +1137,8 @@ const InvoicesPage = () => {
               <div className="relative min-h-[3.5rem]">
                 <DatePicker
                   label="Issued date to"
-                  value={filterIssuedTo}
-                  onChange={setFilterIssuedTo}
+                  value={draftIssuedTo}
+                  onChange={setDraftIssuedTo}
                   placeholder="dd/mm/yyyy"
                   mode="outline"
                 />
@@ -1140,8 +1146,8 @@ const InvoicesPage = () => {
               <div className="relative min-h-[3.5rem]">
                 <DatePicker
                   label="Due date from"
-                  value={filterDueFrom}
-                  onChange={setFilterDueFrom}
+                  value={draftDueFrom}
+                  onChange={setDraftDueFrom}
                   placeholder="dd/mm/yyyy"
                   mode="outline"
                 />
@@ -1149,45 +1155,58 @@ const InvoicesPage = () => {
               <div className="relative min-h-[3.5rem]">
                 <DatePicker
                   label="Due date to"
-                  value={filterDueTo}
-                  onChange={setFilterDueTo}
+                  value={draftDueTo}
+                  onChange={setDraftDueTo}
                   placeholder="dd/mm/yyyy"
                   mode="outline"
                 />
               </div>
-              <Input
+              <CurrencyInput
                 label="Amount min"
-                type="number"
-                min={0}
-                value={filterAmountMin}
-                onChange={(e) => setFilterAmountMin(e.target.value)}
+                value={draftAmountMin}
+                currency={draftCurrency || 'UGX'}
+                onChange={setDraftAmountMin}
                 placeholder="Min amount"
-                aria-label="Amount minimum"
+                ariaLabel="Amount minimum"
+                showCurrencySymbol={false}
               />
-              <Input
+              <CurrencyInput
                 label="Amount max"
-                type="number"
-                min={0}
-                value={filterAmountMax}
-                onChange={(e) => setFilterAmountMax(e.target.value)}
+                value={draftAmountMax}
+                currency={draftCurrency || 'UGX'}
+                onChange={setDraftAmountMax}
                 placeholder="Max amount"
-                aria-label="Amount maximum"
+                ariaLabel="Amount maximum"
+                showCurrencySymbol={false}
               />
-              <CustomSelect
-                label="Sort by"
-                options={SORT_OPTIONS}
-                value={filterSort}
-                onChange={(v) => setFilterSort(v || 'due_asc')}
-                placeholder="Sort by"
-                aria-label="Sort invoices"
-                placement="below"
+              <Button
+                size="sm"
+                label="Apply filters"
+                onClick={() => {
+                  setFilterStatus(draftStatus)
+                  setFilterIssuedFrom(draftIssuedFrom)
+                  setFilterIssuedTo(draftIssuedTo)
+                  setFilterDueFrom(draftDueFrom)
+                  setFilterDueTo(draftDueTo)
+                  setFilterAmountMin(draftAmountMin)
+                  setFilterAmountMax(draftAmountMax)
+                  setFilterCurrency(draftCurrency)
+                  closeFilterSidebar()
+                }}
               />
               <Button
                 size="sm"
                 label="Reset filters"
                 onClick={() => {
+                  setDraftStatus('')
+                  setDraftIssuedFrom('')
+                  setDraftIssuedTo('')
+                  setDraftDueFrom('')
+                  setDraftDueTo('')
+                  setDraftAmountMin('')
+                  setDraftAmountMax('')
+                  setDraftCurrency('')
                   setFilterStatus('')
-                  setFilterSort('due_asc')
                   setFilterIssuedFrom('')
                   setFilterIssuedTo('')
                   setFilterDueFrom('')
@@ -1211,6 +1230,10 @@ const InvoicesPage = () => {
           const bank = viewInvoice.bank ?? DEFAULT_BANK
           const lineItems = getInvoiceLineItems(viewInvoice)
           const logoUrl = viewInvoice.logoUrl ?? LOGIN_LOGO_URL
+          const taxRate = company?.taxRate ?? 0
+          const subtotal = viewInvoice.amount
+          const taxAmount = taxRate > 0 ? Math.round((subtotal * taxRate) / 100) : 0
+          const totalWithTax = subtotal + taxAmount
           return (
             <motion.div
               className="min-w-0 w-full flex flex-col flex-1 min-h-0"
@@ -1252,9 +1275,6 @@ const InvoicesPage = () => {
                   <Logo size="lg" src={logoUrl} className="shrink-0" />
                   <div className="text-right space-y-0.5" style={{ color: dark }}>
                     <Text variant="sm" className="block">Bill to: {viewInvoice.clientName}</Text>
-                    {viewInvoice.consultantName && (
-                      <Text variant="sm" className="block">Consultant: {viewInvoice.consultantName}</Text>
-                    )}
                     <Text variant="sm" className="block">Invoice ID: {viewInvoice.number}</Text>
                     <Text variant="sm" className="block">Date of issue: {formatDateShort(viewInvoice.issuedDate)}</Text>
                     <Text variant="sm" className="block">Payment due: {formatDateShort(viewInvoice.dueDate)}</Text>
@@ -1275,9 +1295,9 @@ const InvoicesPage = () => {
                 </h2>
                 <table className="w-full">
                   <thead>
-                    <tr style={{ backgroundColor: current?.system?.background }}>
+                    <tr>
                       <th className="text-left px-4 py-3">
-                        <Text variant="sm" className="font-medium" style={{ color: dark }}>Consultant / period</Text>
+                        <Text variant="sm" className="font-medium" style={{ color: dark }}>Period</Text>
                       </th>
                       <th className="text-right px-4 py-3 w-20">
                         <Text variant="sm" className="font-medium" style={{ color: dark }}>Hours</Text>
@@ -1314,12 +1334,23 @@ const InvoicesPage = () => {
 
                 {/* Amount due — right-aligned, prominent */}
                 <div className="mt-6 flex flex-col items-end">
-                  <Text variant="sm" className="opacity-90">Amount due:</Text>
-                  <span
-                    className="font-bold mt-0.5"
-                    style={{ fontSize: baseFontSize * 1.5, color: dark }}
-                  >
-                    {formatCurrency(viewInvoice.amount, viewInvoice.currency)}
+                  <Text variant="sm" className="opacity-90">Subtotal:</Text>
+                  <span className="mt-0.5" style={{ fontSize: baseFontSize * 1.1, color: dark }}>
+                    {formatCurrency(subtotal, viewInvoice.currency)}
+                  </span>
+                  {taxRate > 0 && (
+                    <>
+                      <Text variant="sm" className="opacity-90 mt-2">
+                        Tax ({taxRate}%):
+                      </Text>
+                      <span className="mt-0.5" style={{ fontSize: baseFontSize * 1.1, color: dark }}>
+                        {formatCurrency(taxAmount, viewInvoice.currency)}
+                      </span>
+                    </>
+                  )}
+                  <Text variant="sm" className="opacity-90 mt-3">Total amount due:</Text>
+                  <span className="font-bold mt-0.5" style={{ fontSize: baseFontSize * 1.5, color: dark }}>
+                    {formatCurrency(totalWithTax, viewInvoice.currency)}
                   </span>
                 </div>
               </div>
@@ -1355,6 +1386,12 @@ const InvoicesPage = () => {
                 className="shrink-0 flex flex-row justify-end gap-3 py-4 px-8 border-t"
                 style={{ borderColor: current?.system?.border }}
               >
+                <Button
+                  label="Download PDF"
+                  startIcon={<Download className="w-4 h-4 shrink-0" />}
+                  variant="secondary"
+                  onClick={() => handleDownloadInvoicePdf(viewInvoice)}
+                />
                 {viewInvoice.status !== 'paid' ? (
                   <Button
                     label="Mark as paid"
@@ -1381,6 +1418,111 @@ const InvoicesPage = () => {
         })()}
       </Modal>
 
+      {/* Analytics modal */}
+      <Modal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} variant="wide">
+        <div className="p-6 flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
+          <Text className="font-semibold" style={{ fontSize: baseFontSize * 1.15 }}>
+            Invoice analytics
+          </Text>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card
+              key="by-status"
+              title="By status"
+              subtitle="Invoice count by status"
+              className="px-4 pb-4"
+            >
+              <div className="h-[260px] w-full">
+                {loading ? (
+                  <div className="h-full w-full flex flex-col justify-end gap-3 pb-8">
+                    {[60, 80].map((pct, i) => (
+                      <Skeleton key={i} height="h-6" className="max-w-full" style={{ width: `${pct}%` }} />
+                    ))}
+                  </div>
+                ) : byStatusData.length === 0 ? (
+                  <div className="h-full flex items-center justify-center">
+                    <Text variant="sm" className="opacity-70">
+                      No invoices yet
+                    </Text>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={byStatusData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                      <XAxis dataKey="name" tick={tickProps} />
+                      <YAxis tick={tickProps} allowDecimals={false} />
+                      <Tooltip
+                        formatter={(value: number | undefined) => [value ?? 0, 'Count']}
+                        contentStyle={tooltipContentStyle}
+                        cursor={tooltipCursor}
+                      />
+                      <Bar key="count" dataKey="count" radius={[4, 4, 0, 0]}>
+                        {byStatusData.map((entry, index) => (
+                          <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </Card>
+            <Card
+              key="invoice-trend"
+              title="Invoice trend"
+              subtitle="Amount & count by month"
+              className="px-4 pb-4"
+            >
+              <div className="h-[260px] w-full">
+                {loading ? (
+                  <div className="h-full w-full flex flex-col justify-end gap-3 pb-8">
+                    {[50, 70, 60, 85].map((pct, i) => (
+                      <Skeleton key={i} height="h-6" className="max-w-full" style={{ width: `${pct}%` }} />
+                    ))}
+                  </div>
+                ) : trendData.length === 0 ? (
+                  <div className="h-full flex items-center justify-center">
+                    <Text variant="sm" className="opacity-70">
+                      No data yet
+                    </Text>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                      <XAxis dataKey="month" tick={tickProps} />
+                      <YAxis tick={tickProps} allowDecimals={false} />
+                      <Tooltip
+                        formatter={(value: number | undefined, name?: string) =>
+                          [name === 'Amount' ? formatCurrency(Number(value ?? 0), 'UGX') : (value ?? 0), name ?? '']
+                        }
+                        contentStyle={tooltipContentStyle}
+                        cursor={tooltipCursor}
+                      />
+                      <Legend wrapperStyle={legendStyle} />
+                      <Line
+                        type="monotone"
+                        dataKey="amount"
+                        stroke={primaryColor}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        name="Amount"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="count"
+                        stroke={secondaryColor}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        name="Count"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
+      </Modal>
+
       {/* Mark as paid confirm modal */}
       <Modal open={!!markPaidIds?.length} onClose={() => setMarkPaidIds(null)}>
         <div className="p-6">
@@ -1391,7 +1533,7 @@ const InvoicesPage = () => {
               : `Mark ${markPaidIds?.length ?? 0} invoices as paid?`}
           </Text>
           <div className="flex justify-end gap-2">
-            <Button label="Cancel" variant="secondary" onClick={() => setMarkPaidIds(null)} />
+            <Button label="Cancel" variant="background" onClick={() => setMarkPaidIds(null)} />
             <Button
               label="Mark as paid"
               startIcon={<CheckCircle className="w-4 h-4 shrink-0" />}
@@ -1412,7 +1554,7 @@ const InvoicesPage = () => {
               : `Unmark ${unmarkPaidIds?.length ?? 0} invoices? They will be set back to Unpaid.`}
           </Text>
           <div className="flex justify-end gap-2">
-            <Button label="Cancel" variant="secondary" onClick={() => setUnmarkPaidIds(null)} />
+            <Button label="Cancel" variant="background" onClick={() => setUnmarkPaidIds(null)} />
             <Button
               label="Unmark"
               startIcon={<Undo2 className="w-4 h-4 shrink-0" />}

@@ -61,6 +61,36 @@ const data: Milestone[] = [
     createdAt: '2025-02-05T00:00:00Z',
     workflowStateId: 's2',
   },
+  {
+    id: 'm1e',
+    projectId: 'p1',
+    name: 'Development complete',
+    priority: 'high',
+    targetDate: '2026-05-10',
+    taskIds: [],
+    createdAt: '2026-02-01T00:00:00Z',
+    workflowStateId: 's3',
+  },
+  {
+    id: 'm1f',
+    projectId: 'p1',
+    name: 'UAT and feedback',
+    priority: 'medium',
+    targetDate: '2026-06-20',
+    taskIds: [],
+    createdAt: '2026-03-15T00:00:00Z',
+    workflowStateId: 's2',
+  },
+  {
+    id: 'm1g',
+    projectId: 'p1',
+    name: 'Go-live and hypercare',
+    priority: 'high',
+    targetDate: '2026-07-15',
+    taskIds: [],
+    createdAt: '2026-04-01T00:00:00Z',
+    workflowStateId: 's1',
+  },
 ]
 
 export const milestoneRepo = {

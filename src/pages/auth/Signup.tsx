@@ -4,10 +4,8 @@ import View from '../../components/base/View'
 import Text from '../../components/base/Text'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
 import { Input, Button, AlertModal } from '../../components/ui'
-import { userService } from '../../services'
-import { Authstore } from '../../data/Authstore'
+import { authService } from '../../services/authService'
 import { Themestore } from '../../data/Themestore'
-import type { AuthUser } from '../../types'
 
 const Signup = () => {
   const [name, setName] = useState('')
@@ -16,7 +14,6 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { setUser } = Authstore()
   const { current } = Themestore()
   const navigate = useNavigate()
 
@@ -33,25 +30,14 @@ const Signup = () => {
     }
     setLoading(true)
     try {
-      // Placeholder: in a real app you would call a signup API, then redirect to verify-email or login
-      const existing = await userService.getByEmail(email)
-      if (existing) {
-        setError('An account with this email already exists.')
-        setLoading(false)
-        return
-      }
-      // Demo: create in-memory and sign in (mock repo allows create)
-      const user = await userService.create({
+      await authService.signup({
         email,
-        name: name || email.split('@')[0],
-        role: 'consultant',
-        companyId: 'c1',
+        name: name || undefined,
+        password,
       })
-      const authUser: AuthUser = { ...user }
-      setUser(authUser)
       navigate('/app')
-    } catch {
-      setError('Something went wrong.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {
       setLoading(false)
     }
@@ -115,6 +101,7 @@ const Signup = () => {
             label={loading ? 'Creating account…' : 'Create account'}
             fullWidth
             disabled={loading}
+            loading={loading}
           />
         </form>
         <div className="mt-4 text-center">

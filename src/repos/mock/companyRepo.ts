@@ -1,8 +1,30 @@
 import type { Company } from '../../types'
 
 const data: Company[] = [
-  { id: 'c1', name: 'Acme Corp', subscription: 'paid', createdAt: '2025-01-01T00:00:00Z' },
-  { id: 'c2', name: 'Startup Co', subscription: 'free', createdAt: '2025-02-01T00:00:00Z' },
+  {
+    id: 'c1',
+    name: 'Acme Corp',
+    subscription: 'paid',
+    createdAt: '2025-01-01T00:00:00Z',
+    taxRate: 18,
+    storageLimitMb: 10240,
+    storageUsedMb: 2048,
+    address: 'Plot 1, Kampala, Uganda',
+    phone: '+256 700 000 000',
+    email: 'accounts@acmecorp.com',
+  },
+  {
+    id: 'c2',
+    name: 'Startup Co',
+    subscription: 'free',
+    createdAt: '2025-02-01T00:00:00Z',
+    taxRate: 0,
+    storageLimitMb: 2048,
+    storageUsedMb: 256,
+    address: 'Nairobi, Kenya',
+    phone: '+254 700 000 000',
+    email: 'info@startup.co',
+  },
 ]
 
 export const companyRepo = {

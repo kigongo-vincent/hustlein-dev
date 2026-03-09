@@ -34,13 +34,25 @@ const chartTickStyle = { fontSize: 12 }
 
 const MilestoneTasksPage = () => {
   const { projectId, milestoneId } = useParams<{ projectId: string; milestoneId: string }>()
-  const { current } = Themestore()
+  const { current, mode } = Themestore()
   const dark = current?.system?.dark
   const primary = current?.brand?.primary ?? '#682308'
   const secondary = current?.brand?.secondary ?? '#FF9600'
   const borderColor = current?.system?.border
   const fg = current?.system?.foreground
-  const gridColor = dark ? `${dark}18` : 'rgba(0,0,0,0.08)'
+  const gridColor = dark ? `${dark}40` : 'rgba(0,0,0,0.08)'
+  const tickProps = dark ? { ...chartTickStyle, fill: dark } : chartTickStyle
+  const tooltipContentStyle = {
+    fontSize: 13.5,
+    backgroundColor: fg ?? undefined,
+    border: `1px solid ${borderColor ?? 'rgba(0,0,0,0.1)'}`,
+    borderRadius: 4,
+    color: dark,
+  }
+  const tooltipCursor =
+    mode === 'dark'
+      ? { fill: dark ? `${dark}18` : 'rgba(255,255,255,0.06)', stroke: borderColor ?? 'rgba(255,255,255,0.08)' }
+      : { fill: 'rgba(0,0,0,0.04)', stroke: borderColor ?? 'rgba(0,0,0,0.1)' }
 
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [project, setProject] = useState<Project | null>(null)
@@ -309,22 +321,18 @@ const MilestoneTasksPage = () => {
                   layout="vertical"
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
-                  <XAxis type="number" tick={chartTickStyle} allowDecimals={false} />
+                  <XAxis type="number" tick={tickProps} allowDecimals={false} />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    tick={chartTickStyle}
+                    tick={tickProps}
                     width={100}
                     tickFormatter={(v) => (v.length > 12 ? v.slice(0, 11) + '…' : v)}
                   />
                   <Tooltip
                     formatter={(value: number | undefined) => [value ?? 0, 'Tasks']}
-                    contentStyle={{
-                      fontSize: 13.5,
-                      backgroundColor: fg ?? undefined,
-                      border: `1px solid ${borderColor ?? 'rgba(0,0,0,0.1)'}`,
-                      borderRadius: 4,
-                    }}
+                    contentStyle={tooltipContentStyle}
+                    cursor={tooltipCursor}
                   />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]} name="Tasks">
                     {contributionData.map((_, i) => (
@@ -357,20 +365,16 @@ const MilestoneTasksPage = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
                   <XAxis
                     dataKey="name"
-                    tick={chartTickStyle}
+                    tick={tickProps}
                     angle={stateData.length > 4 ? -25 : 0}
                     textAnchor={stateData.length > 4 ? 'end' : 'middle'}
                     interval={0}
                   />
-                  <YAxis tick={chartTickStyle} allowDecimals={false} />
+                  <YAxis tick={tickProps} allowDecimals={false} />
                   <Tooltip
                     formatter={(value: number | undefined) => [value ?? 0, 'Tasks']}
-                    contentStyle={{
-                      fontSize: 13.5,
-                      backgroundColor: fg ?? undefined,
-                      border: `1px solid ${borderColor ?? 'rgba(0,0,0,0.1)'}`,
-                      borderRadius: 4,
-                    }}
+                    contentStyle={tooltipContentStyle}
+                    cursor={tooltipCursor}
                   />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                     {stateData.map((_, i) => (
@@ -500,7 +504,7 @@ const MilestoneTasksPage = () => {
             </div>
           )}
           <footer className="flex justify-end pt-4 mt-4 border-t" style={{ borderColor }}>
-            <Button label="Close" onClick={() => setViewTask(null)} />
+            <Button variant="background" label="Close" onClick={() => setViewTask(null)} />
           </footer>
         </div>
       </Modal>
@@ -551,7 +555,7 @@ const MilestoneTasksPage = () => {
             />
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor }}>
-            <Button variant="secondary" label="Cancel" onClick={() => !actionSaving && setEditTask(null)} disabled={actionSaving} />
+            <Button variant="background" label="Cancel" onClick={() => !actionSaving && setEditTask(null)} disabled={actionSaving} />
             <Button label="Save" onClick={handleSaveEdit} disabled={actionSaving || !editTitle.trim() || !editOwnerId} />
           </footer>
         </div>
@@ -567,7 +571,7 @@ const MilestoneTasksPage = () => {
             This task will be removed from the milestone. This action cannot be undone.
           </Text>
           <footer className="flex justify-end gap-2 pt-4 border-t" style={{ borderColor }}>
-            <Button variant="secondary" label="Cancel" onClick={() => !actionSaving && setDeleteTaskId(null)} disabled={actionSaving} />
+            <Button variant="background" label="Cancel" onClick={() => !actionSaving && setDeleteTaskId(null)} disabled={actionSaving} />
             <Button variant="danger" label="Delete" onClick={handleDelete} disabled={actionSaving} />
           </footer>
         </div>
