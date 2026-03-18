@@ -54,13 +54,14 @@ const ProjectList = () => {
   const [actionSaving, setActionSaving] = useState(false)
 
   const isConsultant = user?.role === 'consultant'
+  const isFreelancer = user?.role === 'freelancer'
   const isProjectLead = user?.role === 'project_lead'
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
       let projectList: Project[]
-      if (isConsultant && user?.id) {
+      if ((isConsultant || isFreelancer) && user?.id) {
         const tasks = await taskService.listByOwner(user.id)
         const projectIds = [...new Set(tasks.map((t) => t.projectId).filter(Boolean))]
         const results = await Promise.all(projectIds.map((id) => projectService.get(id)))
@@ -70,7 +71,7 @@ const ProjectList = () => {
       } else {
         projectList = await projectService.list()
       }
-      const userList = await userService.list()
+      const userList = isFreelancer ? [] : await userService.list()
       setProjects(projectList)
       const leadMap: Record<string, string> = {}
       const uMap: Record<string, { name: string; avatarUrl?: string }> = {}
@@ -104,7 +105,7 @@ const ProjectList = () => {
     } finally {
       setLoading(false)
     }
-  }, [user?.id, user?.role, isConsultant, isProjectLead])
+  }, [user?.id, user?.role, isConsultant, isFreelancer, isProjectLead])
 
   useEffect(() => {
     loadData()

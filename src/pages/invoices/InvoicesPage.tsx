@@ -20,6 +20,7 @@ import { Card, Button, Skeleton, Modal, CustomSelect, DatePicker, Input, Currenc
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { companyService } from '../../services'
+import { invoiceService } from '../../services/invoiceService'
 import type { Invoice, InvoiceStatus, InvoiceLineItem, Company } from '../../types'
 import { downloadInvoicePdf } from '../../utils/invoicePdf'
 import {
@@ -332,8 +333,8 @@ function getStatIcon(label: string) {
 const InvoicesPage = () => {
   const { current, mode } = Themestore()
   const { user } = Authstore()
-  const [invoices, setInvoices] = useState<Invoice[]>(() => [...MOCK_INVOICES])
-  const [loading] = useState(false)
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
   const [markPaidIds, setMarkPaidIds] = useState<string[] | null>(null)
@@ -371,6 +372,30 @@ const InvoicesPage = () => {
       if (!user?.companyId) return
       const c = await companyService.get(user.companyId)
       if (!cancelled) setCompany(c)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [user?.companyId])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!user?.companyId) {
+        setInvoices([])
+        setLoading(false)
+        return
+      }
+      setLoading(true)
+      try {
+        const list = await invoiceService.listByCompany(user.companyId)
+        if (!cancelled) setInvoices(list)
+      } catch {
+        // Fallback to mock if API isn't reachable during dev.
+        if (!cancelled) setInvoices([...MOCK_INVOICES])
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     })()
     return () => {
       cancelled = true
@@ -525,20 +550,27 @@ const InvoicesPage = () => {
   const handleMarkPaidConfirm = () => {
     if (!markPaidIds?.length) return
     setSaving(true)
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        markPaidIds.includes(inv.id)
-          ? { ...inv, status: 'paid' as const, paidAt: new Date().toISOString().slice(0, 10) }
-          : inv
-      )
-    )
-    setMarkPaidIds(null)
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      markPaidIds.forEach((id) => next.delete(id))
-      return next
-    })
-    setSaving(false)
+    ;(async () => {
+      try {
+        const updated = await Promise.all(
+          markPaidIds.map(async (id) => (await invoiceService.markPaid(id)) ?? null)
+        )
+        setInvoices((prev) =>
+          prev.map((inv) => {
+            const u = updated.find((x) => x?.id === inv.id)
+            return u ? u : inv
+          })
+        )
+        setMarkPaidIds(null)
+        setSelectedIds((prev) => {
+          const next = new Set(prev)
+          markPaidIds.forEach((id) => next.delete(id))
+          return next
+        })
+      } finally {
+        setSaving(false)
+      }
+    })()
   }
 
   const handleUnmarkPaidConfirm = () => {

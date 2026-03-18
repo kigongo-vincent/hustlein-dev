@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router'
 import { Authstore } from "../../data/Authstore"
 import CompanyAdmin from "../../components/Dashboards/CompanyAdmin"
 import Consultant from "../../components/Dashboards/Consultant"
@@ -16,6 +17,10 @@ const Dashboard = () => {
 
   if (user?.role === 'consultant' || user?.role === 'project_lead') {
     return <Consultant />
+  }
+
+  if (user?.role === 'freelancer') {
+    return <Navigate to="/app/marketplace" replace />
   }
 
   return <CompanyAdmin />

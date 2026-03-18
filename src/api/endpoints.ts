@@ -96,6 +96,27 @@ export const endpoints = {
   invoicesByCompany: (companyId: string) => path(['companies', companyId, 'invoices']),
   invoice: (id: string) => path(['invoices', id]),
   invoiceMarkPaid: (id: string) => path(['invoices', id, 'paid']),
+
+  // Marketplace
+  marketplaceProjects: () => path(['marketplace', 'projects']),
+  marketplaceProject: (id: string) => path(['marketplace', 'projects', id]),
+  marketplaceApply: (postingId: string) => path(['marketplace', 'projects', postingId, 'apply']),
+  marketplaceApplicationsByPosting: (postingId: string) =>
+    path(['marketplace', 'projects', postingId, 'applications']),
+  marketplaceApplication: (applicationId: string) => path(['marketplace', 'applications', applicationId]),
+  marketplaceMyApplications: () => path(['marketplace', 'applications', 'mine']),
+  marketplaceHire: (applicationId: string) => path(['marketplace', 'applications', applicationId, 'hire']),
+
+  // Assignments
+  myAssignments: () => path(['assignments', 'mine']),
+  projectAssignments: (projectId: string) => path(['projects', projectId, 'assignments']),
+
+  // Billing
+  assignmentTimesheets: (assignmentId: string) => path(['assignments', assignmentId, 'timesheets']),
+  approveTimesheet: (id: string) => path(['timesheets', id, 'approve']),
+  assignmentBillingMilestones: (assignmentId: string) => path(['assignments', assignmentId, 'billing-milestones']),
+  approveBillingMilestone: (id: string) => path(['billing-milestones', id, 'approve']),
+  generateAssignmentInvoice: (assignmentId: string) => path(['assignments', assignmentId, 'invoices', 'generate']),
 } as const
 
 export type Endpoints = typeof endpoints

@@ -19,11 +19,20 @@ export interface ThemeI {
     /** Text/icon color on primary background (e.g. dark mode when primary is white) */
     onPrimary?: string;
   };
+  accent?: {
+    blue: string;
+    purple: string;
+    pink: string;
+    green: string;
+    yellow: string;
+    teal: string;
+  };
 }
 
 export type ThemeOverrides = {
   system?: Partial<ThemeI["system"]>;
   brand?: Partial<ThemeI["brand"]>;
+  accent?: Partial<NonNullable<ThemeI["accent"]>>;
 };
 
 export interface ThemestoreI {
@@ -51,6 +60,14 @@ const darkTheme: ThemeI = {
     secondary: "#FF9600",
     onPrimary: "#0a0a0a",
   },
+  accent: {
+    blue: "#4DABF7",
+    purple: "#B197FC",
+    pink: "#F783AC",
+    green: "#63E6BE",
+    yellow: "#FFD43B",
+    teal: "#38D9A9",
+  },
 };
 
 const lightTheme: ThemeI = {
@@ -66,6 +83,14 @@ const lightTheme: ThemeI = {
     secondary: "#FF9600",
     primary: "#682308",
   },
+  accent: {
+    blue: "#228BE6",
+    purple: "#7950F2",
+    pink: "#E64980",
+    green: "#12B886",
+    yellow: "#FAB005",
+    teal: "#0CA678",
+  },
 };
 
 function mergeTheme(base: ThemeI, overrides: ThemeOverrides | null): ThemeI {
@@ -73,6 +98,7 @@ function mergeTheme(base: ThemeI, overrides: ThemeOverrides | null): ThemeI {
   return {
     system: { ...base.system, ...overrides.system },
     brand: { ...base.brand, ...overrides.brand },
+    accent: { ...base.accent, ...(overrides as any).accent },
   };
 }
 

@@ -4,9 +4,8 @@ import { motion } from 'framer-motion'
 import { Authstore } from '../../data/Authstore'
 import Logo from '../../components/base/Logo'
 import Text from '../../components/base/Text'
-import View from '../../components/base/View'
 
-const SPLASH_DURATION_MS = 12000
+const SPLASH_DURATION_MS = 1500
 
 const Splashscreen = () => {
   const user = Authstore((s) => s.user)
@@ -20,9 +19,9 @@ const Splashscreen = () => {
   }, [navigate, user])
 
   return (
-    <View
-      bg="p"
-      className="flex-1 min-h-0 w-full py-10 flex flex-col items-center justify-between overflow-hidden"
+    <div
+      // bg="p"
+      className="flex-1 min-h-0 bg-[#682308] w-full py-10 flex flex-col items-center justify-between overflow-hidden"
     >
       <div />
       <motion.div
@@ -44,7 +43,7 @@ const Splashscreen = () => {
           Powered by <span className="underline">tekjuice.co.uk</span>
         </Text>
       </motion.div>
-    </View>
+    </div>
   )
 }
 

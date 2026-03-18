@@ -30,12 +30,14 @@ import {
   MessageSquare,
   Folder,
   Check,
+  Receipt,
 } from 'lucide-react'
 
 import { formatDate, getChartColors } from './utils'
 import type { ProjectWithMeta } from './types'
 import ProjectChatSidebar from './ProjectChatSidebar'
 import ProjectFilesModal from './ProjectFilesModal'
+import ProjectBillingModal from './ProjectBillingModal'
 import EditProjectModal from './EditProjectModal'
 import DeleteProjectModal from './DeleteProjectModal'
 import SuspendProjectModal from './SuspendProjectModal'
@@ -92,9 +94,10 @@ const ProjectDetail = () => {
   const [chatSidebarOpen, setChatSidebarOpen] = useState(false)
   const [folderModalOpen, setFolderModalOpen] = useProjectDetailModal(id, 'folder')
   const [logTimeModalOpen, setLogTimeModalOpen] = useState(false)
+  const [billingOpen, setBillingOpen] = useState(false)
 
   const navigate = useNavigate()
-  const isConsultant = user?.role === 'consultant'
+  const isContributor = user?.role === 'consultant' || user?.role === 'freelancer'
 
   const loadData = useCallback(async () => {
     if (!id) return
@@ -105,7 +108,7 @@ const ProjectDetail = () => {
         taskService.listByProject(id),
         milestoneService.listByProject(id),
         commentService.listByEntity('doc', id),
-        userService.list(),
+        user?.role === 'freelancer' ? Promise.resolve([]) : userService.list(),
       ])
       setProject(proj ?? null)
       setTasks(taskList)
@@ -470,7 +473,9 @@ const ProjectDetail = () => {
           style={{ borderColor, paddingLeft: 12, paddingRight: 8 }}
         >
           <div className="min-w-0 flex-1" style={{ paddingLeft: 4 }}>
-            <p className="font-medium truncate" style={{ color: dark }}>{project.name}</p>
+            <Text className="font-medium truncate" style={{ color: dark }}>
+              {project.name}
+            </Text>
             <Text variant="sm" className="opacity-70 truncate" style={{ color: dark }}>
               Lead: {leadName} · {tasks.length} task{tasks.length !== 1 ? 's' : ''}
             </Text>
@@ -491,14 +496,32 @@ const ProjectDetail = () => {
           </button>
           <button
             type="button"
-            onClick={() => (isConsultant ? setLogTimeModalOpen(true) : setAddMilestoneOpen(true))}
+            onClick={() =>
+              isContributor
+                ? user?.role === 'consultant'
+                  ? setLogTimeModalOpen(true)
+                  : navigate('/app/contracts')
+                : setAddMilestoneOpen(true)
+            }
             className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
             style={{ color: dark, backgroundColor: 'transparent' }}
-            title={isConsultant ? 'Log time' : 'Add milestone'}
-            aria-label={isConsultant ? 'Log time' : 'Add milestone'}
+            title={isContributor ? 'Log time' : 'Add milestone'}
+            aria-label={isContributor ? 'Log time' : 'Add milestone'}
           >
             <Plus className="w-5 h-5" />
           </button>
+          {!isContributor && (
+            <button
+              type="button"
+              onClick={() => setBillingOpen(true)}
+              className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+              style={{ color: dark, backgroundColor: 'transparent' }}
+              title="Billing"
+              aria-label="Open billing"
+            >
+              <Receipt className="w-5 h-5" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setAnalyticsOpen(true)}
@@ -519,7 +542,7 @@ const ProjectDetail = () => {
           >
             <LayoutGrid className="w-5 h-5" />
           </button>
-          {!isConsultant && (
+          {!isContributor && (
             <>
           <button
             type="button"
@@ -1054,13 +1077,22 @@ const ProjectDetail = () => {
 
       <ProjectFilesModal open={folderModalOpen} onClose={() => setFolderModalOpen(false)} />
 
-      {isConsultant && (
+      {user?.role === 'consultant' && (
         <LogTimeModal
           open={logTimeModalOpen}
           onClose={() => setLogTimeModalOpen(false)}
           onSaved={() => loadData()}
           initialProjectId={id ?? undefined}
           initialMilestoneId={milestones[0]?.id ?? undefined}
+        />
+      )}
+
+      {!isContributor && (
+        <ProjectBillingModal
+          open={billingOpen}
+          onClose={() => setBillingOpen(false)}
+          projectId={project.id}
+          projectName={project.name}
         />
       )}
     </div>

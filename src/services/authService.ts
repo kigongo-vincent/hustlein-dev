@@ -13,6 +13,7 @@ export interface SignupPayload {
   password: string
   role?: string
   companyId?: string
+  companyName?: string
 }
 
 interface AuthResponse {

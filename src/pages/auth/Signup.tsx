@@ -8,7 +8,9 @@ import { authService } from '../../services/authService'
 import { Themestore } from '../../data/Themestore'
 
 const Signup = () => {
+  const [accountType, setAccountType] = useState<'freelancer' | 'company'>('freelancer')
   const [name, setName] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -28,12 +30,18 @@ const Signup = () => {
       setError('Password must be at least 8 characters.')
       return
     }
+    if (accountType === 'company' && !companyName.trim()) {
+      setError('Company name is required.')
+      return
+    }
     setLoading(true)
     try {
       await authService.signup({
         email,
         name: name || undefined,
         password,
+        role: accountType === 'freelancer' ? 'freelancer' : 'company_admin',
+        companyName: accountType === 'company' ? companyName.trim() : undefined,
       })
       navigate('/app')
     } catch (err) {
@@ -61,6 +69,42 @@ const Signup = () => {
           </Text>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Text variant="sm" className="font-medium">
+              Account type
+            </Text>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setAccountType('freelancer')}
+                className="px-3 py-2 rounded-base text-sm  transition opacity-90 hover:opacity-100"
+                style={{
+                  // borderColor: current?.system?.border ?? 'rgba(0,0,0,0.12)',
+                  backgroundColor: accountType === 'freelancer' ? current?.system?.background : current?.system?.foreground,
+                  color: current?.system?.dark,
+                  fontWeight: accountType === 'freelancer' ? 600 : 500,
+                }}
+                aria-pressed={accountType === 'freelancer'}
+              >
+                Freelancer
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountType('company')}
+                className="px-3 py-2 rounded-base text-sm  transition opacity-90 hover:opacity-100"
+                style={{
+                  // borderColor: current?.system?.border ?? 'rgba(0,0,0,0.12)',
+                  backgroundColor: accountType === 'company' ? current?.system?.background : current?.system?.foreground,
+                  color: current?.system?.dark,
+                  fontWeight: accountType === 'company' ? 600 : 500,
+                }}
+                aria-pressed={accountType === 'company'}
+              >
+                Company
+              </button>
+            </div>
+          </div>
+
           <Input
             label="Name"
             type="text"
@@ -69,10 +113,21 @@ const Signup = () => {
             onChange={(e) => setName(e.target.value)}
             autoComplete="name"
           />
+          {accountType === 'company' && (
+            <Input
+              label="Company name"
+              type="text"
+              placeholder="Your company"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              required
+              autoComplete="organization"
+            />
+          )}
           <Input
             label="Email"
             type="email"
-            placeholder="you@company.com"
+            placeholder={accountType === 'company' ? 'you@company.com' : 'you@email.com'}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required

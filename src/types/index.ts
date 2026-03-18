@@ -1,5 +1,5 @@
 // User & Auth
-export type UserRole = 'super_admin' | 'company_admin' | 'project_lead' | 'consultant'
+export type UserRole = 'super_admin' | 'company_admin' | 'project_lead' | 'consultant' | 'freelancer'
 /** 'on_leave' for suspended / put on leave */
 export type UserStatus = 'active' | 'on_leave'
 
@@ -19,6 +19,109 @@ export interface User {
 }
 export interface AuthUser extends User {
   token?: string
+}
+
+// Marketplace
+export type MarketplaceBudgetType = 'hourly' | 'fixed' | 'hybrid'
+export type MarketplacePostingStatus = 'open' | 'closed'
+
+export interface ProjectPosting {
+  id: string
+  companyId: string
+  createdById: string
+  title: string
+  description: string
+  budgetType: MarketplaceBudgetType
+  hourlyMin?: number
+  hourlyMax?: number
+  fixedMin?: number
+  fixedMax?: number
+  currency: string
+  requiredSkills?: string[]
+  status: MarketplacePostingStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export type ApplicationStatus = 'applied' | 'shortlisted' | 'rejected' | 'withdrawn' | 'hired'
+
+export interface ProjectApplication {
+  id: string
+  postingId: string
+  companyId: string
+  freelancerId: string
+  coverLetter: string
+  proposedHourlyRate?: number
+  proposedFixed?: number
+  currency: string
+  status: ApplicationStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export interface HireResult {
+  projectId: string
+  assignmentId: string
+  freelancerId: string
+  companyId: string
+  billingType: 'hourly' | 'fixed' | 'hybrid'
+  currency: string
+  hourlyRate?: number | null
+  fixedBudget?: number | null
+}
+
+export interface MyAssignment {
+  id: string
+  projectId: string
+  projectName: string
+  companyId: string
+  companyName: string
+  billingType: 'hourly' | 'fixed' | 'hybrid'
+  hourlyRate?: number
+  fixedBudget?: number
+  currency: string
+  status: 'active' | 'completed' | 'terminated'
+}
+
+export type TimesheetStatus = 'submitted' | 'approved' | 'rejected'
+export interface TimesheetEntry {
+  id: string
+  assignmentId: string
+  companyId: string
+  freelancerId: string
+  workDate: string
+  minutes: number
+  notes: string
+  status: TimesheetStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export type BillingMilestoneStatus = 'pending' | 'approved' | 'invoiced' | 'paid'
+export interface BillingMilestone {
+  id: string
+  assignmentId: string
+  companyId: string
+  freelancerId: string
+  title: string
+  amount: number
+  currency: string
+  dueDate?: string
+  status: BillingMilestoneStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ProjectAssignment {
+  id: string
+  projectId: string
+  companyId: string
+  freelancerId: string
+  billingType: 'hourly' | 'fixed' | 'hybrid'
+  hourlyRate?: number
+  fixedBudget?: number
+  currency: string
+  status: string
 }
 
 // Consultant (full profile for multi-step create form)

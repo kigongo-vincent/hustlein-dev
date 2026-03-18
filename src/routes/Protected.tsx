@@ -4,6 +4,7 @@ import { Authstore } from '../data/Authstore'
 import { authService } from '../services/authService'
 import { getStoredToken } from '../api'
 import { Spinner } from '../components/ui'
+import { maybeDevAutologin } from '../dev/devAutologin'
 
 const Protected = () => {
   const user = Authstore((s) => s.user)
@@ -16,6 +17,8 @@ const Protected = () => {
       return
     }
     if (!getStoredToken()) {
+      // Dev convenience: boot with a test freelancer user when no token exists.
+      maybeDevAutologin()
       setRestoring(false)
       return
     }

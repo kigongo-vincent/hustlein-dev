@@ -91,6 +91,7 @@ const roleLabel: Record<UserRole, string> = {
   company_admin: 'Company Admin',
   project_lead: 'Project Lead',
   consultant: 'Consultant',
+  freelancer: 'Freelancer',
 }
 
 const MANAGED_ROLES: UserRole[] = ['consultant', 'project_lead']

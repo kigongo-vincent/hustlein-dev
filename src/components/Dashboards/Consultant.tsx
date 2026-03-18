@@ -82,18 +82,14 @@ const Consultant = () => {
 
     const { user } = Authstore()
     const [tasks, setTasks] = useState<{ id: string; createdAt?: string; title?: string }[]>([])
-    const [loading, setLoading] = useState(true)
 
     const loadTasks = useCallback(async () => {
         if (!user?.id) return
-        setLoading(true)
         try {
             const list = await taskService.listByOwner(user.id)
             setTasks(list)
         } catch {
             setTasks([])
-        } finally {
-            setLoading(false)
         }
     }, [user?.id])
 
@@ -101,7 +97,6 @@ const Consultant = () => {
         loadTasks()
     }, [loadTasks])
 
-    const now = Date.now()
     const oneDay = 24 * 60 * 60 * 1000
     const todayStart = new Date().setHours(0, 0, 0, 0)
     const weekStart = todayStart - new Date().getDay() * oneDay

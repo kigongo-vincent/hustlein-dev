@@ -19,12 +19,65 @@ import {
   StickyNote,
   Building2,
   BriefcaseBusiness,
+  Sparkles,
+  Inbox,
+  Handshake,
+  Activity,
 } from 'lucide-react'
 
 type NavItem = {
   to: string
   label: string
   icon: React.ComponentType<{ size?: number }>
+}
+
+function getIconTint(to: string, accent?: { blue: string; purple: string; pink: string; green: string; yellow: string; teal: string }, fallback?: string) {
+  const a = accent
+  const map: Record<string, string | undefined> = {
+    '/app': a?.purple,
+    '/app/marketplace': a?.blue,
+    '/app/applications': a?.pink,
+    '/app/contracts': a?.teal,
+    '/app/analytics': a?.yellow,
+    '/app/projects': a?.purple,
+    '/app/assigned': a?.blue,
+    '/app/tasks': a?.green,
+    '/app/milestones': a?.yellow,
+    '/app/calendar': a?.teal,
+    '/app/notes': a?.pink,
+    '/app/reports': a?.purple,
+    '/app/invoices': a?.yellow,
+    '/app/consultants': a?.blue,
+    '/app/departments': a?.teal,
+    '/app/settings': a?.green,
+  }
+  return map[to] ?? fallback ?? '#FF9600'
+}
+
+function IconChip({
+  Icon,
+  isActive,
+  tint,
+}: {
+  Icon: React.ComponentType<{ size?: number }>
+  isActive: boolean
+  tint: string
+}) {
+  const bg = isActive ? `linear-gradient(135deg, ${tint} 0%, ${tint}CC 100%)` : `${tint}18`
+  const color = isActive ? '#fff' : tint
+  return (
+    <span
+      className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+      style={{
+        background: bg,
+        boxShadow: isActive ? '0 10px 24px rgba(0,0,0,0.16)' : 'none',
+        color,
+      }}
+      aria-hidden
+    >
+      <Icon size={18} />
+    </span>
+  )
 }
 
 type SettingsSectionId = 'general' | 'appearance' | 'account'
@@ -41,6 +94,10 @@ const ALL_NAV: NavItem[] = [
   { to: '/app/invoices', label: 'Invoices', icon: Receipt },
   { to: '/app/departments', label: 'Departments', icon: Building2 },
   { to: '/app/projects', label: 'Projects', icon: FolderKanban },
+  { to: '/app/marketplace', label: 'Marketplace', icon: Sparkles },
+  { to: '/app/applications', label: 'Applications', icon: Inbox },
+  { to: '/app/contracts', label: 'Contracts', icon: Handshake },
+  { to: '/app/analytics', label: 'Analytics', icon: Activity },
   { to: '/app/notes', label: 'Notes', icon: StickyNote },
   { to: '/app/tasks', label: 'Tasks', icon: ListTodo },
   { to: '/app/milestones', label: 'Milestones', icon: Flag },
@@ -56,9 +113,23 @@ const HIDDEN_FOR_COMPANY_ADMIN = new Set([
   '/app/reports',
   '/app/focus',
   '/app/dashboard',
+  '/app/applications',
+  '/app/contracts',
+  '/app/analytics',
 ])
 const CONSULTANT_ROUTES = new Set([
   '/app',
+  '/app/notes',
+  '/app/tasks',
+  '/app/calendar',
+  '/app/settings',
+  '/app/assigned',
+])
+const FREELANCER_ROUTES = new Set([
+  '/app',
+  '/app/applications',
+  '/app/contracts',
+  '/app/analytics',
   '/app/notes',
   '/app/tasks',
   '/app/calendar',
@@ -92,6 +163,14 @@ const Sidebar = ({ open }: SidebarProps) => {
   const nav = useMemo(() => {
     if (user?.role === 'consultant') {
       return ALL_NAV.filter((item) => CONSULTANT_ROUTES.has(item.to))
+    }
+    if (user?.role === 'freelancer') {
+      // Freelancer UX: treat /app as Job board.
+      return ALL_NAV
+        .map((item) =>
+          item.to === '/app' ? { ...item, label: 'Job board', icon: Sparkles } : item
+        )
+        .filter((item) => FREELANCER_ROUTES.has(item.to))
     }
     if (user?.role === 'project_lead') {
       return ALL_NAV.filter((item) => PROJECT_LEAD_ROUTES.has(item.to))
@@ -144,16 +223,22 @@ const Sidebar = ({ open }: SidebarProps) => {
                   to={item.to}
                   end={item.to === '/app'}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150 opacity-90 hover:opacity-100 ${isActive ? 'opacity-100 font-medium' : ''}`
+                    `flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors duration-150 opacity-90 hover:opacity-100 ${isActive ? 'opacity-100 font-semibold' : ''}`
                   }
                   style={({ isActive }) => linkStyle(isActive)}
                 >
-                  <span className="shrink-0 flex items-center justify-center [&>svg]:size-5" aria-hidden>
-                    <item.icon size={20} />
-                  </span>
-                  <Text variant="sm" className="font-medium tracking-tight">
-                    {item.label}
-                  </Text>
+                  {({ isActive }) => {
+                    const tint = getIconTint(item.to, current?.accent, current?.brand?.secondary)
+                    const Icon = item.icon
+                    return (
+                      <>
+                        <IconChip Icon={Icon} isActive={isActive} tint={tint} />
+                        <Text variant="sm" className="font-medium tracking-tight">
+                          {item.label}
+                        </Text>
+                      </>
+                    )
+                  }}
                 </NavLink>
               )
             }
@@ -168,12 +253,17 @@ const Sidebar = ({ open }: SidebarProps) => {
                   }
                   style={({ isActive }) => linkStyle(isActive)}
                 >
-                  <span className="shrink-0 flex items-center justify-center [&>svg]:size-5" aria-hidden>
-                    <Icon size={20} />
-                  </span>
-                  <Text variant="sm" className="font-medium tracking-tight">
-                    {item.label}
-                  </Text>
+                  {({ isActive }) => {
+                    const tint = getIconTint(item.to, current?.accent, current?.brand?.secondary)
+                    return (
+                      <>
+                        <IconChip Icon={Icon} isActive={isActive} tint={tint} />
+                        <Text variant="sm" className="font-medium tracking-tight">
+                          {item.label}
+                        </Text>
+                      </>
+                    )
+                  }}
                 </NavLink>
                 {isSettingsPage && settingsChildren.length > 0 && (
                   <ul className="mt-0.5 ml-3 pl-4 space-y-0.5" aria-label="Settings sections">

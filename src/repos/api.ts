@@ -15,6 +15,14 @@ import type {
   Note,
   CalendarEvent,
   ProjectFile,
+  ProjectPosting,
+  ProjectApplication,
+  HireResult,
+  MyAssignment,
+  TimesheetEntry,
+  BillingMilestone,
+  ProjectAssignment,
+  Invoice,
 } from '../types'
 
 function okOrNull<T>(res: { ok: boolean; data: T; status: number }): T | null {
@@ -282,5 +290,101 @@ export const commentRepo = {
   async create(payload: Omit<Comment, 'id' | 'createdAt'>): Promise<Comment> {
     const res = await api.post<Comment>(endpoints.commentsCreate(), payload)
     return assertOk(res) as Comment
+  },
+}
+
+export const marketplaceRepo = {
+  async listPostings(): Promise<ProjectPosting[]> {
+    const res = await api.get<ProjectPosting[]>(endpoints.marketplaceProjects())
+    return assertOk(res) as ProjectPosting[]
+  },
+  async getPosting(id: string): Promise<ProjectPosting | null> {
+    const res = await api.get<ProjectPosting>(endpoints.marketplaceProject(id))
+    return okOrNull(res)
+  },
+  async createPosting(payload: Omit<ProjectPosting, 'id' | 'companyId' | 'createdById' | 'status' | 'createdAt' | 'updatedAt'> & { status?: ProjectPosting['status']; companyId?: string }): Promise<ProjectPosting> {
+    const res = await api.post<ProjectPosting>(endpoints.marketplaceProjects(), payload)
+    return assertOk(res) as ProjectPosting
+  },
+  async apply(postingId: string, payload: Pick<ProjectApplication, 'coverLetter'> & Partial<Pick<ProjectApplication, 'proposedHourlyRate' | 'proposedFixed' | 'currency'>>): Promise<ProjectApplication> {
+    const res = await api.post<ProjectApplication>(endpoints.marketplaceApply(postingId), payload)
+    return assertOk(res) as ProjectApplication
+  },
+  async listApplications(postingId: string): Promise<ProjectApplication[]> {
+    const res = await api.get<ProjectApplication[]>(endpoints.marketplaceApplicationsByPosting(postingId))
+    return assertOk(res) as ProjectApplication[]
+  },
+  async listMyApplications(): Promise<ProjectApplication[]> {
+    const res = await api.get<ProjectApplication[]>(endpoints.marketplaceMyApplications())
+    return assertOk(res) as ProjectApplication[]
+  },
+  async updateApplicationStatus(applicationId: string, status: ProjectApplication['status']): Promise<ProjectApplication> {
+    const res = await api.patch<ProjectApplication>(endpoints.marketplaceApplication(applicationId), { status })
+    return assertOk(res) as ProjectApplication
+  },
+  async hire(applicationId: string, payload: { projectLeadId: string; billingType?: HireResult['billingType']; hourlyRate?: number; fixedBudget?: number; currency?: string; startDate?: string }): Promise<HireResult> {
+    const res = await api.post<HireResult>(endpoints.marketplaceHire(applicationId), payload)
+    return assertOk(res) as HireResult
+  },
+}
+
+export const assignmentRepo = {
+  async listMine(): Promise<MyAssignment[]> {
+    const res = await api.get<MyAssignment[]>(endpoints.myAssignments())
+    return assertOk(res) as MyAssignment[]
+  },
+  async listByProject(projectId: string): Promise<ProjectAssignment[]> {
+    const res = await api.get<ProjectAssignment[]>(endpoints.projectAssignments(projectId))
+    return assertOk(res) as ProjectAssignment[]
+  },
+}
+
+export const billingRepo = {
+  async listTimesheets(assignmentId: string, params?: { from?: string; to?: string; status?: string }): Promise<TimesheetEntry[]> {
+    const url = endpoints.assignmentTimesheets(assignmentId) + (params ? `?${new URLSearchParams(Object.entries(params).filter(([,v]) => !!v).map(([k,v]) => [k, String(v)])).toString()}` : '')
+    const res = await api.get<TimesheetEntry[]>(url)
+    return assertOk(res) as TimesheetEntry[]
+  },
+  async createTimesheet(assignmentId: string, payload: Pick<TimesheetEntry, 'workDate' | 'minutes' | 'notes'>): Promise<TimesheetEntry> {
+    const res = await api.post<TimesheetEntry>(endpoints.assignmentTimesheets(assignmentId), payload)
+    return assertOk(res) as TimesheetEntry
+  },
+  async approveTimesheet(id: string): Promise<TimesheetEntry> {
+    const res = await api.patch<TimesheetEntry>(endpoints.approveTimesheet(id), {})
+    return assertOk(res) as TimesheetEntry
+  },
+  async listMilestones(assignmentId: string): Promise<BillingMilestone[]> {
+    const res = await api.get<BillingMilestone[]>(endpoints.assignmentBillingMilestones(assignmentId))
+    return assertOk(res) as BillingMilestone[]
+  },
+  async createMilestone(assignmentId: string, payload: Pick<BillingMilestone, 'title' | 'amount' | 'currency' | 'dueDate'>): Promise<BillingMilestone> {
+    const res = await api.post<BillingMilestone>(endpoints.assignmentBillingMilestones(assignmentId), payload)
+    return assertOk(res) as BillingMilestone
+  },
+  async approveMilestone(id: string): Promise<BillingMilestone> {
+    const res = await api.patch<BillingMilestone>(endpoints.approveBillingMilestone(id), {})
+    return assertOk(res) as BillingMilestone
+  },
+  async generateInvoice(assignmentId: string, payload: { from?: string; to?: string }): Promise<Invoice> {
+    const res = await api.post<Invoice>(endpoints.generateAssignmentInvoice(assignmentId), payload)
+    return assertOk(res) as Invoice
+  },
+}
+
+export const invoiceRepo = {
+  async listByCompany(companyId: string, params?: { status?: string }): Promise<Invoice[]> {
+    const url =
+      endpoints.invoicesByCompany(companyId) +
+      (params?.status ? `?${new URLSearchParams({ status: params.status }).toString()}` : '')
+    const res = await api.get<Invoice[]>(url)
+    return assertOk(res) as Invoice[]
+  },
+  async getById(id: string): Promise<Invoice | null> {
+    const res = await api.get<Invoice>(endpoints.invoice(id))
+    return okOrNull(res)
+  },
+  async markPaid(id: string): Promise<Invoice | null> {
+    const res = await api.patch<Invoice>(endpoints.invoiceMarkPaid(id), {})
+    return okOrNull(res)
   },
 }

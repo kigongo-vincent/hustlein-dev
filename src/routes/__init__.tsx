@@ -25,6 +25,11 @@ import SettingsPage from '../pages/settings/SettingsPage'
 import NotesPage from '../pages/notes/NotesPage'
 import DepartmentsPage from '../pages/departments/DepartmentsPage'
 import AssignedProjects from '../pages/projects/AssignedProjects'
+import MarketplacePage from '../pages/marketplace/MarketplacePage'
+import ProjectPostingDetailPage from '../pages/marketplace/ProjectPostingDetailPage'
+import MyApplicationsPage from '../pages/marketplace/MyApplicationsPage'
+import MyAssignmentsPage from '../pages/assignments/MyAssignmentsPage'
+import FreelancerAnalyticsPage from '../pages/analytics/FreelancerAnalyticsPage'
 
 const TasksPageByRole = () => {
   const user = Authstore((s) => s.user)
@@ -75,6 +80,11 @@ const __init__ = () => {
           <Route path="calendar" Component={CalendarPage} />
           <Route path="reports" Component={ReportsPage} />
           <Route path="focus" Component={FocusPage} />
+          <Route path="marketplace" Component={MarketplacePage} />
+          <Route path="marketplace/:id" Component={ProjectPostingDetailPage} />
+          <Route path="applications" Component={MyApplicationsPage} />
+          <Route path="contracts" Component={MyAssignmentsPage} />
+          <Route path="analytics" Component={FreelancerAnalyticsPage} />
           <Route element={<RoleProtected allowedRoles={['company_admin', 'super_admin']} />}>
             <Route path="consultants" Component={ConsultantsPage} />
             <Route path="invoices" Component={InvoicesPage} />
