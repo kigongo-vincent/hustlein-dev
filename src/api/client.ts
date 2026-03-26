@@ -6,29 +6,31 @@
  *   navigable without a running backend.
  */
 
-const DEV_TOKEN_PREFIX = 'hustle-dev-local-'
+const DEV_TOKEN_PREFIX = "hustle-dev-local-";
 
-const TOKEN_KEY = 'hustle_token'
+const TOKEN_KEY = "hustle_token";
+
+let _ = 0;
 
 export interface HttpResponse<T = unknown> {
-  data: T
-  status: number
-  ok: boolean
+  data: T;
+  status: number;
+  ok: boolean;
 }
 
 export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 export function setStoredToken(token: string | null): void {
-  if (token == null) localStorage.removeItem(TOKEN_KEY)
-  else localStorage.setItem(TOKEN_KEY, token)
+  if (token == null) localStorage.removeItem(TOKEN_KEY);
+  else localStorage.setItem(TOKEN_KEY, token);
 }
 
 function getAuthHeaders(): Record<string, string> {
-  const token = getStoredToken()
-  if (!token) return {}
-  return { Authorization: `Bearer ${token}` }
+  const token = getStoredToken();
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
 }
 
 async function request<T>(
@@ -37,60 +39,60 @@ async function request<T>(
   body?: unknown
 ): Promise<HttpResponse<T>> {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...getAuthHeaders(),
-  }
+  };
   const init: RequestInit = {
     method,
     headers,
     ...(body != null && { body: JSON.stringify(body) }),
-  }
-  const res = await fetch(url, init)
-  let data: T
-  const contentType = res.headers.get('content-type')
-  if (contentType?.includes('application/json')) {
+  };
+  const res = await fetch(url, init);
+  let data: T;
+  const contentType = res.headers.get("content-type");
+  if (contentType?.includes("application/json")) {
     try {
-      data = await res.json()
+      data = await res.json();
     } catch {
-      data = undefined as T
+      data = undefined as T;
     }
   } else {
-    data = undefined as T
+    data = undefined as T;
   }
 
   if (res.status === 401) {
-    const tok = getStoredToken()
+    const tok = getStoredToken();
     // Dev-local tokens mean there's no real backend running — silently ignore the 401
     // so navigation works without kicking the user to the login redirect cascade.
     if (tok?.startsWith(DEV_TOKEN_PREFIX)) {
-      return { data, status: res.status, ok: false }
+      return { data, status: res.status, ok: false };
     }
-    setStoredToken(null)
-    window.dispatchEvent(new CustomEvent('auth:logout'))
+    setStoredToken(null);
+    window.dispatchEvent(new CustomEvent("auth:logout"));
   }
 
   return {
     data,
     status: res.status,
     ok: res.ok,
-  }
+  };
 }
 
 export const api = {
-  get: <T>(url: string) => request<T>('GET', url),
-  post: <T>(url: string, body?: unknown) => request<T>('POST', url, body),
-  put: <T>(url: string, body?: unknown) => request<T>('PUT', url, body),
-  patch: <T>(url: string, body?: unknown) => request<T>('PATCH', url, body),
-  delete: <T>(url: string) => request<T>('DELETE', url),
-}
+  get: <T>(url: string) => request<T>("GET", url),
+  post: <T>(url: string, body?: unknown) => request<T>("POST", url, body),
+  put: <T>(url: string, body?: unknown) => request<T>("PUT", url, body),
+  patch: <T>(url: string, body?: unknown) => request<T>("PATCH", url, body),
+  delete: <T>(url: string) => request<T>("DELETE", url),
+};
 
 export function assertOk<T>(res: HttpResponse<T>): T {
   if (!res.ok) {
     const msg =
-      typeof res.data === 'object' && res.data !== null && 'error' in res.data
+      typeof res.data === "object" && res.data !== null && "error" in res.data
         ? String((res.data as { error: unknown }).error)
-        : `Request failed: ${res.status}`
-    throw new Error(msg)
+        : `Request failed: ${res.status}`;
+    throw new Error(msg);
   }
-  return res.data as T
+  return res.data as T;
 }
