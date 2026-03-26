@@ -10,8 +10,6 @@ const DEV_TOKEN_PREFIX = "hustle-dev-local-";
 
 const TOKEN_KEY = "hustle_token";
 
-let _ = 0;
-
 export interface HttpResponse<T = unknown> {
   data: T;
   status: number;
