@@ -200,7 +200,7 @@ const Consultant = () => {
                     <Text className="mb-4 font-semibold">Billable vs Non-Billable</Text>
 
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={billableData}>
+                        <BarChart data={billableData} margin={{ top: 8, right: 8, left: 0, bottom: 40 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                             <XAxis dataKey="name" tick={{ ...chartTickStyle, ...tickProps }} />
                             <YAxis tick={{ ...chartTickStyle, ...tickProps }} />

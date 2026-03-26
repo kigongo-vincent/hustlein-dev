@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
 import { Authstore } from '../../data/Authstore'
-import Logo from '../../components/base/Logo'
+import Logo, { DARK_LOGO_URL } from '../../components/base/Logo'
 import Text from '../../components/base/Text'
 
 const SPLASH_DURATION_MS = 1500
@@ -31,7 +31,7 @@ const Splashscreen = () => {
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
         {/* <View bg="p" className="px-10 py-4"> */}
-        <Logo />
+        <Logo src={DARK_LOGO_URL} />
         {/* </View> */}
       </motion.div>
       <motion.div

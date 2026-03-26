@@ -137,10 +137,15 @@ const Sidebar = ({ open }: SidebarProps) => {
   return (
     <motion.div
       initial={false}
-      animate={{ width: open ? SIDEBAR_WIDTH : 0 }}
+      animate={{ x: open ? 0 : -SIDEBAR_WIDTH, opacity: open ? 1 : 0 }}
       transition={{ type: 'tween', duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex flex-col shrink-0 overflow-hidden fixed inset-y-0 left-0 z-30 md:relative md:inset-auto"
-      style={{ height: 'var(--app-viewport-height)' }}
+      style={{
+        height: 'var(--app-viewport-height)',
+        width: SIDEBAR_WIDTH,
+        pointerEvents: open ? 'auto' : 'none',
+        visibility: open ? 'visible' : 'hidden',
+      }}
     >
       <View
         bg="fg"

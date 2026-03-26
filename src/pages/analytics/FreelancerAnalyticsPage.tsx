@@ -186,7 +186,7 @@ export default function FreelancerAnalyticsPage() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 28 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
                 <XAxis dataKey="day" tick={{ fontSize: 12, fill: dark }} />
                 <YAxis tick={{ fontSize: 12, fill: dark }} allowDecimals={false} />

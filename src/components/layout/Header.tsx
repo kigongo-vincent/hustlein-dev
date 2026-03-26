@@ -4,18 +4,19 @@ import Text, { baseFontSize } from '../base/Text'
 import Avatar from '../base/Avatar'
 import { Authstore } from '../../data/Authstore'
 import { Themestore } from '../../data/Themestore'
-import { ChevronRight, ChevronLeft, Settings, Sun, Moon, LogOut } from 'lucide-react'
+import { Menu, X, Settings, Sun, Moon, LogOut } from 'lucide-react'
 import { Button, Modal } from '../ui'
 import { APP_ICON_SIZE, getMutedIconColor } from '../base/iconTokens'
 
 type HeaderProps = {
   sidebarOpen: boolean
   onToggleSidebar: () => void
+  isDesktop: boolean
 }
 
 
 
-const Header = ({ sidebarOpen, onToggleSidebar }: HeaderProps) => {
+const Header = ({ sidebarOpen, onToggleSidebar, isDesktop }: HeaderProps) => {
   const { user, logout } = Authstore()
   const { current, mode, setTheme } = Themestore()
   const navigate = useNavigate()
@@ -39,7 +40,7 @@ const Header = ({ sidebarOpen, onToggleSidebar }: HeaderProps) => {
   return (
     <>
       <div
-      className="flex items-center justify-between px-4 shrink-0"
+      className="flex items-center justify-between px-4 shrink-0 relative z-40"
       style={{
         backgroundColor: current?.system?.foreground,
         borderBottom: `1px solid ${border}`,
@@ -50,17 +51,22 @@ const Header = ({ sidebarOpen, onToggleSidebar }: HeaderProps) => {
     >
       {/* Left: sidebar toggle + user */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onToggleSidebar}
-          className="w-6 h-6 rounded-base opacity-55 hover:opacity-90 transition-opacity flex items-center justify-center"
-          style={{ color: muted }}
-          title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-          aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-          aria-expanded={sidebarOpen}
-        >
-          {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-        </button>
+        {!isDesktop ? (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="w-6 h-6 rounded-base opacity-55 hover:opacity-90 transition-opacity flex items-center justify-center"
+            style={{ color: muted }}
+            title={sidebarOpen ? 'Close menu' : 'Open menu'}
+            aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={sidebarOpen}
+          >
+            {sidebarOpen ? <X size={14} /> : <Menu size={14} />}
+          </button>
+        ) : (
+          // Keep header alignment consistent when the desktop sidebar is always shown.
+          <div className="w-6 h-6" />
+        )}
         <Link
           to="/app/profile"
           className="flex items-center gap-2.5 px-1 py-1 rounded-base hover:opacity-85 transition-opacity"

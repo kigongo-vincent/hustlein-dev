@@ -11,8 +11,10 @@ import type { Company } from '../../types'
 import CompanyCompletionModal from '../../pages/company/CompanyCompletionModal'
 
 const AppShell = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [isDesktop, setIsDesktop] = useState(false)
+  const initialIsDesktop =
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : false
+  const [sidebarOpen, setSidebarOpen] = useState(initialIsDesktop)
+  const [isDesktop, setIsDesktop] = useState(initialIsDesktop)
   const current = Themestore((s) => s.current)
   const mode = Themestore((s) => s.mode)
   const user = Authstore((s) => s.user)
@@ -30,6 +32,8 @@ const AppShell = () => {
     const sync = () => {
       const desktop = media.matches
       setIsDesktop(desktop)
+      // On desktop, keep the sidebar expanded by default.
+      // On mobile, the sidebar behaves like a slide-in drawer and starts closed.
       setSidebarOpen(desktop)
     }
     sync()
@@ -106,7 +110,8 @@ const AppShell = () => {
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <Header
           sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+          isDesktop={isDesktop}
+          onToggleSidebar={() => setSidebarOpen((prev) => (isDesktop ? true : !prev))}
         />
         <main
           className="flex-1 flex flex-col min-h-0 px-4 sm:px-5 py-3 overflow-hidden"

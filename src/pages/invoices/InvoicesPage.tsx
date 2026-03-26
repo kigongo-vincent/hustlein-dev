@@ -1534,7 +1534,7 @@ const InvoicesPage = () => {
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 28 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
                       <XAxis dataKey="month" tick={tickProps} />
                       <YAxis tick={tickProps} allowDecimals={false} />

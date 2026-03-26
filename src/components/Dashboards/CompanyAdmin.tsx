@@ -208,7 +208,7 @@ const ConsultantDashboard = () => {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={weekData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <LineChart data={weekData} margin={{ top: 8, right: 8, left: 0, bottom: 28 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                 <XAxis dataKey="day" tick={tickProps} />
                 <YAxis tick={tickProps} allowDecimals={false} />
@@ -232,7 +232,7 @@ const ConsultantDashboard = () => {
       <Card title="Overview" subtitle="Stats at a glance" className="px-4 pb-4">
         <div className="h-[320px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 48 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
               <XAxis dataKey="name" tick={tickProps} />
               <YAxis tick={tickProps} allowDecimals={false} />
