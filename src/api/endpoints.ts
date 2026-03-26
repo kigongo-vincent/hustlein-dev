@@ -9,7 +9,9 @@ function path(
   segments: string[],
   params?: Record<string, string | undefined>
 ): string {
-  const p = [BASE, ...segments].join('/').replace(/\/+/g, '/')
+  // Avoid breaking absolute URLs like `https://host/api` into `https:/host/api`.
+  // We only want to collapse repeated slashes in the path portion, not the `://` after the scheme.
+  const p = [BASE, ...segments].join('/').replace(/(^|[^:])\/{2,}/g, '$1/')
   if (!params) return p
   const filtered = Object.fromEntries(
     Object.entries(params).filter(([, v]) => v != null && v !== '')
