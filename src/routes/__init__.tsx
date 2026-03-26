@@ -11,8 +11,6 @@ import { Spinner } from '../components/ui'
 import Dashboard from '../pages/dashboard/Dashboard'
 import ProjectList from '../pages/projects/ProjectList'
 import ProjectDetail from '../pages/projects/ProjectDetail'
-import TaskList from '../pages/tasks/TaskList'
-import ConsultantTasksPage from '../pages/tasks/ConsultantTasksPage'
 import MilestoneList from '../pages/milestones/MilestoneList'
 import MilestoneTasksPage from '../pages/milestones/MilestoneTasksPage'
 import CalendarPage from '../pages/calendar/CalendarPage'
@@ -26,15 +24,20 @@ import NotesPage from '../pages/notes/NotesPage'
 import DepartmentsPage from '../pages/departments/DepartmentsPage'
 import AssignedProjects from '../pages/projects/AssignedProjects'
 import MarketplacePage from '../pages/marketplace/MarketplacePage'
-import ProjectPostingDetailPage from '../pages/marketplace/ProjectPostingDetailPage'
 import MyApplicationsPage from '../pages/marketplace/MyApplicationsPage'
 import MyAssignmentsPage from '../pages/assignments/MyAssignmentsPage'
 import FreelancerAnalyticsPage from '../pages/analytics/FreelancerAnalyticsPage'
 
-const TasksPageByRole = () => {
+const ProjectsPageByRole = () => {
   const user = Authstore((s) => s.user)
-  if (user?.role === 'consultant') return <ConsultantTasksPage />
-  return <TaskList />
+  if (user?.role === 'freelancer') return <AssignedProjects />
+  return <ProjectList />
+}
+
+const LegacyTasksRedirect = () => {
+  const user = Authstore((s) => s.user)
+  if (user?.role === 'freelancer') return <Navigate to="/app/assigned" replace />
+  return <Navigate to="/app/milestones" replace />
 }
 
 const RootRedirect = () => {
@@ -71,20 +74,24 @@ const __init__ = () => {
       <Route path="/app" element={<Protected />}>
         <Route element={<AppShell />}>
           <Route index Component={Dashboard} />
-          <Route path="projects" Component={ProjectList} />
-          <Route path='assigned' Component={AssignedProjects} />
+          <Route path="projects" element={<ProjectsPageByRole />} />
+          <Route element={<RoleProtected allowedRoles={['consultant', 'freelancer', 'project_lead']} />}>
+            <Route path='assigned' Component={AssignedProjects} />
+          </Route>
           <Route path="projects/:projectId/milestones/:milestoneId" Component={MilestoneTasksPage} />
           <Route path="projects/:id" Component={ProjectDetail} />
-          <Route path="tasks" element={<TasksPageByRole />} />
+          <Route element={<RoleProtected allowedRoles={['consultant', 'company_admin', 'project_lead', 'super_admin']} />}>
+            <Route path="tasks" element={<LegacyTasksRedirect />} />
+            <Route path="contracts" Component={MyAssignmentsPage} />
+            <Route path="analytics" Component={FreelancerAnalyticsPage} />
+          </Route>
           <Route path="milestones" Component={MilestoneList} />
           <Route path="calendar" Component={CalendarPage} />
           <Route path="reports" Component={ReportsPage} />
           <Route path="focus" Component={FocusPage} />
           <Route path="marketplace" Component={MarketplacePage} />
-          <Route path="marketplace/:id" Component={ProjectPostingDetailPage} />
+          <Route path="marketplace/:id" Component={ProjectDetail} />
           <Route path="applications" Component={MyApplicationsPage} />
-          <Route path="contracts" Component={MyAssignmentsPage} />
-          <Route path="analytics" Component={FreelancerAnalyticsPage} />
           <Route element={<RoleProtected allowedRoles={['company_admin', 'super_admin']} />}>
             <Route path="consultants" Component={ConsultantsPage} />
             <Route path="invoices" Component={InvoicesPage} />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router'
+import { Outlet, useLocation } from 'react-router'
 import View from '../base/View'
 import Sidebar from './Sidebar'
 import Header from './Header'
@@ -12,9 +12,11 @@ import CompanyCompletionModal from '../../pages/company/CompanyCompletionModal'
 
 const AppShell = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isDesktop, setIsDesktop] = useState(false)
   const current = Themestore((s) => s.current)
   const mode = Themestore((s) => s.mode)
   const user = Authstore((s) => s.user)
+  const location = useLocation()
 
   const [companyForCompletion, setCompanyForCompletion] = useState<Company | null>(null)
   const [loadingCompany, setLoadingCompany] = useState(false)
@@ -22,6 +24,22 @@ const AppShell = () => {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', mode)
   }, [mode])
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 768px)')
+    const sync = () => {
+      const desktop = media.matches
+      setIsDesktop(desktop)
+      setSidebarOpen(desktop)
+    }
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  useEffect(() => {
+    if (!isDesktop) setSidebarOpen(false)
+  }, [location.pathname, isDesktop])
 
   useEffect(() => {
     const root = document.documentElement
@@ -75,8 +93,16 @@ const AppShell = () => {
     !isCompanyComplete(companyForCompletion)
 
   return (
-    <View bg="bg" className="flex overflow-hidden" style={{ height: 'var(--app-viewport-height)' }}>
+    <View bg="bg" className="flex w-full overflow-hidden" style={{ height: 'var(--app-viewport-height)' }}>
       <Sidebar open={sidebarOpen} />
+      {!isDesktop && sidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-20 bg-black/35 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar backdrop"
+        />
+      )}
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <Header
           sidebarOpen={sidebarOpen}

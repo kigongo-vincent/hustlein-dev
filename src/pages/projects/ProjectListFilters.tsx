@@ -94,12 +94,16 @@ const ProjectListFilters = ({
             aria-label="Sort projects"
             placement="below"
           />
-          <Button
-            size="sm"
-            label="Reset filters"
-            onClick={onReset}
-            disabled={!filterLeadId && filterSort === 'name_asc'}
-          />
+          <div className="pt-3 mt-1 border-t" style={{ borderColor: current?.system?.border ?? 'rgba(0,0,0,0.08)' }}>
+            <Button
+              size="sm"
+              fullWidth
+              variant="background"
+              label="Reset filters"
+              onClick={onReset}
+              disabled={!filterLeadId && filterSort === 'name_asc'}
+            />
+          </div>
         </div>
       </aside>
     </>

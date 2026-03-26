@@ -278,6 +278,7 @@ export interface Department {
 
 // Project
 export type ProjectStatus = 'active' | 'suspended'
+export type ProjectType = 'internal' | 'external'
 
 export interface Project {
   id: string
@@ -290,6 +291,8 @@ export interface Project {
   createdAt: string
   /** Optional; defaults to active when absent */
   status?: ProjectStatus
+  /** Optional for backward compatibility; defaults to internal */
+  projectType?: ProjectType
   /** Optional project due date (ISO date string) */
   dueDate?: string
 }
@@ -352,11 +355,27 @@ export interface Goal {
 export interface ProjectFile {
   id: string
   projectId: string
+  parentId?: string
   name: string
-  type: 'file' | 'link'
+  type: 'file' | 'link' | 'folder'
   url: string
+  sizeBytes?: number
+  contentType?: string
   uploadedById: string
   createdAt: string
+}
+
+export interface ProjectFileStorageSummary {
+  projectId: string
+  companyId: string
+  fileCount: number
+  folderCount: number
+  projectBytes: number
+  usedBytes: number
+  limitBytes: number
+  limitMb: number
+  usagePercent: number
+  remainingBytes: number
 }
 
 // Comment

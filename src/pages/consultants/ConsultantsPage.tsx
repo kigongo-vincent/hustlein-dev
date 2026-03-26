@@ -826,29 +826,34 @@ const ConsultantsPage = () => {
                 aria-label="Sort consultants"
                 placement="below"
               />
-              <Button
-                size="sm"
-                label="Apply filters"
-                onClick={() => {
-                  setFilterRole(draftFilterRole)
-                  setFilterStatus(draftFilterStatus)
-                  setFilterSort(draftFilterSort || 'name_asc')
-                  closeFilterSidebar()
-                }}
-              />
-              <Button
-                size="sm"
-                label="Reset filters"
-                onClick={() => {
-                  setDraftFilterRole('')
-                  setDraftFilterStatus('')
-                  setDraftFilterSort('name_asc')
-                  setFilterRole('')
-                  setFilterStatus('')
-                  setFilterSort('name_asc')
-                }}
-                disabled={!filterRole && !filterStatus && filterSort === 'name_asc'}
-              />
+              <div className="pt-3 mt-1 space-y-3 border-t" style={{ borderColor: current?.system?.border ?? 'rgba(0,0,0,0.08)' }}>
+                <Button
+                  size="sm"
+                  fullWidth
+                  label="Apply filters"
+                  onClick={() => {
+                    setFilterRole(draftFilterRole)
+                    setFilterStatus(draftFilterStatus)
+                    setFilterSort(draftFilterSort || 'name_asc')
+                    closeFilterSidebar()
+                  }}
+                />
+                <Button
+                  size="sm"
+                  fullWidth
+                  variant="background"
+                  label="Reset filters"
+                  onClick={() => {
+                    setDraftFilterRole('')
+                    setDraftFilterStatus('')
+                    setDraftFilterSort('name_asc')
+                    setFilterRole('')
+                    setFilterStatus('')
+                    setFilterSort('name_asc')
+                  }}
+                  disabled={!filterRole && !filterStatus && filterSort === 'name_asc'}
+                />
+              </div>
             </div>
           </aside>
         </>

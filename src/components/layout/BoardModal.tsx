@@ -6,7 +6,7 @@ import { useBoardModal } from '../../data/ModalStore'
 import { projectService } from '../../services/projectService'
 import { milestoneService } from '../../services/milestoneService'
 import { taskService } from '../../services/taskService'
-import { userService } from '../../services'
+import { userService, assignmentService } from '../../services'
 import type { Project, WorkflowState, Milestone, User, Task } from '../../types'
 import Text from '../base/Text'
 import { baseFontSize } from '../base/Text'
@@ -59,6 +59,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
   const [editStateId, setEditStateId] = useState('')
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([])
   const [milestoneAssigneeIds, setMilestoneAssigneeIds] = useState<string[]>([])
+  const [defaultMilestoneAssigneeIds, setDefaultMilestoneAssigneeIds] = useState<string[]>([])
   const [deleteMilestoneId, setDeleteMilestoneId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -76,17 +77,21 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
     if (!pid) return
     setLoading(true)
     try {
-      const [workflow, milestoneList, taskList, userList] = await Promise.all([
+      const [workflow, milestoneList, taskList, userList, assignments] = await Promise.all([
         projectService.getWorkflow(pid),
         milestoneService.listByProject(pid),
         taskService.listByProject(pid),
         userService.list(),
+        assignmentService.listByProject(pid),
       ])
       const states = (workflow?.states ?? []).slice().sort((a, b) => a.order - b.order)
       setWorkflowStates(states)
       setMilestones(milestoneList)
       setTasks(taskList)
       setUsers(userList)
+      setDefaultMilestoneAssigneeIds(
+        assignments.filter((assignment) => assignment.status === 'active').map((assignment) => assignment.freelancerId)
+      )
       const map: Record<string, string> = {}
       userList.forEach((u) => { map[u.id] = u.name ?? u.email })
       setUserMap(map)
@@ -99,6 +104,8 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
   useEffect(() => { if (projectId) loadBoard(projectId) }, [projectId, loadBoard])
 
   const firstStateId = workflowStates[0]?.id ?? ''
+  const selectedProject = projects.find((p) => p.id === projectId) ?? null
+  const isExternalOriginProject = selectedProject?.projectType === 'external'
   const milestonesByState = useMemo(() => {
     const map: Record<string, Milestone[]> = {}
     workflowStates.forEach((s) => { map[s.id] = [] })
@@ -223,7 +230,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     )
     setMilestonePriority('medium')
-    setMilestoneAssigneeIds([])
+    setMilestoneAssigneeIds(defaultMilestoneAssigneeIds)
     setAddMilestoneOpen(true)
   }
 
@@ -238,7 +245,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
         targetDate: milestoneTarget,
         taskIds: [],
         workflowStateId: addMilestoneStateId || firstStateId,
-        assigneeIds: milestoneAssigneeIds.length ? milestoneAssigneeIds : undefined,
+        assigneeIds: milestoneAssigneeIds.length ? milestoneAssigneeIds : (defaultMilestoneAssigneeIds.length ? defaultMilestoneAssigneeIds : undefined),
       })
       setMilestones((prev) => [...prev, created])
       setAddMilestoneOpen(false)
@@ -630,74 +637,76 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
               aria-label="Column"
               placement="above"
             />
-            <div>
-              <label className="block mb-1">
-                <Text variant="sm" style={{ color: dark }}>Assigned employees</Text>
-              </label>
-              <div className="flex gap-3 overflow-x-auto scroll-slim pb-1 -mx-0.5" style={{ minHeight: 168 }}>
-                {users.map((u) => {
-                  const selected = milestoneAssigneeIds.includes(u.id)
-                  const roleLabel = u.role ? u.role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : null
-                  const displayName = userMap[u.id] ?? u.name ?? u.email
-                  const initials = (u.name || u.email || '?').trim().split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase() || '?'
-                  return (
-                    <label
-                      key={u.id}
-                      className="relative flex-shrink-0 w-[120px] aspect-[3/4] rounded-xl overflow-hidden cursor-pointer block transition hover:opacity-95"
-                      style={{
-                        boxShadow: borderColor ? `0 0 0 1px ${borderColor}` : undefined,
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={(e) => {
-                          if (e.target.checked) setMilestoneAssigneeIds((prev) => [...prev, u.id])
-                          else setMilestoneAssigneeIds((prev) => prev.filter((id) => id !== u.id))
-                        }}
-                        className="sr-only"
-                        aria-label={`Assign ${displayName}`}
-                      />
-                      <div className="absolute inset-0">
-                        {u.avatarUrl ? (
-                          <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div
-                            className="w-full h-full flex items-center justify-center font-medium text-3xl"
-                            style={{
-                              backgroundColor: bg ?? 'rgba(0,0,0,0.08)',
-                              color: primary,
-                            }}
-                          >
-                            {initials}
-                          </div>
-                        )}
-                      </div>
-                      <div
-                        className="absolute inset-x-0 bottom-0 pt-8 pb-2 px-2 text-white text-xs"
+            {!isExternalOriginProject && (
+              <div>
+                <label className="block mb-1">
+                  <Text variant="sm" style={{ color: dark }}>Assigned employees</Text>
+                </label>
+                <div className="flex gap-3 overflow-x-auto scroll-slim pb-1 -mx-0.5" style={{ minHeight: 168 }}>
+                  {users.map((u) => {
+                    const selected = milestoneAssigneeIds.includes(u.id)
+                    const roleLabel = u.role ? u.role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : null
+                    const displayName = userMap[u.id] ?? u.name ?? u.email
+                    const initials = (u.name || u.email || '?').trim().split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase() || '?'
+                    return (
+                      <label
+                        key={u.id}
+                        className="relative flex-shrink-0 w-[120px] aspect-[3/4] rounded-xl overflow-hidden cursor-pointer block transition hover:opacity-95"
                         style={{
-                          background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
+                          boxShadow: borderColor ? `0 0 0 1px ${borderColor}` : undefined,
                         }}
                       >
-                        <p className="font-medium truncate">{displayName}</p>
-                        {(roleLabel ?? u.email) && <p className="truncate opacity-90">{roleLabel ?? u.email}</p>}
-                      </div>
-                      {selected && (
-                        <span
-                          className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: fg, color: primary }}
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={(e) => {
+                            if (e.target.checked) setMilestoneAssigneeIds((prev) => [...prev, u.id])
+                            else setMilestoneAssigneeIds((prev) => prev.filter((id) => id !== u.id))
+                          }}
+                          className="sr-only"
+                          aria-label={`Assign ${displayName}`}
+                        />
+                        <div className="absolute inset-0">
+                          {u.avatarUrl ? (
+                            <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div
+                              className="w-full h-full flex items-center justify-center font-medium text-3xl"
+                              style={{
+                                backgroundColor: bg ?? 'rgba(0,0,0,0.08)',
+                                color: primary,
+                              }}
+                            >
+                              {initials}
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="absolute inset-x-0 bottom-0 pt-8 pb-2 px-2 text-white text-xs"
+                          style={{
+                            background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
+                          }}
                         >
-                          <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </label>
-                  )
-                })}
-                {users.length === 0 && (
-                  <span className="text-sm opacity-70 flex items-center" style={{ color: dark }}>No users loaded</span>
-                )}
+                          <p className="font-medium truncate">{displayName}</p>
+                          {(roleLabel ?? u.email) && <p className="truncate opacity-90">{roleLabel ?? u.email}</p>}
+                        </div>
+                        {selected && (
+                          <span
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: fg, color: primary }}
+                          >
+                            <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                          </span>
+                        )}
+                      </label>
+                    )
+                  })}
+                  {users.length === 0 && (
+                    <span className="text-sm opacity-70 flex items-center" style={{ color: dark }}>No users loaded</span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
             <Button variant="background" label="Cancel" onClick={() => !saving && setAddMilestoneOpen(false)} disabled={saving} />

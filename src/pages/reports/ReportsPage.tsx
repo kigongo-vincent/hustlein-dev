@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   AreaChart,
   Area,
@@ -11,8 +11,8 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import Text, { baseFontSize } from '../../components/base/Text'
-import { ListTodo, CheckCircle, FolderKanban, BarChart3 } from 'lucide-react'
-import { Card, Select } from '../../components/ui'
+import { ListTodo, CheckCircle, FolderKanban, BarChart3, Search, SlidersHorizontal, X } from 'lucide-react'
+import { Button, Card, CustomSelect } from '../../components/ui'
 import { AppPageLayout } from '../../components/layout'
 import { reportService, projectService } from '../../services'
 import { Themestore } from '../../data/Themestore'
@@ -35,6 +35,12 @@ const ReportsPage = () => {
   const [progressData, setProgressData] = useState<{ date: string; completed: number }[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [projectFilter, setProjectFilter] = useState<string>('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterSidebarExiting, setFilterSidebarExiting] = useState(false)
+  const [filterSidebarEntered, setFilterSidebarEntered] = useState(false)
+  const [draftProjectFilter, setDraftProjectFilter] = useState('')
+  const FILTER_SIDEBAR_DURATION_MS = 220
   const primaryColor = current?.brand?.primary || '#682308'
   const dark = current?.system?.dark
   const mode = Themestore((s) => s.mode)
@@ -58,23 +64,68 @@ const ReportsPage = () => {
     reportService.getProgressOverTime(pid).then(setProgressData)
   }, [projectFilter])
 
+  useEffect(() => {
+    if (filterOpen) {
+      setFilterSidebarExiting(false)
+      setFilterSidebarEntered(false)
+      setDraftProjectFilter(projectFilter)
+      const start = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setFilterSidebarEntered(true))
+      })
+      return () => cancelAnimationFrame(start)
+    }
+    setFilterSidebarEntered(false)
+  }, [filterOpen, projectFilter])
+
+  const closeFilterSidebar = useCallback(() => {
+    setFilterSidebarExiting(true)
+    const t = setTimeout(() => {
+      setFilterOpen(false)
+      setFilterSidebarExiting(false)
+    }, FILTER_SIDEBAR_DURATION_MS)
+    return () => clearTimeout(t)
+  }, [])
+
   const projectOptions = [
     { value: '', label: 'All projects' },
     ...projects.map((p) => ({ value: p.id, label: p.name })),
   ]
+  const searchLower = searchQuery.trim().toLowerCase()
+  const visibleByOwner = byOwner.filter((r) => !searchLower || r.ownerName.toLowerCase().includes(searchLower))
 
   return (
     <AppPageLayout title="Reports" subtitle="Progress and completion by project">
       <div className="space-y-6">
-      <div className="flex gap-4">
-        <div className="min-w-[200px]">
-          <Select
-            label="Project"
-            options={projectOptions}
-            value={projectFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
-          />
-        </div>
+      <div
+        className="flex items-center rounded-base overflow-hidden"
+        style={{ backgroundColor: current?.system?.foreground }}
+        role="search"
+      >
+        <Search className="ml-3 w-4 h-4 opacity-60 shrink-0" style={{ color: dark }} aria-hidden />
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search owner..."
+          className="flex-1 min-w-0 py-2 pl-3 pr-4 bg-transparent focus:outline-none focus:ring-0 border-0 placeholder:opacity-60"
+          style={{ fontSize: baseFontSize, lineHeight: 1.5, color: dark }}
+          aria-label="Search report owners"
+        />
+        {searchQuery && (
+          <button type="button" onClick={() => setSearchQuery('')} className="shrink-0 opacity-35 hover:opacity-80 transition-opacity mr-2">
+            <X className="w-3.5 h-3.5" style={{ color: dark }} />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setFilterOpen(true)}
+          className="shrink-0 p-2.5 transition-opacity hover:opacity-100 opacity-90"
+          style={{ color: dark, backgroundColor: filterOpen ? current?.system?.background : 'transparent' }}
+          title="Filter"
+          aria-label="Open filters"
+          aria-expanded={filterOpen}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+        </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {stats.map((s) => (
@@ -128,7 +179,7 @@ const ReportsPage = () => {
         )}
       </Card>
       <Card title="Task completion by owner" subtitle="Completed vs total tasks">
-        {byOwner.length === 0 ? (
+        {visibleByOwner.length === 0 ? (
           <Text variant="sm" className="opacity-70">
             No data yet.
           </Text>
@@ -136,7 +187,7 @@ const ReportsPage = () => {
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={byOwner.map((r) => ({ name: r.ownerName, completed: r.completed, total: r.total }))}
+                data={visibleByOwner.map((r) => ({ name: r.ownerName, completed: r.completed, total: r.total }))}
                 layout="vertical"
                 margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
               >
@@ -160,7 +211,7 @@ const ReportsPage = () => {
             </ResponsiveContainer>
           </div>
         )}
-        {byOwner.length > 0 && (
+        {visibleByOwner.length > 0 && (
           <table className="w-full mt-4 text-left border-collapse">
             <thead>
               <tr className="border-b border-black/10">
@@ -176,7 +227,7 @@ const ReportsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {byOwner.map((r) => (
+              {visibleByOwner.map((r) => (
                 <tr key={r.ownerId} className="border-b border-black/5">
                   <td className="py-2 pr-4"><Text variant="sm">{r.ownerName}</Text></td>
                   <td className="py-2 pr-4"><Text variant="sm">{r.completed}</Text></td>
@@ -187,6 +238,70 @@ const ReportsPage = () => {
           </table>
         )}
       </Card>
+      {(filterOpen || filterSidebarExiting) && (
+        <>
+          <div
+            role="presentation"
+            className="fixed inset-0 z-40 transition-opacity ease-out"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.35)',
+              opacity: filterSidebarEntered && !filterSidebarExiting ? 1 : 0,
+              transitionDuration: `${FILTER_SIDEBAR_DURATION_MS}ms`,
+            }}
+            onClick={closeFilterSidebar}
+            aria-hidden
+          />
+          <aside
+            className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm flex flex-col shadow-lg transition-transform ease-out"
+            style={{
+              backgroundColor: current?.system?.foreground ?? '#fff',
+              borderLeft: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
+              transform: filterSidebarEntered && !filterSidebarExiting ? 'translateX(0)' : 'translateX(100%)',
+              transitionDuration: `${FILTER_SIDEBAR_DURATION_MS}ms`,
+            }}
+            aria-label="Filter reports"
+          >
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b shrink-0" style={{ borderColor: current?.system?.border }}>
+              <Text className="font-medium">Filters</Text>
+              <button type="button" onClick={closeFilterSidebar} className="p-2 rounded-base opacity-80 hover:opacity-100" style={{ color: current?.system?.dark }} aria-label="Close filters">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto scroll-slim flex-1 min-h-0 space-y-5">
+              <CustomSelect
+                label="Project"
+                options={projectOptions}
+                value={draftProjectFilter}
+                onChange={setDraftProjectFilter}
+                mode="fill"
+                placement="below"
+              />
+              <div className="pt-3 mt-1 space-y-3 border-t" style={{ borderColor: current?.system?.border ?? 'rgba(0,0,0,0.08)' }}>
+                <Button
+                  size="sm"
+                  fullWidth
+                  label="Apply filters"
+                  onClick={() => {
+                    setProjectFilter(draftProjectFilter)
+                    closeFilterSidebar()
+                  }}
+                />
+                <Button
+                  size="sm"
+                  fullWidth
+                  variant="background"
+                  label="Reset filters"
+                  onClick={() => {
+                    setDraftProjectFilter('')
+                    setProjectFilter('')
+                  }}
+                  disabled={!projectFilter && !draftProjectFilter}
+                />
+              </div>
+            </div>
+          </aside>
+        </>
+      )}
       </div>
     </AppPageLayout>
   )

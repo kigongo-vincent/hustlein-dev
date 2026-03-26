@@ -15,6 +15,7 @@ import type {
   Note,
   CalendarEvent,
   ProjectFile,
+  ProjectFileStorageSummary,
   ApplicationFile,
   ProjectPosting,
   ProjectApplication,
@@ -190,6 +191,14 @@ export const projectFileRepo = {
     const res = await api.get<ProjectFile[]>(endpoints.projectFiles(projectId))
     return assertOk(res) as ProjectFile[]
   },
+  async getTreeByProject(projectId: string): Promise<ProjectFile[]> {
+    const res = await api.get<ProjectFile[]>(endpoints.projectFilesTree(projectId))
+    return assertOk(res) as ProjectFile[]
+  },
+  async getStorageSummary(projectId: string): Promise<ProjectFileStorageSummary> {
+    const res = await api.get<ProjectFileStorageSummary>(endpoints.projectFilesStorage(projectId))
+    return assertOk(res) as ProjectFileStorageSummary
+  },
   async create(payload: Omit<ProjectFile, 'id' | 'createdAt'>): Promise<ProjectFile> {
     const res = await api.post<ProjectFile>(endpoints.projectFiles(payload.projectId), payload)
     return assertOk(res) as ProjectFile
@@ -201,6 +210,10 @@ export const projectFileRepo = {
   async delete(id: string): Promise<boolean> {
     const res = await api.delete(endpoints.file(id))
     return res.ok
+  },
+  async move(id: string, parentId?: string): Promise<ProjectFile | null> {
+    const res = await api.patch<ProjectFile>(endpoints.projectFileMove(id), { parentId })
+    return okOrNull(res)
   },
 }
 

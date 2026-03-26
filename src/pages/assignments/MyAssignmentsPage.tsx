@@ -6,7 +6,7 @@ import { Themestore } from '../../data/Themestore'
 import { assignmentService, billingService } from '../../services'
 import type { MyAssignment } from '../../types'
 import type { TimesheetEntry } from '../../types'
-import { BriefcaseBusiness, ArrowRight, Clock } from 'lucide-react'
+import { BriefcaseBusiness, ArrowRight, Clock, CheckCircle, Building2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 
 function formatMoney(amount?: number, currency = 'UGX') {
@@ -16,7 +16,6 @@ function formatMoney(amount?: number, currency = 'UGX') {
 
 const MyAssignmentsPage = () => {
   const { current } = Themestore()
-  const dark = current?.system?.dark
   const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
@@ -47,6 +46,8 @@ const MyAssignmentsPage = () => {
   }, [])
 
   const active = useMemo(() => items.filter((a) => a.status === 'active'), [items])
+  const fixedContracts = useMemo(() => items.filter((a) => a.billingType === 'fixed').length, [items])
+  const hourlyContracts = useMemo(() => items.filter((a) => a.billingType !== 'fixed').length, [items])
 
   const openLog = async (a: MyAssignment) => {
     setLogFor(a)
@@ -95,11 +96,33 @@ const MyAssignmentsPage = () => {
               Your active engagements across companies.
             </Text>
           </div>
-          <div className="text-sm opacity-90" style={{ color: dark }}>
-            Active: {active.length} • Total: {items.length}
-          </div>
         </div>
       </View>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {loading ? (
+          [1, 2, 3, 4].map((i) => (
+            <Card key={i} className="min-h-[7rem] py-4 px-4" noShadow>
+              <Text variant="sm" className="opacity-50">—</Text>
+              <div className="h-2" />
+              <Text className="font-medium">—</Text>
+              <Text variant="sm" className="opacity-50 mt-1">—</Text>
+            </Card>
+          ))
+        ) : (
+          [
+            { label: 'Active contracts', value: String(active.length), caption: 'Currently running', icon: CheckCircle },
+            { label: 'Total contracts', value: String(items.length), caption: 'Across companies', icon: BriefcaseBusiness },
+            { label: 'Hourly contracts', value: String(hourlyContracts), caption: 'Time-based billing', icon: Clock },
+            { label: 'Fixed contracts', value: String(fixedContracts), caption: 'Milestone/fixed scope', icon: Building2 },
+          ].map((s) => (
+            <Card key={s.label} title={s.label} rightIcon={<s.icon className="w-4 h-4" />} className="min-h-[7rem] py-4 px-4" noShadow>
+              <Text className="font-medium">{s.value}</Text>
+              <Text variant="sm" className="opacity-70 mt-1">{s.caption}</Text>
+            </Card>
+          ))
+        )}
+      </div>
 
       <Card title="Engagements" subtitle="Projects you’re hired on" className="p-0 overflow-hidden" noShadow>
         {loading ? (

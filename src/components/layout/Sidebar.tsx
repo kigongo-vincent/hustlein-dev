@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { NavLink, useLocation } from 'react-router'
+import { NavLink } from 'react-router'
 import { motion } from 'framer-motion'
 import View from '../base/View'
 import Text from '../base/Text'
@@ -10,7 +10,6 @@ import { APP_ICON_SIZE, getMutedIconColor } from '../base/iconTokens'
 import {
   LayoutDashboard,
   FolderKanban,
-  ListTodo,
   Flag,
   Calendar,
   BarChart3,
@@ -32,14 +31,6 @@ type NavItem = {
   icon: React.ComponentType<{ size?: number }>
 }
 
-type SettingsSectionId = 'general' | 'appearance' | 'account'
-
-const SETTINGS_CHILDREN: { id: SettingsSectionId; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'account', label: 'Account' },
-]
-
 const ALL_NAV: NavItem[] = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/app/consultants', label: 'Consultants', icon: Users },
@@ -51,7 +42,6 @@ const ALL_NAV: NavItem[] = [
   { to: '/app/contracts', label: 'Contracts', icon: Handshake },
   { to: '/app/analytics', label: 'Analytics', icon: Activity },
   { to: '/app/notes', label: 'Notes', icon: StickyNote },
-  { to: '/app/tasks', label: 'Tasks', icon: ListTodo },
   { to: '/app/milestones', label: 'Milestones', icon: Flag },
   { to: '/app/calendar', label: 'Calendar', icon: Calendar },
   { to: '/app/reports', label: 'Reports', icon: BarChart3 },
@@ -65,14 +55,16 @@ const HIDDEN_FOR_COMPANY_ADMIN = new Set([
   '/app/reports',
   '/app/focus',
   '/app/dashboard',
+  '/app/marketplace',
   '/app/applications',
-  '/app/contracts',
-  '/app/analytics',
+  '/app/assigned',
 ])
 const CONSULTANT_ROUTES = new Set([
   '/app',
   '/app/notes',
-  '/app/tasks',
+  '/app/milestones',
+  '/app/contracts',
+  '/app/analytics',
   '/app/calendar',
   '/app/settings',
   '/app/assigned',
@@ -80,10 +72,7 @@ const CONSULTANT_ROUTES = new Set([
 const FREELANCER_ROUTES = new Set([
   '/app/marketplace',
   '/app/applications',
-  '/app/contracts',
-  '/app/analytics',
   '/app/notes',
-  '/app/tasks',
   '/app/calendar',
   '/app/settings',
   '/app/assigned',
@@ -92,8 +81,9 @@ const PROJECT_LEAD_ROUTES = new Set([
   '/app',
   '/app/projects',
   '/app/assigned',
-  '/app/tasks',
   '/app/milestones',
+  '/app/contracts',
+  '/app/analytics',
   '/app/notes',
   '/app/calendar',
   '/app/reports',
@@ -109,12 +99,12 @@ type SidebarProps = {
 const Sidebar = ({ open }: SidebarProps) => {
   const { current } = Themestore()
   const user = Authstore((s) => s.user)
-  const location = useLocation()
-  const isSettingsPage = location.pathname === '/app/settings'
 
   const nav = useMemo(() => {
     if (user?.role === 'consultant') {
-      return ALL_NAV.filter((item) => CONSULTANT_ROUTES.has(item.to))
+      return ALL_NAV
+        .map((item) => (item.to === '/app/assigned' ? { ...item, label: 'Assigned projects' } : item))
+        .filter((item) => CONSULTANT_ROUTES.has(item.to))
     }
     if (user?.role === 'freelancer') {
       return ALL_NAV
@@ -124,17 +114,18 @@ const Sidebar = ({ open }: SidebarProps) => {
         .filter((item) => FREELANCER_ROUTES.has(item.to))
     }
     if (user?.role === 'project_lead') {
-      return ALL_NAV.filter((item) => PROJECT_LEAD_ROUTES.has(item.to))
+      return ALL_NAV
+        .map((item) => (item.to === '/app/assigned' ? { ...item, label: 'Assigned projects' } : item))
+        .filter((item) => PROJECT_LEAD_ROUTES.has(item.to))
     }
     if (user?.role === 'company_admin' || user?.role === 'super_admin') {
-      return ALL_NAV.filter((item) => !HIDDEN_FOR_COMPANY_ADMIN.has(item.to))
+      return ALL_NAV
+        .map((item) =>
+          item.to === '/app/projects' ? { ...item, label: 'Marketplace Projects' } : item
+        )
+        .filter((item) => !HIDDEN_FOR_COMPANY_ADMIN.has(item.to))
     }
     return ALL_NAV
-  }, [user?.role])
-
-  const settingsChildren = useMemo(() => {
-    const isCompanyAdmin = user?.role === 'company_admin' || user?.role === 'super_admin'
-    return SETTINGS_CHILDREN.filter((s) => s.id !== 'general' || isCompanyAdmin)
   }, [user?.role])
 
   const isDark = Themestore((s) => s.mode) === 'dark'
@@ -142,7 +133,6 @@ const Sidebar = ({ open }: SidebarProps) => {
   const muted = getMutedIconColor(isDark ? 'dark' : 'light')
   // const activeBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.035)'
   const activeBg = current?.system?.background
-  const hoverBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.028)'
 
   return (
     <motion.div
@@ -223,35 +213,6 @@ const Sidebar = ({ open }: SidebarProps) => {
                     )
                   }}
                 </NavLink>
-                {isSettingsPage && settingsChildren.length > 0 && (
-                  <ul className="mt-1 ml-5 pl-6 space-y-1" aria-label="Settings sections">
-                    {settingsChildren.map((child) => {
-                      const to = `/app/settings?section=${child.id}`
-                      const isChildActive =
-                        location.pathname === '/app/settings' &&
-                        (location.search === `?section=${child.id}` || (child.id === 'appearance' && !location.search))
-                      return (
-                        <li key={child.id}>
-                          <NavLink
-                            to={to}
-                            className="flex items-center py-2 pl-3 pr-3 rounded-base text-left transition-colors duration-150 border-l-2"
-                            style={{
-                              borderLeftColor: isChildActive ? (current?.brand?.primary ?? 'transparent') : 'transparent',
-                              color: isChildActive ? (current?.brand?.primary ?? current?.system?.dark) : current?.system?.dark,
-                              // fontWeight: isChildActive ? 600 : 500,
-                              backgroundColor: isChildActive ? hoverBg : 'transparent',
-                              opacity: isChildActive ? 1 : 0.75,
-                            }}
-                          >
-                            <Text variant="sm" className={isChildActive ? 'font-medium' : 'font-normal'}>
-                              {child.label}
-                            </Text>
-                          </NavLink>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
               </div>
             )
           })}

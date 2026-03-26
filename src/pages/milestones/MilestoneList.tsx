@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import Text from '../../components/base/Text'
 import { Card, Badge, Table } from '../../components/ui'
 import { AppPageLayout } from '../../components/layout'
@@ -25,10 +26,15 @@ const MilestoneList = () => {
           {milestones.map((m) => (
             <tr key={m.id}>
               <td className="px-4 py-2">
-                <Text variant="sm">{m.name}</Text>
+                <Link
+                  to={`/app/projects/${m.projectId}/milestones/${m.id}`}
+                  className="underline-offset-2 hover:underline"
+                >
+                  <Text variant="sm">{m.name}</Text>
+                </Link>
               </td>
               <td className="px-4 py-2">
-                <Text variant="sm">{projects[m.projectId]?.name ?? m.projectId}</Text>
+                <Text variant="sm">{projects[m.projectId]?.name ?? '—'}</Text>
               </td>
               <td className="px-4 py-2">
                 <Badge variant={m.priority}>{m.priority}</Badge>

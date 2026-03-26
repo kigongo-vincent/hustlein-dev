@@ -51,7 +51,10 @@ export const endpoints = {
   projectsByLead: (leadId: string) => path(['projects', 'lead', leadId]),
   project: (id: string) => path(['projects', id]),
   projectFiles: (projectId: string) => path(['projects', projectId, 'files']),
+  projectFilesTree: (projectId: string) => path(['projects', projectId, 'files', 'tree']),
+  projectFilesStorage: (projectId: string) => path(['projects', projectId, 'files', 'storage']),
   projectFileUpload: (projectId: string) => path(['projects', projectId, 'files', 'upload']),
+  projectFileMove: (id: string) => path(['files', id, 'move']),
 
   // Workflow
   workflowByProject: (projectId: string) => path(['projects', projectId, 'workflow']),

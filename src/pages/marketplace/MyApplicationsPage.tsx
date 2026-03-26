@@ -142,15 +142,38 @@ const MyApplicationsPage = () => {
       })
 
       if (applyAttachments.length > 0) {
-        await Promise.all(applyAttachments.map((file) => marketplaceService.uploadApplicationFile(created.id, file)))
+        const uploadResults = await Promise.allSettled(
+          applyAttachments.map((file) => marketplaceService.uploadApplicationFile(created.id, file)),
+        )
+        const failedUploads = uploadResults.filter((r) => r.status === 'rejected').length
+        if (failedUploads > 0) {
+          notifyError(
+            failedUploads === 1
+              ? 'Application submitted, but 1 file failed to upload.'
+              : `Application submitted, but ${failedUploads} files failed to upload.`,
+          )
+        } else {
+          notifySuccess('Re-application submitted.')
+        }
+      } else {
+        notifySuccess('Re-application submitted.')
       }
 
       setReapplyOpen(false)
       setApplyAttachments([])
-      notifySuccess('Re-application submitted.')
+      setReapplyPostingId(null)
+      setApplyCoverLetter('')
+      setApplyProposedHourly('')
+      setApplyProposedFixed('')
       await refreshApps()
     } catch (err) {
-      notifyError(err instanceof Error ? err.message : 'Failed to re-apply.')
+      const msg = err instanceof Error ? err.message : 'Failed to re-apply.'
+      if (msg.toLowerCase().includes('already applied')) {
+        notifyError('You already have an active application for this posting.')
+        await refreshApps()
+      } else {
+        notifyError(msg)
+      }
     } finally {
       setSaving(false)
     }

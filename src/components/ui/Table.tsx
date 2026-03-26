@@ -9,7 +9,8 @@ export interface Props extends HTMLAttributes<HTMLTableElement> {
 const Table = ({ headers, children, className = '', ...rest }: Props) => {
   return (
     <View bg="fg" className={`rounded-base overflow-hidden shadow-custom ${className}`}>
-      <table className="w-full" {...rest}>
+      <div className="w-full overflow-x-auto">
+        <table className="w-full min-w-[640px]" {...rest}>
         <thead>
           <tr>
             {headers.map((h) => (
@@ -22,7 +23,8 @@ const Table = ({ headers, children, className = '', ...rest }: Props) => {
           </tr>
         </thead>
         <tbody>{children}</tbody>
-      </table>
+        </table>
+      </div>
     </View>
   )
 }

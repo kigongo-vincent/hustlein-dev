@@ -1,11 +1,17 @@
 import { projectFileRepo } from '../repos'
 import { endpoints } from '../api'
 import { getStoredToken } from '../api/client'
-import type { ProjectFile } from '../types'
+import type { ProjectFile, ProjectFileStorageSummary } from '../types'
 
 export const projectFileService = {
   async listByProject(projectId: string): Promise<ProjectFile[]> {
     return projectFileRepo.getByProject(projectId)
+  },
+  async treeByProject(projectId: string): Promise<ProjectFile[]> {
+    return projectFileRepo.getTreeByProject(projectId)
+  },
+  async storageSummary(projectId: string): Promise<ProjectFileStorageSummary> {
+    return projectFileRepo.getStorageSummary(projectId)
   },
   async add(payload: Omit<ProjectFile, 'id' | 'createdAt'>): Promise<ProjectFile> {
     return projectFileRepo.create(payload)
@@ -16,10 +22,14 @@ export const projectFileService = {
   async remove(id: string): Promise<boolean> {
     return projectFileRepo.delete(id)
   },
-  async upload(projectId: string, file: File): Promise<ProjectFile> {
+  async move(id: string, parentId?: string): Promise<ProjectFile | null> {
+    return projectFileRepo.move(id, parentId)
+  },
+  async upload(projectId: string, file: File, parentId?: string): Promise<ProjectFile> {
     const token = getStoredToken()
     const body = new FormData()
     body.append('file', file)
+    if (parentId) body.append('parentId', parentId)
     const res = await fetch(endpoints.projectFileUpload(projectId), {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,

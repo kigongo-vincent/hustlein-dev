@@ -161,9 +161,9 @@ const ConsultantDashboard = () => {
   return (
     <div className="w-full mx-auto space-y-4">
       <View bg="bg" className="p-3">
-        <Text className="font-medium">Consultant Dashboard</Text>
+        <Text className="font-medium">Company Dashboard</Text>
         <Text variant="sm" className="opacity-80">
-          overview of your hours, tasks, and progress
+          overview of your projects, tasks, and progress
         </Text>
       </View>
 

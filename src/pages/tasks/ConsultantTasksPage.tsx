@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Badge, LogTimeModal } from '../../components/ui'
+import { Card, Button, Badge, LogTimeModal, CustomSelect } from '../../components/ui'
 import { AppPageLayout } from '../../components/layout'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
@@ -33,6 +33,7 @@ export default function ConsultantTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [projects, setProjects] = useState<Record<string, Project>>({})
   const [projectList, setProjectList] = useState<Project[]>([])
+  const [stateNames, setStateNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [projectFilter, setProjectFilter] = useState('')
@@ -50,15 +51,31 @@ export default function ConsultantTasksPage() {
       const projResults = await Promise.all(projectIds.map((id) => projectService.get(id)))
       const projList = projResults.filter((p): p is Project => p != null)
       const byId: Record<string, Project> = {}
+      const workflowMap: Record<string, string> = {}
       projList.forEach((p) => {
         byId[p.id] = p
       })
+      await Promise.all(
+        projList.map(async (p) => {
+          try {
+            const wf = await projectService.getWorkflow(p.id)
+            if (!wf) return
+            wf.states.forEach((s) => {
+              workflowMap[s.id] = s.name
+            })
+          } catch {
+            // Ignore missing workflow for legacy projects
+          }
+        })
+      )
       setProjects(byId)
       setProjectList(projList)
+      setStateNames(workflowMap)
     } catch {
       setTasks([])
       setProjectList([])
       setProjects({})
+      setStateNames({})
     } finally {
       setLoading(false)
     }
@@ -83,7 +100,7 @@ export default function ConsultantTasksPage() {
   const chartByProject = useMemo(() => {
     const counts: Record<string, number> = {}
     tasks.forEach((t) => {
-      const name = projects[t.projectId]?.name ?? t.projectId ?? 'Unknown'
+      const name = projects[t.projectId]?.name ?? 'Unknown project'
       counts[name] = (counts[name] ?? 0) + 1
     })
     return Object.entries(counts)
@@ -202,7 +219,7 @@ export default function ConsultantTasksPage() {
             <div className="flex items-center justify-between gap-3 flex-1 min-w-0">
               <div
                 className="flex items-center flex-1 min-w-0 rounded-base overflow-hidden"
-                style={{ border: `1px solid ${borderColor}` }}
+                style={{ backgroundColor: current?.system?.foreground }}
               >
                 <div className="flex-1 min-w-0 relative flex items-center">
                   <Search
@@ -224,7 +241,7 @@ export default function ConsultantTasksPage() {
                   className="shrink-0 p-2.5 transition-opacity hover:opacity-100 opacity-90"
                   style={{
                     color: dark,
-                    backgroundColor: filterOpen ? current?.system?.background : 'transparent',
+                    backgroundColor: filterOpen ? current?.system?.background : current?.system?.foreground,
                   }}
                   title="Filter"
                   aria-label="Open filters"
@@ -298,7 +315,7 @@ export default function ConsultantTasksPage() {
                         {t.title}
                       </td>
                       <td className="py-2 px-3" style={{ fontSize: baseFontSize, color: dark }}>
-                        {projects[t.projectId]?.name ?? t.projectId ?? '—'}
+                        {projects[t.projectId]?.name ?? '—'}
                       </td>
                       <td className="py-2 px-3">
                         <Badge variant={t.priority ?? 'medium'}>{t.priority ?? 'medium'}</Badge>
@@ -307,7 +324,7 @@ export default function ConsultantTasksPage() {
                         {t.dueDate ?? '—'}
                       </td>
                       <td className="py-2 px-3" style={{ fontSize: baseFontSize, color: dark }}>
-                        {t.workflowStateId ?? '—'}
+                        {stateNames[t.workflowStateId] ?? '—'}
                       </td>
                     </tr>
                   ))
@@ -349,30 +366,26 @@ export default function ConsultantTasksPage() {
           </div>
           <div className="p-4 space-y-4">
             <div>
-              <label className="block mb-1.5 text-sm font-medium" style={{ color: dark }}>
-                Project
-              </label>
-              <select
+              <CustomSelect
+                label="Project"
+                options={projectOptions}
                 value={projectFilter}
-                onChange={(e) => setProjectFilter(e.target.value)}
-                className="w-full px-3 py-2 rounded-base border bg-transparent focus:outline-none focus:ring-2"
-                style={{ fontSize: baseFontSize, color: dark, borderColor }}
-              >
-                {projectOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setProjectFilter}
+                mode="fill"
+                placement="below"
+              />
             </div>
-            <Button
-              variant="secondary"
-              label="Reset filters"
-              onClick={() => {
-                setProjectFilter('')
-                setSearch('')
-              }}
-            />
+            <div className="pt-1">
+              <Button
+                fullWidth
+                variant="background"
+                label="Reset filters"
+                onClick={() => {
+                  setProjectFilter('')
+                  setSearch('')
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

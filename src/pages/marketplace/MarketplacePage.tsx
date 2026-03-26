@@ -1,14 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import Avatar from '../../components/base/Avatar'
-import { Button, Input, Modal, Textarea, CustomSelect, RichTextEditor } from '../../components/ui'
+import { Button, Input, Modal, Textarea, CustomSelect, RichTextEditor, CurrencyInput } from '../../components/ui'
 import { Themestore, type ThemeI } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { companyService } from '../../services/companyService'
 import { marketplaceService } from '../../services/marketplaceService'
 import { userService } from '../../services/userService'
-import type { ProjectPosting, ProjectApplication, User, Company, UserRole } from '../../types'
+import type { ProjectPosting, ProjectApplication, User, Company } from '../../types'
 import { AnimatePresence, motion } from 'framer-motion'
 import { notifyError, notifySuccess } from '../../data/NotificationStore'
 import {
@@ -24,6 +23,15 @@ const BUDGET_OPTIONS = [
   { value: 'hourly', label: 'Hourly' },
   { value: 'fixed', label: 'Fixed' },
 ] as const
+
+const CURRENCY_OPTIONS = [
+  { value: 'UGX', label: 'UGX' },
+  { value: 'KES', label: 'KES' },
+  { value: 'TZS', label: 'TZS' },
+  { value: 'USD', label: 'USD' },
+  { value: 'EUR', label: 'EUR' },
+  { value: 'GBP', label: 'GBP' },
+]
 
 type SortOption = 'newest' | 'oldest' | 'budget_high' | 'budget_low'
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
@@ -106,17 +114,6 @@ function listingSpotlightDaysLeft(createdAt: string): number {
   return Math.max(0, MARKETPLACE_LISTING_WINDOW_DAYS - elapsedDays)
 }
 
-function formatMarketplaceRole(role: UserRole): string {
-  const labels: Record<UserRole, string> = {
-    super_admin: 'Super admin',
-    company_admin: 'Company admin',
-    project_lead: 'Project lead',
-    consultant: 'Consultant',
-    freelancer: 'Freelancer',
-  }
-  return labels[role] ?? role
-}
-
 /** Resolve relative upload paths (e.g. /uploads/...) when VITE_API_URL is an absolute API base. */
 function resolvePublicAssetUrl(url?: string | null): string | undefined {
   const s = url?.trim()
@@ -150,8 +147,8 @@ const MarketplaceProjectCard = ({
   theme,
   skillColors,
   variant = 'default',
-  viewerUser,
-  viewerIsCompanyAdmin,
+  viewerUser: _viewerUser,
+  viewerIsCompanyAdmin: _viewerIsCompanyAdmin,
   onApply,
   onManageApplications,
 }: MarketplaceProjectCardProps) => {
@@ -239,41 +236,16 @@ const MarketplaceProjectCard = ({
               </div>
             </div>
           </div>
-          {viewerIsCompanyAdmin && viewerUser ? (
-            <div className="flex items-center gap-3 shrink-0">
-              <Avatar
-                size="md"
-                name={viewerUser.name}
-                src={resolvePublicAssetUrl(viewerUser.avatarUrl ?? undefined)}
-              />
-              <div className="min-w-0">
-                <Text
-                  className="font-semibold leading-tight"
-                  style={{ color: theme.system.dark, opacity: 0.95, fontSize: baseFontSize * 1.2 }}
-                >
-                  {viewerUser.name}
-                </Text>
-                <Text
-                  variant="sm"
-                  className="leading-tight"
-                  style={{ color: theme.system.dark, opacity: 0.55 }}
-                >
-                  {viewerUser.role === 'company_admin' ? 'CEO' : formatMarketplaceRole(viewerUser.role)}
-                </Text>
-              </div>
-            </div>
-          ) : (
-            <Text
-              variant="sm"
-              className="shrink-0 rounded-full font-normal tracking-wide px-6 py-2 ml-auto inline-flex"
-              style={{
-                background: badgeSuccess ? `${green}22` : `${green}14`,
-                color: green,
-              }}
-            >
-              {badgeLabel}
-            </Text>
-          )}
+          <Text
+            variant="sm"
+            className="shrink-0 rounded-full font-normal tracking-wide px-6 py-2 ml-auto inline-flex"
+            style={{
+              background: badgeSuccess ? `${green}22` : `${green}14`,
+              color: green,
+            }}
+          >
+            {badgeLabel}
+          </Text>
         </div>
 
         <span className="text-[11px] font-medium" style={{ opacity: 0.4 }}>
@@ -961,13 +933,43 @@ const MarketplacePage = () => {
               onChange={(v) => setCreateBudgetType(v === 'hybrid' || v === 'hourly' || v === 'fixed' ? v : 'hybrid')}
               placement="below"
             />
-            <Input label="Currency" value={createCurrency} onChange={(e) => setCreateCurrency(e.target.value.toUpperCase())} />
+            <CustomSelect
+              label="Currency"
+              options={CURRENCY_OPTIONS}
+              value={createCurrency}
+              onChange={(v) => setCreateCurrency(v || 'UGX')}
+              placement="below"
+            />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Hourly min" value={createHourlyMin} onChange={(e) => setCreateHourlyMin(e.target.value)} />
-            <Input label="Hourly max" value={createHourlyMax} onChange={(e) => setCreateHourlyMax(e.target.value)} />
-            <Input label="Fixed min" value={createFixedMin} onChange={(e) => setCreateFixedMin(e.target.value)} />
-            <Input label="Fixed max" value={createFixedMax} onChange={(e) => setCreateFixedMax(e.target.value)} />
+            <CurrencyInput
+              label="Hourly min"
+              value={createHourlyMin}
+              onChange={setCreateHourlyMin}
+              currency={createCurrency}
+              showCurrencySymbol={false}
+            />
+            <CurrencyInput
+              label="Hourly max"
+              value={createHourlyMax}
+              onChange={setCreateHourlyMax}
+              currency={createCurrency}
+              showCurrencySymbol={false}
+            />
+            <CurrencyInput
+              label="Fixed min"
+              value={createFixedMin}
+              onChange={setCreateFixedMin}
+              currency={createCurrency}
+              showCurrencySymbol={false}
+            />
+            <CurrencyInput
+              label="Fixed max"
+              value={createFixedMax}
+              onChange={setCreateFixedMax}
+              currency={createCurrency}
+              showCurrencySymbol={false}
+            />
           </div>
           <Input label="Required skills" placeholder="Comma-separated (e.g. React, Go, Figma)" value={createSkills} onChange={(e) => setCreateSkills(e.target.value)} />
           <div className="flex justify-end gap-3 pt-2">

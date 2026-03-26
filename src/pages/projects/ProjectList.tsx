@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
 import { Card, Button, Skeleton } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { useProjectListModal } from '../../data/ModalStore'
-import { projectService, userService, taskService } from '../../services'
-import type { Project } from '../../types'
+import { projectService, userService, taskService, marketplaceService } from '../../services'
+import type { Project, ProjectPosting } from '../../types'
 import { FolderKanban, ListTodo, User, BarChart3, Search, Plus, SlidersHorizontal } from 'lucide-react'
 import { Authstore } from '../../data/Authstore'
 import {
@@ -16,8 +17,9 @@ import {
 import type { ProjectMember, ProjectWithMeta } from './types'
 import { getChartColors } from './utils'
 import ProjectCard from './ProjectCard'
+import MarketplaceProjectCard from '../../components/marketplace/MarketplaceProjectCard'
 import ProjectListFilters from './ProjectListFilters'
-import CreateProjectModal from './CreateProjectModal'
+import CreateProjectModal, { type CreateProjectPayload } from './CreateProjectModal'
 import EditProjectModal from './EditProjectModal'
 import DeleteProjectModal from './DeleteProjectModal'
 import SuspendProjectModal from './SuspendProjectModal'
@@ -25,8 +27,12 @@ import ProjectListAnalyticsModal from './ProjectListAnalyticsModal'
 
 const ProjectList = () => {
   const { current } = Themestore()
+  const navigate = useNavigate()
   const user = Authstore((s) => s.user)
+  const isCompanyAdmin = user?.role === 'company_admin' || user?.role === 'super_admin'
   const [projects, setProjects] = useState<Project[]>([])
+  const [marketplaceProjects, setMarketplaceProjects] = useState<ProjectPosting[]>([])
+  const [companyProjectTab, setCompanyProjectTab] = useState<'internal' | 'marketplace'>('internal')
   const [leads, setLeads] = useState<Record<string, string>>({})
   const [taskCountByProject, setTaskCountByProject] = useState<Record<string, number>>({})
   const [membersByProject, setMembersByProject] = useState<Record<string, ProjectMember[]>>({})
@@ -53,15 +59,21 @@ const ProjectList = () => {
   const [editSaving, setEditSaving] = useState(false)
   const [suspendProject, setSuspendProject] = useState<ProjectWithMeta | null>(null)
   const [actionSaving, setActionSaving] = useState(false)
+  const skillColors = useMemo(() => {
+    const a = current?.accent
+    return [a?.blue, a?.purple, a?.pink, a?.green, a?.yellow, a?.teal].filter(Boolean) as string[]
+  }, [current?.accent])
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [projectList, userList] = await Promise.all([
+      const [projectList, userList, postingList] = await Promise.all([
         projectService.list(),
         userService.list(),
+        isCompanyAdmin ? marketplaceService.listPostings() : Promise.resolve([] as ProjectPosting[]),
       ])
       setProjects(projectList)
+      setMarketplaceProjects(postingList)
       const leadMap: Record<string, string> = {}
       const uMap: Record<string, { name: string; avatarUrl?: string }> = {}
       userList.forEach((u) => {
@@ -92,7 +104,7 @@ const ProjectList = () => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isCompanyAdmin])
 
   useEffect(() => {
     loadData()
@@ -139,6 +151,30 @@ const ProjectList = () => {
     return list
   }, [filteredProjects, filterSort])
 
+  const filteredMarketplaceProjects = useMemo(() => {
+    return marketplaceProjects.filter((p) => {
+      if (!searchLower) return true
+      const haystack = [
+        p.title,
+        p.description,
+        p.companyName ?? '',
+        ...(p.requiredSkills ?? []),
+      ]
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(searchLower)
+    })
+  }, [marketplaceProjects, searchLower])
+
+  const sortedMarketplaceProjects = useMemo(() => {
+    const list = [...filteredMarketplaceProjects]
+    if (filterSort === 'name_asc') return list.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }))
+    if (filterSort === 'name_desc') return list.sort((a, b) => b.title.localeCompare(a.title, undefined, { sensitivity: 'base' }))
+    if (filterSort === 'date_desc') return list.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    if (filterSort === 'date_asc') return list.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    return list
+  }, [filteredMarketplaceProjects, filterSort])
+
   useEffect(() => {
     if (filterOpen) {
       setFilterSidebarExiting(false)
@@ -161,28 +197,56 @@ const ProjectList = () => {
     return () => clearTimeout(t)
   }, [setFilterOpen])
 
-  const handleCreateProject = useCallback(async () => {
-    if (!user?.companyId || !createName.trim() || !createLeadId) return
-    setCreateSaving(true)
-    try {
-      await projectService.create({
-        companyId: user.companyId,
-        name: createName.trim(),
-        description: createDescription.trim() || undefined,
-        projectLeadId: createLeadId,
-        workflowId: 'w1',
-        dueDate: createDueDate.trim() || undefined,
-      })
-      setCreateModalOpen(false)
-      setCreateName('')
-      setCreateDescription('')
-      setCreateLeadId('')
-      setCreateDueDate('')
-      loadData()
-    } finally {
-      setCreateSaving(false)
-    }
-  }, [user?.companyId, createName, createDescription, createLeadId, createDueDate, loadData])
+  const handleCreateProject = useCallback(
+    async (payload: CreateProjectPayload) => {
+      setCreateSaving(true)
+      try {
+        if (payload.projectType === 'internal') {
+          if (!user?.companyId) return
+
+          await projectService.create({
+            companyId: user.companyId,
+            projectType: payload.projectType,
+            name: payload.name.trim(),
+            description: payload.description.trim() || undefined,
+            projectLeadId: payload.leadId,
+            workflowId: 'w1',
+            dueDate: payload.dueDate.trim() || undefined,
+          })
+
+          setCreateModalOpen(false)
+          setCreateName('')
+          setCreateDescription('')
+          setCreateLeadId('')
+          setCreateDueDate('')
+          loadData()
+          return
+        }
+
+        // External: creates a marketplace posting only.
+        await marketplaceService.createPosting({
+          title: payload.title.trim(),
+          description: payload.description.trim(),
+          budgetType: payload.budgetType,
+          hourlyMin: payload.hourlyMin,
+          hourlyMax: payload.hourlyMax,
+          fixedMin: payload.fixedMin,
+          fixedMax: payload.fixedMax,
+          currency: payload.currency.trim() || 'UGX',
+          requiredSkills: payload.requiredSkills,
+        })
+
+        setCreateModalOpen(false)
+        setCreateName('')
+        setCreateDescription('')
+        setCreateLeadId('')
+        setCreateDueDate('')
+      } finally {
+        setCreateSaving(false)
+      }
+    },
+    [loadData, user?.companyId]
+  )
 
   useEffect(() => {
     if (editProject) {
@@ -292,19 +356,27 @@ const ProjectList = () => {
           <View bg="bg" className="p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <Text className="font-medium">Projects</Text>
+                <Text className="font-medium">{isCompanyAdmin ? 'Marketplace Projects' : 'Projects'}</Text>
                 <Text variant="sm" className="opacity-80">
-                  Upwork-style overview and analytics
+                  {isCompanyAdmin ? 'Manage internal and marketplace projects in one place' : 'Upwork-style overview and analytics'}
                 </Text>
               </div>
               <div className="flex items-center gap-2 flex-nowrap">
-                <Button
-                  variant="outlinePrimary"
-                  size="sm"
-                  label="Create project"
-                  startIcon={<Plus className="w-4 h-4 shrink-0" />}
+                <button
+                  type="button"
                   onClick={() => setCreateModalOpen(true)}
-                />
+                  className="inline-flex items-center gap-2 rounded-base px-3 py-2 transition-opacity hover:opacity-100 opacity-90"
+                  style={{
+                    border: `0.5px solid ${current?.brand?.primary ? `${current.brand.primary}66` : 'rgba(104,35,8,0.35)'}`,
+                    color: current?.brand?.primary ?? '#682308',
+                    backgroundColor: 'transparent',
+                    fontSize: Math.max(11, baseFontSize * 0.95),
+                  }}
+                  aria-label="Create project"
+                >
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span>Create project</span>
+                </button>
                 <Button
                   variant="secondaryBrand"
                   size="sm"
@@ -316,6 +388,53 @@ const ProjectList = () => {
               </div>
             </div>
           </View>
+
+          {isCompanyAdmin && (
+            <div
+              role="tablist"
+              aria-label="Company projects view"
+              className="flex flex-wrap gap-2 pb-2 border-b"
+              style={{ borderColor: current?.system?.border ?? 'rgba(0,0,0,0.06)' }}
+            >
+              {([
+                { id: 'internal', label: 'Internal Projects', count: sortedProjects.length },
+                { id: 'marketplace', label: 'Marketplace Projects', count: sortedMarketplaceProjects.length },
+              ] as const).map((tab) => {
+                const active = companyProjectTab === tab.id
+                const primary = current?.brand?.primary ?? '#682308'
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setCompanyProjectTab(tab.id)}
+                    className="px-3 py-2 rounded-md font-medium transition-opacity whitespace-nowrap"
+                    style={{
+                      fontSize: Math.max(11, baseFontSize * 1.05),
+                      backgroundColor: active ? `${primary}14` : 'transparent',
+                      color: active ? primary : (current?.system?.dark ?? '#111'),
+                      opacity: active ? 1 : 0.7,
+                    }}
+                  >
+                    {tab.label}
+                    <span
+                      className="font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
+                      style={{
+                        fontSize: Math.max(10, baseFontSize * 0.9),
+                        marginLeft: 8,
+                        backgroundColor: active ? `${primary}22` : (current?.system?.background ?? 'rgba(0,0,0,0.04)'),
+                        color: active ? primary : (current?.system?.dark ?? '#111'),
+                        opacity: active ? 1 : 0.75,
+                      }}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {loading
@@ -348,7 +467,6 @@ const ProjectList = () => {
         <View bg="fg" className="rounded-base p-0 overflow-hidden mt-5">
           <div
             className="flex items-center rounded-base"
-            style={{ border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.12)'}` }}
             role="search"
           >
             <Search
@@ -359,7 +477,11 @@ const ProjectList = () => {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search projects by name, description or lead…"
+              placeholder={
+                isCompanyAdmin && companyProjectTab === 'marketplace'
+                  ? 'Search marketplace projects by title, description, company or skill…'
+                  : 'Search projects by name, description or lead…'
+              }
               className="flex-1 min-w-0 py-3 pl-3 pr-4 bg-transparent focus:outline-none focus:ring-0 border-0 placeholder:opacity-60"
               style={{ fontSize: baseFontSize, lineHeight: 1.5, color: dark }}
               aria-label="Search projects"
@@ -393,6 +515,37 @@ const ProjectList = () => {
                 </Card>
               ))}
             </div>
+          ) : isCompanyAdmin && companyProjectTab === 'marketplace' ? (
+            sortedMarketplaceProjects.length === 0 ? (
+              <div className="p-8 text-center">
+                <Text variant="sm" className="opacity-70">
+                  {marketplaceProjects.length === 0
+                    ? 'No marketplace projects yet. Create one to get started.'
+                    : 'No marketplace projects match your search or filters.'}
+                </Text>
+              </div>
+            ) : (
+              <div className="space-y-4 max-w-6xl">
+                {sortedMarketplaceProjects.map((p) => (
+                  <MarketplaceProjectCard
+                    key={p.id}
+                    posting={p}
+                    company={null}
+                    isFreelancer={false}
+                    theme={current}
+                    skillColors={skillColors}
+                    variant="default"
+                    viewerUser={user ?? null}
+                    viewerIsCompanyAdmin={true}
+                    onCardClick={() => navigate(`/app/projects/${p.id}?external=1`, { state: { externalPosting: true } })}
+                    actionOverride={{
+                      label: 'View details',
+                      onClick: () => navigate(`/app/projects/${p.id}?external=1`, { state: { externalPosting: true } }),
+                    }}
+                  />
+                ))}
+              </div>
+            )
           ) : sortedProjects.length === 0 ? (
             <div className="p-8 text-center">
               <Text variant="sm" className="opacity-70">
@@ -442,6 +595,7 @@ const ProjectList = () => {
         onDueDateChange={setCreateDueDate}
         onSubmit={handleCreateProject}
         leadOptions={leadOptions}
+        projectTypeChoiceEnabled={isCompanyAdmin}
       />
 
       <DeleteProjectModal

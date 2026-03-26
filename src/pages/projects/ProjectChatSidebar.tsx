@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
 import Text from '../../components/base/Text'
 import { Themestore } from '../../data/Themestore'
-import { LayoutGrid, CheckCheck } from 'lucide-react'
-import { Button } from '../../components/ui'
+import { LayoutGrid } from 'lucide-react'
 import type { Comment } from '../../types'
 import { PEXELS_AVATAR_LIST } from './constants'
 import type { LastSeenByAuthor } from './projectChatTypes'
@@ -57,7 +56,6 @@ export type ProjectChatSidebarProps = {
   projectDescription?: string
   onSaveGroupSettings?: (payload: { name: string; description: string }) => void | Promise<void>
   onLeaveGroup?: () => void
-  onMarkAllAgreed?: () => void | Promise<void>
 }
 
 export default function ProjectChatSidebar({
@@ -79,7 +77,6 @@ export default function ProjectChatSidebar({
   projectDescription,
   onSaveGroupSettings,
   onLeaveGroup,
-  onMarkAllAgreed,
 }: ProjectChatSidebarProps) {
   const { current } = Themestore()
   const dark = current?.system?.dark
@@ -110,16 +107,6 @@ export default function ProjectChatSidebar({
             Project chat · {participantCount} participant{participantCount !== 1 ? 's' : ''}
           </Text>
         </div>
-        {onMarkAllAgreed && (
-          <Button
-            variant="ghost"
-            size="sm"
-            label="Mark all agreed"
-            startIcon={<CheckCheck className="w-4 h-4 shrink-0" />}
-            onClick={onMarkAllAgreed}
-            className="shrink-0"
-          />
-        )}
         <button
           type="button"
           onClick={() => setGroupMenuOpen(true)}

@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import Text, { baseFontSize } from '../base/Text'
-import Avatar from '../base/Avatar'
-import type { Company, ProjectPosting, User, UserRole } from '../../types'
+import type { Company, ProjectPosting, User } from '../../types'
 import type { ThemeI } from '../../data/Themestore'
 import { Wallet } from 'lucide-react'
 
@@ -73,17 +72,6 @@ function budgetLines(p: ProjectPosting): string[] {
   ]
 }
 
-function formatMarketplaceRole(role: UserRole): string {
-  const labels: Record<UserRole, string> = {
-    super_admin: 'Super admin',
-    company_admin: 'Company admin',
-    project_lead: 'Project lead',
-    consultant: 'Consultant',
-    freelancer: 'Freelancer',
-  }
-  return labels[role] ?? role
-}
-
 export type MarketplaceProjectCardActionTone = 'primary' | 'danger'
 
 export type MarketplaceProjectCardActionOverride = {
@@ -107,6 +95,7 @@ export type MarketplaceProjectCardProps = {
   onManageApplications?: () => void
   actionOverride?: MarketplaceProjectCardActionOverride
   secondaryActionOverride?: MarketplaceProjectCardActionOverride
+  onCardClick?: () => void
 }
 
 const MarketplaceProjectCard = ({
@@ -116,12 +105,13 @@ const MarketplaceProjectCard = ({
   theme,
   skillColors,
   variant = 'default',
-  viewerUser,
-  viewerIsCompanyAdmin,
+  viewerUser: _viewerUser,
+  viewerIsCompanyAdmin: _viewerIsCompanyAdmin,
   onApply,
   onManageApplications,
   actionOverride,
   secondaryActionOverride,
+  onCardClick,
 }: MarketplaceProjectCardProps) => {
   const [primaryHover, setPrimaryHover] = useState(false)
   const [secondaryHover, setSecondaryHover] = useState(false)
@@ -188,7 +178,19 @@ const MarketplaceProjectCard = ({
   const updated = p.updatedAt ? new Date(p.updatedAt) : null
 
   return (
-    <div className={`rounded-base shadow-custom ${pad}`} style={{ background: theme.system.foreground, color: theme.system.dark }}>
+    <div
+      className={`rounded-base shadow-custom ${pad} ${onCardClick ? 'cursor-pointer' : ''}`}
+      style={{ background: theme.system.foreground, color: theme.system.dark }}
+      onClick={onCardClick}
+      role={onCardClick ? 'button' : undefined}
+      tabIndex={onCardClick ? 0 : undefined}
+      onKeyDown={onCardClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onCardClick()
+        }
+      } : undefined}
+    >
       <div className="flex flex-col gap-4 min-w-0">
         <div className="flex items-start gap-4">
           <div className="min-w-0 flex flex-col gap-0">
@@ -230,27 +232,13 @@ const MarketplaceProjectCard = ({
             </div>
           </div>
 
-          {viewerIsCompanyAdmin && viewerUser ? (
-            <div className="flex items-center gap-3 shrink-0">
-              <Avatar size="md" name={viewerUser.name} src={resolvePublicAssetUrl(viewerUser.avatarUrl ?? undefined)} />
-              <div className="min-w-0">
-                <Text className="font-semibold leading-tight" style={{ color: theme.system.dark, opacity: 0.95, fontSize: baseFontSize * 1.2 }}>
-                  {viewerUser.name}
-                </Text>
-                <Text variant="sm" className="leading-tight" style={{ color: theme.system.dark, opacity: 0.55 }}>
-                  {viewerUser.role === 'company_admin' ? 'CEO' : formatMarketplaceRole(viewerUser.role)}
-                </Text>
-              </div>
-            </div>
-          ) : (
-            <Text
-              variant="sm"
-              className="shrink-0 rounded-full font-normal tracking-wide px-6 py-2 ml-auto inline-flex"
-              style={{ background: badgeSuccess ? `${green}22` : `${green}14`, color: green }}
-            >
-              {badgeLabel}
-            </Text>
-          )}
+          <Text
+            variant="sm"
+            className="shrink-0 rounded-full font-normal tracking-wide px-6 py-2 ml-auto inline-flex"
+            style={{ background: badgeSuccess ? `${green}22` : `${green}14`, color: green }}
+          >
+            {badgeLabel}
+          </Text>
         </div>
 
         <span className="text-[11px] font-medium" style={{ opacity: 0.4 }}>
@@ -312,7 +300,10 @@ const MarketplaceProjectCard = ({
             {secondaryActionOverride ? (
               <button
                 type="button"
-                onClick={secondaryClick}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  secondaryClick()
+                }}
                 disabled={secondaryDisabled}
                 onMouseEnter={() => setSecondaryHover(true)}
                 onMouseLeave={() => setSecondaryHover(false)}
@@ -332,7 +323,10 @@ const MarketplaceProjectCard = ({
 
             <button
               type="button"
-              onClick={actionClick}
+              onClick={(e) => {
+                e.stopPropagation()
+                actionClick()
+              }}
               disabled={actionDisabled}
               onMouseEnter={() => setPrimaryHover(true)}
               onMouseLeave={() => setPrimaryHover(false)}

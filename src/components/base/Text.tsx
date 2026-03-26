@@ -13,8 +13,8 @@ const isWindows =
   typeof navigator !== "undefined" && /Win/i.test(navigator.userAgent)
 const FONT_SCALE_WINDOWS = 1.12
 
-const _base = 12.5
-const _min = 11
+const _base = 12.271875
+const _min = 10.79925
 export const baseFontSize = isWindows ? _base * FONT_SCALE_WINDOWS : _base
 /** Max font size (px) for the app; lg/xl variants use this so body text never exceeds base. */
 export const maxFontSize = baseFontSize

@@ -98,7 +98,7 @@ const MilestoneTasksPage = () => {
   }, [projectId, milestoneId])
 
   const stateName = (stateId: string) =>
-    workflowStates.find((s) => s.id === stateId)?.name ?? stateId
+    workflowStates.find((s) => s.id === stateId)?.name ?? 'Unknown'
 
   const doneStateIds = useMemo(
     () =>
@@ -128,7 +128,7 @@ const MilestoneTasksPage = () => {
     })
     return Object.entries(byOwner)
       .map(([ownerId, count]) => ({
-        name: users.find((u) => u.id === ownerId)?.name ?? ownerId,
+        name: users.find((u) => u.id === ownerId)?.name ?? 'Unknown user',
         ownerId,
         count,
       }))

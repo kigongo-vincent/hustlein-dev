@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import Text, { baseFontSize } from '../../components/base/Text'
 import { Card, Skeleton } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { useProjectListModal } from '../../data/ModalStore'
-import { projectService, userService, taskService } from '../../services'
+import { projectService, userService, taskService, marketplaceService } from '../../services'
 import type { Project } from '../../types'
-import { Search, SlidersHorizontal } from 'lucide-react'
+import { Search, SlidersHorizontal, X, FolderKanban, ListTodo, UserCheck, User } from 'lucide-react'
 import { Authstore } from '../../data/Authstore'
 import {
   PEXELS_AVATAR_FALLBACKS,
@@ -15,8 +16,9 @@ import {
 import type { ProjectMember, ProjectWithMeta } from './types'
 import { getChartColors } from './utils'
 import ProjectCard from './ProjectCard'
+import MarketplaceProjectCard from '../../components/marketplace/MarketplaceProjectCard'
 import ProjectListFilters from './ProjectListFilters'
-import CreateProjectModal from './CreateProjectModal'
+import CreateProjectModal, { type CreateProjectPayload } from './CreateProjectModal'
 import EditProjectModal from './EditProjectModal'
 import DeleteProjectModal from './DeleteProjectModal'
 import SuspendProjectModal from './SuspendProjectModal'
@@ -24,7 +26,9 @@ import ProjectListAnalyticsModal from './ProjectListAnalyticsModal'
 
 const ProjectList = () => {
   const { current } = Themestore()
+  const navigate = useNavigate()
   const user = Authstore((s) => s.user)
+  const isCompanyAdmin = user?.role === 'company_admin' || user?.role === 'super_admin'
   const [projects, setProjects] = useState<Project[]>([])
   const [leads, setLeads] = useState<Record<string, string>>({})
   const [taskCountByProject, setTaskCountByProject] = useState<Record<string, number>>({})
@@ -56,6 +60,10 @@ const ProjectList = () => {
   const isConsultant = user?.role === 'consultant'
   const isFreelancer = user?.role === 'freelancer'
   const isProjectLead = user?.role === 'project_lead'
+  const skillColors = useMemo(() => {
+    const a = current?.accent
+    return [a?.blue, a?.purple, a?.pink, a?.green, a?.yellow, a?.teal].filter(Boolean) as string[]
+  }, [current?.accent])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -174,28 +182,56 @@ const ProjectList = () => {
     return () => clearTimeout(t)
   }, [])
 
-  const handleCreateProject = useCallback(async () => {
-    if (!user?.companyId || !createName.trim() || !createLeadId) return
-    setCreateSaving(true)
-    try {
-      await projectService.create({
-        companyId: user.companyId,
-        name: createName.trim(),
-        description: createDescription.trim() || undefined,
-        projectLeadId: createLeadId,
-        workflowId: 'w1',
-        dueDate: createDueDate.trim() || undefined,
-      })
-      setCreateModalOpen(false)
-      setCreateName('')
-      setCreateDescription('')
-      setCreateLeadId('')
-      setCreateDueDate('')
-      loadData()
-    } finally {
-      setCreateSaving(false)
-    }
-  }, [user?.companyId, createName, createDescription, createLeadId, createDueDate, loadData])
+  const handleCreateProject = useCallback(
+    async (payload: CreateProjectPayload) => {
+      setCreateSaving(true)
+      try {
+        if (payload.projectType === 'internal') {
+          if (!user?.companyId) return
+
+          await projectService.create({
+            companyId: user.companyId,
+            projectType: payload.projectType,
+            name: payload.name.trim(),
+            description: payload.description.trim() || undefined,
+            projectLeadId: payload.leadId,
+            workflowId: 'w1',
+            dueDate: payload.dueDate.trim() || undefined,
+          })
+
+          setCreateModalOpen(false)
+          setCreateName('')
+          setCreateDescription('')
+          setCreateLeadId('')
+          setCreateDueDate('')
+          loadData()
+          return
+        }
+
+        // External: creates a marketplace posting only.
+        await marketplaceService.createPosting({
+          title: payload.title.trim(),
+          description: payload.description.trim(),
+          budgetType: payload.budgetType,
+          hourlyMin: payload.hourlyMin,
+          hourlyMax: payload.hourlyMax,
+          fixedMin: payload.fixedMin,
+          fixedMax: payload.fixedMax,
+          currency: payload.currency.trim() || 'UGX',
+          requiredSkills: payload.requiredSkills,
+        })
+
+        setCreateModalOpen(false)
+        setCreateName('')
+        setCreateDescription('')
+        setCreateLeadId('')
+        setCreateDueDate('')
+      } finally {
+        setCreateSaving(false)
+      }
+    },
+    [loadData, user?.companyId]
+  )
 
   useEffect(() => {
     if (editProject) {
@@ -277,11 +313,72 @@ const ProjectList = () => {
   }, [projects])
 
   const chartColors = getChartColors(primaryColor, secondaryColor, Math.max(chartDataByProject.length, 2))
+  const totalTasks = useMemo(
+    () => Object.values(taskCountByProject).reduce((a, b) => a + b, 0),
+    [taskCountByProject]
+  )
+  const activeProjects = useMemo(
+    () => projectsWithMeta.filter((p) => p.status === 'active').length,
+    [projectsWithMeta]
+  )
+  const uniqueLeads = useMemo(
+    () => new Set(projectsWithMeta.map((p) => p.projectLeadId).filter(Boolean)).size,
+    [projectsWithMeta]
+  )
+  const statCards = useMemo(
+    () => [
+      { label: 'Active projects', value: String(activeProjects), caption: 'Currently running', icon: UserCheck },
+      { label: 'Total projects', value: String(projectsWithMeta.length), caption: 'Assigned to you', icon: FolderKanban },
+      { label: 'Total tasks', value: String(totalTasks), caption: 'Across assigned projects', icon: ListTodo },
+      { label: 'Project leads', value: String(uniqueLeads), caption: 'Unique owners', icon: User },
+    ],
+    [activeProjects, projectsWithMeta.length, totalTasks, uniqueLeads]
+  )
+
+  const toMarketplacePosting = useCallback((p: ProjectWithMeta) => {
+    return {
+      id: p.id,
+      companyId: p.companyId,
+      createdById: p.projectLeadId,
+      title: p.name,
+      description: p.description ?? '',
+      budgetType: 'hybrid' as const,
+      currency: 'UGX',
+      status: p.status === 'suspended' ? 'closed' as const : 'open' as const,
+      createdAt: p.createdAt,
+      updatedAt: p.createdAt,
+      requiredSkills: p.skills ?? [],
+    }
+  }, [])
 
   return (
     <>
       <div className="w-full h-full mx-auto flex flex-col min-h-0">
-
+        <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          {loading
+            ? [1, 2, 3, 4].map((i) => (
+                <Card key={i} className="min-h-[7rem] py-4 px-4">
+                  <Skeleton height="h-4" width="w-24" className="mb-2" />
+                  <Skeleton height="h-4" width="w-16" className="mb-1" />
+                  <Skeleton height="h-8" width="w-12" />
+                </Card>
+              ))
+            : statCards.map((s) => (
+                <Card
+                  key={s.label}
+                  title={s.label}
+                  rightIcon={<s.icon className="w-5 h-5 opacity-80" />}
+                  className="min-h-[7rem] py-4 px-4"
+                >
+                  <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
+                    {s.value}
+                  </Text>
+                  <Text variant="sm" className="opacity-55 mt-0.5">
+                    {s.caption}
+                  </Text>
+                </Card>
+              ))}
+        </div>
 
         <Card
           className="p-0 overflow-hidden flex-1 min-h-0 flex flex-col mt-5"
@@ -300,7 +397,7 @@ const ProjectList = () => {
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name, description or lead…"
+                    placeholder="search for projects..."
                     className="w-full py-2 pl-9 pr-3 bg-transparent focus:outline-none focus:ring-0 border-0 placeholder:opacity-60"
                     style={{
                       fontSize: baseFontSize,
@@ -309,6 +406,11 @@ const ProjectList = () => {
                     }}
                     aria-label="Search projects"
                   />
+                  {searchQuery && (
+                    <button type="button" onClick={() => setSearchQuery('')} className="shrink-0 opacity-35 hover:opacity-80 transition-opacity mr-2">
+                      <X className="w-3.5 h-3.5" style={{ color: current?.system?.dark }} />
+                    </button>
+                  )}
                 </div>
                 {!isConsultant && (
                   <button
@@ -361,13 +463,32 @@ const ProjectList = () => {
             ) : (
               <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
                 {sortedProjects.map((p) => (
-                  <ProjectCard
-                    key={p.id}
-                    project={p}
-                    onDelete={isConsultant ? undefined : () => setDeleteProject(p)}
-                    onEdit={isConsultant ? undefined : () => setEditProject(p)}
-                    onSuspend={isConsultant ? undefined : () => setSuspendProject(p)}
-                  />
+                  isFreelancer ? (
+                    <MarketplaceProjectCard
+                      key={p.id}
+                      posting={toMarketplacePosting(p)}
+                      company={null}
+                      isFreelancer={false}
+                      theme={current}
+                      skillColors={skillColors}
+                      variant="default"
+                      viewerUser={null}
+                      viewerIsCompanyAdmin={false}
+                      onCardClick={() => navigate(`/app/projects/${p.id}`)}
+                      actionOverride={{
+                        label: 'View project',
+                        onClick: () => navigate(`/app/projects/${p.id}`),
+                      }}
+                    />
+                  ) : (
+                    <ProjectCard
+                      key={p.id}
+                      project={p}
+                      onDelete={isConsultant ? undefined : () => setDeleteProject(p)}
+                      onEdit={isConsultant ? undefined : () => setEditProject(p)}
+                      onSuspend={isConsultant ? undefined : () => setSuspendProject(p)}
+                    />
+                  )
                 ))}
               </div>
             )}
@@ -410,6 +531,7 @@ const ProjectList = () => {
             onLeadIdChange={setCreateLeadId}
             onSubmit={handleCreateProject}
             leadOptions={leadOptions}
+            projectTypeChoiceEnabled={isCompanyAdmin}
           />
 
           <DeleteProjectModal

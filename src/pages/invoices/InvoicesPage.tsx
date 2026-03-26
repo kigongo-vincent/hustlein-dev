@@ -770,7 +770,12 @@ const InvoicesPage = () => {
 
       {/* Top charts moved to analytics modal */}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div
+        role="tablist"
+        aria-label="Invoice status"
+        className="flex flex-wrap items-center gap-2 pb-2 border-b"
+        style={{ borderColor: current?.system?.border ?? 'rgba(0,0,0,0.08)' }}
+      >
         {(
           [
             { id: 'all', label: 'All' },
@@ -785,13 +790,14 @@ const InvoicesPage = () => {
               key={t.id}
               type="button"
               onClick={() => setActiveTab(t.id)}
-              className="px-3 py-2 rounded-base text-sm opacity-90 hover:opacity-100 transition"
+              className="px-3 py-2 rounded-md font-medium opacity-90 hover:opacity-100 transition"
               style={{
+                fontSize: Math.max(11, baseFontSize * 0.95),
                 backgroundColor: selected
                   ? `${current?.brand?.primary ?? '#682308'}14`
                   : (current?.system?.foreground ?? '#fff'),
                 color: selected ? (current?.brand?.primary ?? current?.system?.dark) : current?.system?.dark,
-                border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.12)'}`,
+                border: `1px solid ${selected ? `${current?.brand?.primary ?? '#682308'}44` : (current?.system?.border ?? 'rgba(0,0,0,0.12)')}`,
               }}
               aria-pressed={selected}
             >
@@ -808,9 +814,7 @@ const InvoicesPage = () => {
         titleSuffix={
           <div
             className="flex items-center flex-1 min-w-0 max-w-md justify-end rounded-base overflow-hidden"
-            style={{
-              border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.12)'}`,
-            }}
+            style={{ backgroundColor: current?.system?.background ?? 'rgba(0,0,0,0.03)' }}
           >
             <div className="flex-1 min-w-0">
               <Input
@@ -827,7 +831,7 @@ const InvoicesPage = () => {
               className="shrink-0 p-2.5 transition-opacity hover:opacity-100 opacity-90 focus:outline-none focus:ring-0"
               style={{
                 color: current?.system?.dark,
-                backgroundColor: filterOpen ? current?.system?.background : 'transparent',
+                backgroundColor: filterOpen ? `${current?.brand?.primary ?? '#682308'}14` : 'transparent',
               }}
               title="Filter"
               aria-label="Open filters"
@@ -967,7 +971,7 @@ const InvoicesPage = () => {
                     style={{
                       backgroundColor:
                         index % 2 === 0 ? current?.system?.foreground : current?.system?.background,
-                      ...(mode === 'dark' && { borderBottom: `1px solid ${current?.system?.border ?? 'rgba(255,255,255,0.08)'}` }),
+                      borderBottom: `1px solid ${current?.system?.border ?? (mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')}`,
                     }}
                   >
                     <td className="px-4 py-3">
@@ -1218,44 +1222,49 @@ const InvoicesPage = () => {
                 ariaLabel="Amount maximum"
                 showCurrencySymbol={false}
               />
-              <Button
-                size="sm"
-                label="Apply filters"
-                onClick={() => {
-                  setFilterStatus(draftStatus)
-                  setFilterIssuedFrom(draftIssuedFrom)
-                  setFilterIssuedTo(draftIssuedTo)
-                  setFilterDueFrom(draftDueFrom)
-                  setFilterDueTo(draftDueTo)
-                  setFilterAmountMin(draftAmountMin)
-                  setFilterAmountMax(draftAmountMax)
-                  setFilterCurrency(draftCurrency)
-                  closeFilterSidebar()
-                }}
-              />
-              <Button
-                size="sm"
-                label="Reset filters"
-                onClick={() => {
-                  setDraftStatus('')
-                  setDraftIssuedFrom('')
-                  setDraftIssuedTo('')
-                  setDraftDueFrom('')
-                  setDraftDueTo('')
-                  setDraftAmountMin('')
-                  setDraftAmountMax('')
-                  setDraftCurrency('')
-                  setFilterStatus('')
-                  setFilterIssuedFrom('')
-                  setFilterIssuedTo('')
-                  setFilterDueFrom('')
-                  setFilterDueTo('')
-                  setFilterAmountMin('')
-                  setFilterAmountMax('')
-                  setFilterCurrency('')
-                }}
-                disabled={!hasActiveFilters}
-              />
+              <div className="pt-3 mt-1 space-y-3 border-t" style={{ borderColor: current?.system?.border ?? 'rgba(0,0,0,0.08)' }}>
+                <Button
+                  size="sm"
+                  fullWidth
+                  label="Apply filters"
+                  onClick={() => {
+                    setFilterStatus(draftStatus)
+                    setFilterIssuedFrom(draftIssuedFrom)
+                    setFilterIssuedTo(draftIssuedTo)
+                    setFilterDueFrom(draftDueFrom)
+                    setFilterDueTo(draftDueTo)
+                    setFilterAmountMin(draftAmountMin)
+                    setFilterAmountMax(draftAmountMax)
+                    setFilterCurrency(draftCurrency)
+                    closeFilterSidebar()
+                  }}
+                />
+                <Button
+                  size="sm"
+                  fullWidth
+                  variant="background"
+                  label="Reset filters"
+                  onClick={() => {
+                    setDraftStatus('')
+                    setDraftIssuedFrom('')
+                    setDraftIssuedTo('')
+                    setDraftDueFrom('')
+                    setDraftDueTo('')
+                    setDraftAmountMin('')
+                    setDraftAmountMax('')
+                    setDraftCurrency('')
+                    setFilterStatus('')
+                    setFilterIssuedFrom('')
+                    setFilterIssuedTo('')
+                    setFilterDueFrom('')
+                    setFilterDueTo('')
+                    setFilterAmountMin('')
+                    setFilterAmountMax('')
+                    setFilterCurrency('')
+                  }}
+                  disabled={!hasActiveFilters}
+                />
+              </div>
             </div>
           </motion.aside>
         </>

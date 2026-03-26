@@ -181,9 +181,7 @@ const Consultant = () => {
                     <Text className="mb-4 font-semibold">Weekly Hours</Text>
 
                     <ResponsiveContainer width="100%" height={300}>
-                        <LineChart
-                            style={{ fontSize: ".9vw" }}
-                            data={weeklyHours}>
+                        <LineChart data={weeklyHours}>
                             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                             <XAxis dataKey="day" tick={{ ...chartTickStyle, ...tickProps }} />
                             <YAxis tick={{ ...chartTickStyle, ...tickProps }} />
@@ -202,7 +200,7 @@ const Consultant = () => {
                     <Text className="mb-4 font-semibold">Billable vs Non-Billable</Text>
 
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart style={{ fontSize: ".9vw" }} data={billableData}>
+                        <BarChart data={billableData}>
                             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                             <XAxis dataKey="name" tick={{ ...chartTickStyle, ...tickProps }} />
                             <YAxis tick={{ ...chartTickStyle, ...tickProps }} />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router'
+import { useParams, Link, useNavigate, useLocation } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import Text, { baseFontSize, minFontSize } from '../../components/base/Text'
 import Avatar from '../../components/base/Avatar'
@@ -13,8 +13,10 @@ import {
   milestoneService,
   userService,
   commentService,
+  marketplaceService,
+  assignmentService,
 } from '../../services'
-import type { Project, Task, Milestone, Comment, UserRole } from '../../types'
+import type { Project, ProjectPosting, ProjectApplication, ProjectAssignment, Task, Milestone, Comment, UserRole, User } from '../../types'
 import {
   ChevronLeft,
   Calendar,
@@ -31,6 +33,10 @@ import {
   Folder,
   Check,
   Receipt,
+  Users,
+  UserCheck,
+  UserX,
+  UserRound,
 } from 'lucide-react'
 
 import { formatDate, getChartColors } from './utils'
@@ -48,8 +54,36 @@ import LogTimeModal from '../../components/ui/LogTimeModal'
 
 const DONE_STATE_ID = 's6'
 
+function normalizeCurrencyForIntl(code: string): string {
+  const u = (code || 'UGX').trim().toUpperCase() || 'UGX'
+  const aliases: Record<string, string> = { KSH: 'KES', SH: 'KES' }
+  return aliases[u] ?? u
+}
+
+function formatMoney(value?: number, currency = 'UGX') {
+  if (value == null || Number.isNaN(value)) return '—'
+  const iso = normalizeCurrencyForIntl(currency || 'UGX')
+  const displayCode = (currency || 'UGX').trim().toUpperCase() || 'UGX'
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: iso,
+      currencyDisplay: 'code',
+      maximumFractionDigits: 0,
+    }).format(value)
+  } catch {
+    return `${displayCode} ${Math.round(Number(value)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+  }
+}
+
+function formatRoleLabel(role?: UserRole) {
+  if (!role) return 'Freelancer'
+  return role.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())
+}
+
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
   const { current, mode: themeMode } = Themestore()
   const user = Authstore((s) => s.user)
   const dark = current?.system?.dark
@@ -61,10 +95,23 @@ const ProjectDetail = () => {
   const fg = current?.system?.foreground
 
   const [project, setProject] = useState<Project | null>(null)
+  const [externalPosting, setExternalPosting] = useState<ProjectPosting | null>(null)
+  const [externalApplications, setExternalApplications] = useState<ProjectApplication[]>([])
+  const [externalLinkedProjectId, setExternalLinkedProjectId] = useState<string | null>(null)
+  const [applicationFreelancers, setApplicationFreelancers] = useState<Record<string, User>>({})
+  const [applicationStatusTab, setApplicationStatusTab] = useState<'all' | ProjectApplication['status']>('all')
+  const [externalActionSavingId, setExternalActionSavingId] = useState<string | null>(null)
+  const [hiringApplicationId, setHiringApplicationId] = useState<string | null>(null)
+  const [pendingApplicationAction, setPendingApplicationAction] = useState<{
+    applicationId: string
+    kind: 'shortlist' | 'reject' | 'revoke' | 'assign'
+  } | null>(null)
+  const [hireLeadId, setHireLeadId] = useState('')
+  const [projectAssignments, setProjectAssignments] = useState<ProjectAssignment[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [milestones, setMilestones] = useState<Milestone[]>([])
   const [comments, setComments] = useState<Comment[]>([])
-  const [users, setUsers] = useState<{ id: string; name: string; avatarUrl?: string; role?: UserRole; lastSeen?: string }[]>([])
+  const [users, setUsers] = useState<{ id: string; name: string; email?: string; avatarUrl?: string; role?: UserRole; lastSeen?: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [commentSending, setCommentSending] = useState(false)
@@ -92,37 +139,156 @@ const ProjectDetail = () => {
   const [boardOpen, setBoardOpen] = useProjectDetailModal(id, 'board')
   const [actionSaving, setActionSaving] = useState(false)
   const [chatSidebarOpen, setChatSidebarOpen] = useState(false)
+  const [chatReadAt, setChatReadAt] = useState<number>(0)
   const [folderModalOpen, setFolderModalOpen] = useProjectDetailModal(id, 'folder')
   const [logTimeModalOpen, setLogTimeModalOpen] = useState(false)
   const [billingOpen, setBillingOpen] = useState(false)
 
   const navigate = useNavigate()
+  const externalFromRoute = location.pathname.includes('/app/marketplace/')
+  const externalFromQuery = new URLSearchParams(location.search).get('external') === '1'
+  const isExternalContext = externalFromRoute || externalFromQuery
   const isContributor = user?.role === 'consultant' || user?.role === 'freelancer'
+  const isInternalProject = !isExternalContext
+  const isExternalOriginInternalProject = isInternalProject && project?.projectType === 'external'
+  const canManageProject = isInternalProject && !isContributor
+  const canContributeTasks = isInternalProject && isContributor
+  const canManageExternalPosting = isExternalContext && (user?.role === 'company_admin' || user?.role === 'super_admin')
 
   const loadData = useCallback(async () => {
     if (!id) return
     setLoading(true)
     try {
-      const [proj, taskList, milestoneList, commentList, userList] = await Promise.all([
+      if (isExternalContext) {
+        const [posting, userList] = await Promise.all([
+          marketplaceService.getPosting(id),
+          user?.role === 'freelancer' ? Promise.resolve([]) : userService.list(),
+        ])
+
+        setExternalPosting(posting ?? null)
+        if (posting) {
+          const apps = await marketplaceService.listApplications(posting.id)
+          setExternalApplications(apps)
+
+          // External marketplace detail pages use posting IDs. Files/folders belong to
+          // the real internal project created at hire time, so resolve that project id.
+          const storageKey = `marketplace:posting:${posting.id}:projectId`
+          const mappedProjectId = localStorage.getItem(storageKey)
+          if (mappedProjectId) {
+            setExternalLinkedProjectId(mappedProjectId)
+          } else if (apps.some((application) => application.status === 'hired')) {
+            try {
+              const allProjects = await projectService.list()
+              const matched = allProjects
+                .filter((candidate) => candidate.companyId === posting.companyId && candidate.name === posting.title)
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+              setExternalLinkedProjectId(matched?.id ?? null)
+              if (matched?.id) localStorage.setItem(storageKey, matched.id)
+            } catch {
+              setExternalLinkedProjectId(null)
+            }
+          } else {
+            setExternalLinkedProjectId(null)
+          }
+        } else {
+          setExternalApplications([])
+          setExternalLinkedProjectId(null)
+        }
+        setProjectAssignments([])
+        setTasks([])
+        setMilestones([])
+        setComments([])
+
+        if (posting) {
+          // Build a lightweight project shape so internal detail layout can be reused.
+          setProject({
+            id: posting.id,
+            companyId: posting.companyId,
+            name: posting.title,
+            description: posting.description,
+            projectLeadId: posting.createdById,
+            workflowId: '',
+            createdAt: posting.createdAt,
+            dueDate: undefined,
+            status: posting.status === 'closed' ? 'suspended' : 'active',
+            projectType: 'external',
+          })
+        } else {
+          setProject(null)
+        }
+
+        const visibleUsers = user?.role === 'freelancer' && user
+          ? [{ id: user.id, name: user.name, email: user.email, avatarUrl: user.avatarUrl, role: user.role, lastSeen: user.lastSeen }]
+          : userList.map((u) => ({ id: u.id, name: u.name, email: u.email, avatarUrl: u.avatarUrl, role: u.role, lastSeen: u.lastSeen }))
+        setUsers(visibleUsers)
+        setHireLeadId((prev) => prev || user?.id || visibleUsers[0]?.id || '')
+        return
+      }
+
+      const [proj, taskList, milestoneList, commentList, userList, assignments] = await Promise.all([
         projectService.get(id),
         taskService.listByProject(id),
         milestoneService.listByProject(id),
         commentService.listByEntity('doc', id),
         user?.role === 'freelancer' ? Promise.resolve([]) : userService.list(),
+        assignmentService.listByProject(id),
       ])
+      setExternalPosting(null)
+      setExternalApplications([])
+      setExternalLinkedProjectId(null)
       setProject(proj ?? null)
       setTasks(taskList)
       setMilestones(milestoneList)
       setComments(commentList)
-      setUsers(userList.map((u) => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl, role: u.role, lastSeen: u.lastSeen })))
+      setProjectAssignments(assignments)
+      const visibleUsers = user?.role === 'freelancer' && user
+        ? [{ id: user.id, name: user.name, email: user.email, avatarUrl: user.avatarUrl, role: user.role, lastSeen: user.lastSeen }]
+        : userList.map((u) => ({ id: u.id, name: u.name, email: u.email, avatarUrl: u.avatarUrl, role: u.role, lastSeen: u.lastSeen }))
+      setUsers(visibleUsers)
     } finally {
       setLoading(false)
     }
-  }, [id])
+  }, [id, isExternalContext, user?.role, user?.id, user?.name, user?.avatarUrl, user?.lastSeen])
 
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  useEffect(() => {
+    if (!isExternalContext || externalApplications.length === 0) {
+      setApplicationFreelancers({})
+      return
+    }
+    const missingIds = Array.from(
+      new Set(
+        externalApplications
+          .map((application) => application.freelancerId)
+          .filter((uid) => !!uid && !users.some((u) => u.id === uid))
+      )
+    )
+    if (missingIds.length === 0) return
+    let cancelled = false
+    ;(async () => {
+      const fetched = await Promise.all(
+        missingIds.map(async (uid) => {
+          try {
+            return await userService.get(uid)
+          } catch {
+            return null
+          }
+        })
+      )
+      if (cancelled) return
+      const map: Record<string, User> = {}
+      fetched.forEach((entry) => {
+        if (entry?.id) map[entry.id] = entry
+      })
+      setApplicationFreelancers((prev) => ({ ...prev, ...map }))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isExternalContext, externalApplications, users])
 
   useEffect(() => {
     if (addMilestoneOpen && !milestoneTarget) {
@@ -132,6 +298,29 @@ const ProjectDetail = () => {
       )
     }
   }, [addMilestoneOpen])
+
+  useEffect(() => {
+    if (!addMilestoneOpen) return
+    if (milestoneAssigneeIds.length > 0) return
+    const defaultAssigneeIds = projectAssignments
+      .filter((assignment) => assignment.status === 'active')
+      .map((assignment) => assignment.freelancerId)
+    if (defaultAssigneeIds.length > 0) {
+      setMilestoneAssigneeIds(defaultAssigneeIds)
+    }
+  }, [addMilestoneOpen, milestoneAssigneeIds.length, projectAssignments])
+
+  useEffect(() => {
+    if (!addTaskOpen) return
+    if (user?.role === 'freelancer' && user.id && !taskOwnerId) {
+      setTaskOwnerId(user.id)
+    }
+  }, [addTaskOpen, user?.role, user?.id, taskOwnerId])
+
+  useEffect(() => {
+    if (!chatSidebarOpen) return
+    setChatReadAt(Date.now())
+  }, [chatSidebarOpen, comments.length])
 
   const userMap = useMemo(() => {
     const m: Record<string, string> = {}
@@ -145,7 +334,11 @@ const ProjectDetail = () => {
     return m
   }, [users])
 
-  const leadName = project ? userMap[project.projectLeadId] ?? project.projectLeadId : ''
+  const leadName = externalPosting
+    ? (externalPosting.companyName ?? userMap[externalPosting.createdById] ?? 'Company')
+    : project
+      ? userMap[project.projectLeadId] ?? project.projectLeadId
+      : ''
 
   const milestonesDone = useMemo(
     () => milestones.filter((m) => m.workflowStateId === DONE_STATE_ID).length,
@@ -160,9 +353,79 @@ const ProjectDetail = () => {
     return formatDate(project.dueDate)
   }, [project?.dueDate])
 
-  const assignedEmployeeIds = useMemo(
-    () => [...new Set(tasks.map((t) => t.ownerId).filter(Boolean))],
-    [tasks]
+  const assignedEmployeeIds = useMemo(() => {
+    const fromAssignments = projectAssignments
+      .filter((assignment) => assignment.status === 'active')
+      .map((assignment) => assignment.freelancerId)
+      .filter(Boolean)
+    if (fromAssignments.length > 0) return [...new Set(fromAssignments)]
+    return [...new Set(tasks.map((t) => t.ownerId).filter(Boolean))]
+  }, [tasks, projectAssignments])
+  const canManageExternalHiring = isExternalContext && (user?.role === 'company_admin' || user?.role === 'super_admin')
+  const hiredApplication = useMemo(
+    () => externalApplications.find((application) => application.status === 'hired') ?? null,
+    [externalApplications]
+  )
+  const filesProjectId = useMemo(() => {
+    if (!project) return ''
+    if (isExternalContext) return externalLinkedProjectId ?? project.id
+    return project.id
+  }, [project, isExternalContext, externalLinkedProjectId])
+  const getFreelancerProfile = useCallback((freelancerId: string) => {
+    return users.find((u) => u.id === freelancerId) ?? applicationFreelancers[freelancerId] ?? null
+  }, [users, applicationFreelancers])
+  const heroAssignedConsultants = useMemo(() => {
+    if (isExternalContext) {
+      const byId = new Map<string, { id: string; name: string; avatarUrl?: string }>()
+      externalApplications
+        .filter((application) => application.status === 'hired')
+        .forEach((application) => {
+          const profile = getFreelancerProfile(application.freelancerId)
+          const memberId = profile?.id ?? application.freelancerId
+          if (!memberId || byId.has(memberId)) return
+          byId.set(memberId, {
+            id: memberId,
+            name: profile?.name ?? 'Assigned freelancer',
+            avatarUrl: profile?.avatarUrl,
+          })
+        })
+      return Array.from(byId.values())
+    }
+    if (!project) return []
+    const assigneeIds = new Set<string>([project.projectLeadId])
+    tasks.forEach((task) => assigneeIds.add(task.ownerId))
+    return Array.from(assigneeIds).map((uid) => ({
+      id: uid,
+      name: userMap[uid] ?? uid,
+      avatarUrl: users.find((u) => u.id === uid)?.avatarUrl,
+    }))
+  }, [isExternalContext, externalApplications, getFreelancerProfile, project, tasks, userMap, users])
+  const applicationTabs = useMemo(() => {
+    const counts = {
+      all: externalApplications.length,
+      applied: 0,
+      shortlisted: 0,
+      rejected: 0,
+      withdrawn: 0,
+      hired: 0,
+    }
+    externalApplications.forEach((application) => {
+      counts[application.status] += 1
+    })
+    return [
+      { key: 'all' as const, label: 'All', count: counts.all },
+      { key: 'applied' as const, label: 'Applied', count: counts.applied },
+      { key: 'shortlisted' as const, label: 'Shortlisted', count: counts.shortlisted },
+      { key: 'hired' as const, label: 'Hired', count: counts.hired },
+      { key: 'rejected' as const, label: 'Rejected', count: counts.rejected },
+      { key: 'withdrawn' as const, label: 'Withdrawn', count: counts.withdrawn },
+    ]
+  }, [externalApplications])
+  const visibleApplications = useMemo(
+    () => applicationStatusTab === 'all'
+      ? externalApplications
+      : externalApplications.filter((application) => application.status === applicationStatusTab),
+    [applicationStatusTab, externalApplications]
   )
 
   const userOptions = useMemo(
@@ -299,6 +562,16 @@ const ProjectDetail = () => {
       })),
     }
   }, [project, tasks, userMap, users])
+  const suspendModalProject: ProjectWithMeta | null = useMemo(() => {
+    if (projectWithMeta) return projectWithMeta
+    if (!project) return null
+    return {
+      ...project,
+      leadName,
+      taskCount: tasks.length,
+      members: [],
+    }
+  }, [projectWithMeta, project, leadName, tasks.length])
 
   useEffect(() => {
     if (editOpen && project) {
@@ -342,14 +615,73 @@ const ProjectDetail = () => {
     if (!id) return
     setActionSaving(true)
     try {
-      const nextStatus = project?.status === 'suspended' ? 'active' : 'suspended'
-      await projectService.update(id, { status: nextStatus })
+      if (isExternalContext) {
+        const nextPostingStatus = externalPosting?.status === 'closed' ? 'open' : 'closed'
+        await marketplaceService.updatePosting(id, { status: nextPostingStatus })
+      } else {
+        const nextStatus = project?.status === 'suspended' ? 'active' : 'suspended'
+        await projectService.update(id, { status: nextStatus })
+      }
       setSuspendOpen(false)
       loadData()
     } finally {
       setActionSaving(false)
     }
-  }, [id, project?.status, loadData])
+  }, [id, isExternalContext, externalPosting?.status, project?.status, loadData])
+
+  const handleShortlistApplication = useCallback(async (applicationId: string) => {
+    if (!id) return
+    setExternalActionSavingId(applicationId)
+    try {
+      await marketplaceService.updateApplicationStatus(applicationId, 'shortlisted')
+      const refreshed = await marketplaceService.listApplications(id)
+      setExternalApplications(refreshed)
+    } finally {
+      setExternalActionSavingId(null)
+    }
+  }, [id])
+
+  const handleUpdateApplicationStatus = useCallback(async (applicationId: string, status: ProjectApplication['status']) => {
+    if (!id) return
+    setExternalActionSavingId(applicationId)
+    try {
+      await marketplaceService.updateApplicationStatus(applicationId, status)
+      const refreshed = await marketplaceService.listApplications(id)
+      setExternalApplications(refreshed)
+    } finally {
+      setExternalActionSavingId(null)
+    }
+  }, [id])
+
+  const handleHireApplication = useCallback(async (applicationId: string) => {
+    if (!hireLeadId) return
+    const alreadyHiredOther = externalApplications.some((application) => application.status === 'hired' && application.id !== applicationId)
+    if (alreadyHiredOther) return
+    setHiringApplicationId(applicationId)
+    try {
+      const hireResult = await marketplaceService.hire(applicationId, { projectLeadId: hireLeadId })
+      if (id && hireResult?.projectId) {
+        localStorage.setItem(`marketplace:posting:${id}:projectId`, hireResult.projectId)
+        setExternalLinkedProjectId(hireResult.projectId)
+      }
+      if (id) {
+        const refreshed = await marketplaceService.listApplications(id)
+        setExternalApplications(refreshed)
+      }
+    } finally {
+      setHiringApplicationId(null)
+    }
+  }, [hireLeadId, id, externalApplications])
+
+  const handleConfirmApplicationAction = useCallback(async () => {
+    if (!pendingApplicationAction) return
+    const { applicationId, kind } = pendingApplicationAction
+    if (kind === 'shortlist') await handleShortlistApplication(applicationId)
+    if (kind === 'reject') await handleUpdateApplicationStatus(applicationId, 'rejected')
+    if (kind === 'revoke') await handleUpdateApplicationStatus(applicationId, 'shortlisted')
+    if (kind === 'assign') await handleHireApplication(applicationId)
+    setPendingApplicationAction(null)
+  }, [pendingApplicationAction, handleShortlistApplication, handleUpdateApplicationStatus, handleHireApplication])
 
   const leadOptions = useMemo(
     () => users.map((u) => ({ value: u.id, label: u.name })).sort((a, b) => a.label.localeCompare(b.label)),
@@ -370,6 +702,25 @@ const ProjectDetail = () => {
   const analyticsChartColors = useMemo(
     () => getChartColors(primaryColor, secondaryColor, Math.max(analyticsChartData.length, 2)),
     [primaryColor, secondaryColor, analyticsChartData.length]
+  )
+  const pendingActionApplication = useMemo(
+    () => pendingApplicationAction
+      ? externalApplications.find((a) => a.id === pendingApplicationAction.applicationId) ?? null
+      : null,
+    [pendingApplicationAction, externalApplications]
+  )
+  const confirmActionLoading = useMemo(() => {
+    if (!pendingApplicationAction) return false
+    if (pendingApplicationAction.kind === 'assign') return hiringApplicationId === pendingApplicationAction.applicationId
+    return externalActionSavingId === pendingApplicationAction.applicationId
+  }, [pendingApplicationAction, externalActionSavingId, hiringApplicationId])
+  const unreadCommentsCount = useMemo(
+    () =>
+      comments.filter((c) =>
+        c.authorId !== user?.id &&
+        new Date(c.createdAt).getTime() > chatReadAt
+      ).length,
+    [comments, user?.id, chatReadAt]
   )
 
   if (!id) return <Text>Invalid project</Text>
@@ -477,7 +828,9 @@ const ProjectDetail = () => {
               {project.name}
             </Text>
             <Text variant="sm" className="opacity-70 truncate" style={{ color: dark }}>
-              Lead: {leadName} · {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+              {isExternalContext
+                ? `Posted by: ${leadName} · ${(externalPosting?.requiredSkills?.length ?? 0)} skill${(externalPosting?.requiredSkills?.length ?? 0) !== 1 ? 's' : ''}`
+                : `Lead: ${leadName} · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`}
             </Text>
           </div>
           <div
@@ -494,23 +847,27 @@ const ProjectDetail = () => {
             >
               <Folder className="w-5 h-5" />
             </button>
-            <button
-              type="button"
-              onClick={() =>
-                isContributor
-                  ? user?.role === 'consultant'
-                    ? setLogTimeModalOpen(true)
-                    : navigate('/app/contracts')
-                  : setAddMilestoneOpen(true)
-              }
-              className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-              style={{ color: dark, backgroundColor: 'transparent' }}
-              title={isContributor ? 'Log time' : 'Add milestone'}
-              aria-label={isContributor ? 'Log time' : 'Add milestone'}
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-            {!isContributor && (
+            {isInternalProject && (
+              <button
+                type="button"
+                onClick={() =>
+                  canContributeTasks
+                    ? user?.role === 'consultant'
+                      ? setLogTimeModalOpen(true)
+                      : setAddTaskOpen(true)
+                    : canManageProject
+                      ? setAddMilestoneOpen(true)
+                      : undefined
+                }
+                className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+                style={{ color: dark, backgroundColor: 'transparent' }}
+                title={canContributeTasks ? (user?.role === 'freelancer' ? 'Add task' : 'Log time') : 'Add milestone'}
+                aria-label={canContributeTasks ? (user?.role === 'freelancer' ? 'Add task' : 'Log time') : 'Add milestone'}
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            )}
+            {canManageProject && (
               <button
                 type="button"
                 onClick={() => setBillingOpen(true)}
@@ -522,27 +879,31 @@ const ProjectDetail = () => {
                 <Receipt className="w-5 h-5" />
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setAnalyticsOpen(true)}
-              className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-              style={{ color: dark, backgroundColor: 'transparent' }}
-              title="View analytics"
-              aria-label="View analytics"
-            >
-              <BarChart3 className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setBoardOpen(true)}
-              className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-              style={{ color: dark, backgroundColor: 'transparent' }}
-              title="Board"
-              aria-label="Open board"
-            >
-              <LayoutGrid className="w-5 h-5" />
-            </button>
-            {!isContributor && (
+            {isInternalProject && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setAnalyticsOpen(true)}
+                  className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+                  style={{ color: dark, backgroundColor: 'transparent' }}
+                  title="View analytics"
+                  aria-label="View analytics"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBoardOpen(true)}
+                  className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+                  style={{ color: dark, backgroundColor: 'transparent' }}
+                  title="Board"
+                  aria-label="Open board"
+                >
+                  <LayoutGrid className="w-5 h-5" />
+                </button>
+              </>
+            )}
+            {(canManageProject || canManageExternalPosting) && (
               <>
                 <button
                   type="button"
@@ -551,6 +912,7 @@ const ProjectDetail = () => {
                   style={{ color: dark, backgroundColor: 'transparent' }}
                   title="Edit project"
                   aria-label="Edit project"
+                  disabled={!isInternalProject}
                 >
                   <Pencil className="w-5 h-5" />
                 </button>
@@ -559,10 +921,10 @@ const ProjectDetail = () => {
                   onClick={() => setSuspendOpen(true)}
                   className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
                   style={{ color: dark, backgroundColor: 'transparent' }}
-                  title={project?.status === 'suspended' ? 'Resume project' : 'Suspend project'}
-                  aria-label={project?.status === 'suspended' ? 'Resume project' : 'Suspend project'}
+                  title={isExternalContext ? (externalPosting?.status === 'closed' ? 'Resume project' : 'Suspend project') : (project?.status === 'suspended' ? 'Resume project' : 'Suspend project')}
+                  aria-label={isExternalContext ? (externalPosting?.status === 'closed' ? 'Resume project' : 'Suspend project') : (project?.status === 'suspended' ? 'Resume project' : 'Suspend project')}
                 >
-                  {project?.status === 'suspended' ? (
+                  {(isExternalContext ? externalPosting?.status === 'closed' : project?.status === 'suspended') ? (
                     <PlayCircle className="w-5 h-5" />
                   ) : (
                     <PauseCircle className="w-5 h-5" />
@@ -575,29 +937,32 @@ const ProjectDetail = () => {
                   style={{ color: dark, backgroundColor: 'transparent' }}
                   title="Delete project"
                   aria-label="Delete project"
+                  disabled={!isInternalProject}
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
               </>
             )}
-            <button
-              type="button"
-              onClick={() => setChatSidebarOpen((prev) => !prev)}
-              className="relative shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-              style={{ color: dark, backgroundColor: 'transparent' }}
-              title={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
-              aria-label={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
-            >
-              <MessageSquare className="w-5 h-5" />
-              {comments.length > 0 && (
-                <span
-                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-white text-xs font-medium px-1"
-                  style={{ backgroundColor: current?.system?.error }}
-                >
-                  {comments.length > 99 ? '99+' : comments.length}
-                </span>
-              )}
-            </button>
+            {isInternalProject && (
+              <button
+                type="button"
+                onClick={() => setChatSidebarOpen((prev) => !prev)}
+                className="relative shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+                style={{ color: dark, backgroundColor: 'transparent' }}
+                title={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
+                aria-label={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
+              >
+                <MessageSquare className="w-5 h-5" />
+                {unreadCommentsCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-white text-xs font-medium px-1"
+                    style={{ backgroundColor: current?.system?.error }}
+                  >
+                    {unreadCommentsCount > 99 ? '99+' : unreadCommentsCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </header>
 
@@ -609,7 +974,7 @@ const ProjectDetail = () => {
               style={{ color: dark, fontSize: baseFontSize }}
             >
               <ChevronLeft className="w-4 h-4 shrink-0" />
-              Projects
+              {isExternalContext ? 'Marketplace Projects' : 'Projects'}
             </Link>
             <span className="opacity-50" style={{ color: dark }}>/</span>
             <span style={{ color: dark, fontSize: baseFontSize }} className="font-medium truncate max-w-[200px]">
@@ -672,10 +1037,10 @@ const ProjectDetail = () => {
                         </div>
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="opacity-70 shrink-0" style={{ color: dark }}>Assigned consultants</span>
-                          {projectWithMeta && projectWithMeta.members.length > 0 ? (
+                          {heroAssignedConsultants.length > 0 ? (
                             <>
                               <span className="flex -space-x-2">
-                                {projectWithMeta.members.slice(0, 5).map((m) => (
+                                {heroAssignedConsultants.slice(0, 5).map((m) => (
                                   <span
                                     key={m.id}
                                     className="rounded-full shrink-0 inline-block"
@@ -684,7 +1049,7 @@ const ProjectDetail = () => {
                                     <Avatar name={m.name} size="sm" src={m.avatarUrl} />
                                   </span>
                                 ))}
-                                {projectWithMeta.members.length > 5 && (
+                                {heroAssignedConsultants.length > 5 && (
                                   <span
                                     className="h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-medium shrink-0"
                                     style={{
@@ -693,14 +1058,14 @@ const ProjectDetail = () => {
                                       boxShadow: `0 0 0 2px ${fg}`,
                                     }}
                                   >
-                                    +{projectWithMeta.members.length - 5}
+                                    +{heroAssignedConsultants.length - 5}
                                   </span>
                                 )}
                               </span>
                               <span className="opacity-75 truncate" style={{ color: dark }}>
-                                {projectWithMeta.members.length === 1
-                                  ? projectWithMeta.members[0].name
-                                  : `${projectWithMeta.members.length} working`}
+                                {heroAssignedConsultants.length === 1
+                                  ? heroAssignedConsultants[0].name
+                                  : `${heroAssignedConsultants.length} working`}
                               </span>
                             </>
                           ) : (
@@ -721,14 +1086,32 @@ const ProjectDetail = () => {
                         </div>
                         <div className="flex items-center gap-2 min-w-0">
                           <Target className="w-4 h-4 shrink-0 opacity-70" style={{ color: dark }} />
-                          <span className="opacity-70 shrink-0" style={{ color: dark }}>Milestones</span>
+                          <span className="opacity-70 shrink-0" style={{ color: dark }}>
+                            {isExternalContext ? 'Budget' : 'Milestones'}
+                          </span>
                           <span style={{ color: dark }}>
-                            {milestones.length ? `${milestones.length} set` : 'None'}
+                            {isExternalContext && externalPosting
+                              ? externalPosting.budgetType === 'hourly'
+                                ? `${formatMoney(externalPosting.hourlyMin, externalPosting.currency)} – ${formatMoney(externalPosting.hourlyMax, externalPosting.currency)} / hr`
+                                : externalPosting.budgetType === 'fixed'
+                                  ? `${formatMoney(externalPosting.fixedMin, externalPosting.currency)} – ${formatMoney(externalPosting.fixedMax, externalPosting.currency)}`
+                                  : `${formatMoney(externalPosting.hourlyMin, externalPosting.currency)} – ${formatMoney(externalPosting.hourlyMax, externalPosting.currency)} / hr • ${formatMoney(externalPosting.fixedMin, externalPosting.currency)} – ${formatMoney(externalPosting.fixedMax, externalPosting.currency)} fixed`
+                              : milestones.length
+                                ? `${milestones.length} set`
+                                : 'None'}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="opacity-70 shrink-0" style={{ color: dark }}>Assigned consultants</span>
-                          {assignedEmployeeIds.length > 0 ? (
+                          <span className="opacity-70 shrink-0" style={{ color: dark }}>
+                            {isExternalContext ? 'Posting status' : 'Assigned consultants'}
+                          </span>
+                          {isExternalContext && externalPosting ? (
+                            <span style={{ color: dark }}>
+                              {hiredApplication
+                                ? `Assigned to ${getFreelancerProfile(hiredApplication.freelancerId)?.name ?? 'Freelancer'}`
+                                : (externalPosting.status === 'open' ? 'Open' : 'Closed')}
+                            </span>
+                          ) : assignedEmployeeIds.length > 0 ? (
                             <>
                               <span className="flex -space-x-2">
                                 {assignedEmployeeIds.slice(0, 5).map((uid) => (
@@ -768,6 +1151,25 @@ const ProjectDetail = () => {
                           )}
                         </div>
                       </div>
+                      {isExternalContext && (
+                        <div className="flex items-start gap-2 min-w-0 flex-wrap">
+                          {externalPosting?.requiredSkills && externalPosting.requiredSkills.length > 0 ? (
+                            <span className="flex flex-wrap gap-2">
+                              {externalPosting.requiredSkills.map((skill) => (
+                                <span
+                                  key={skill}
+                                  className="px-2.5 py-1 rounded-full text-xs font-medium"
+                                  style={{ backgroundColor: `${primaryColor}16`, color: dark, border: `1px solid ${borderColor}` }}
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                            </span>
+                          ) : (
+                            <span style={{ color: dark }}>—</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -802,7 +1204,194 @@ const ProjectDetail = () => {
             </Card>
           </section>
 
+          {isExternalContext && canManageExternalHiring && (
+            <section className="mb-6">
+              <Card className="p-5" style={{ backgroundColor: fg }}>
+                <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" style={{ color: dark }} />
+                    <Text className="font-medium" style={{ color: dark }}>
+                      Applications ({externalApplications.length})
+                    </Text>
+                  </div>
+                  <div className="w-full sm:w-[280px]">
+                    <CustomSelect
+                      label="Project lead"
+                      options={leadOptions}
+                      value={hireLeadId}
+                      onChange={setHireLeadId}
+                      placement="below"
+                    />
+                  </div>
+                </div>
+                <div className="mb-3 flex items-center gap-2 flex-wrap">
+                  {applicationTabs.map((tab) => {
+                    const selected = applicationStatusTab === tab.key
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setApplicationStatusTab(tab.key)}
+                        className="px-3 py-1.5 rounded-base border transition-opacity font-medium"
+                        style={{
+                          borderColor: selected ? `${primaryColor}55` : borderColor,
+                          color: dark,
+                          backgroundColor: selected ? `${primaryColor}16` : 'transparent',
+                          opacity: selected ? 1 : 0.84,
+                        }}
+                      >
+                        {tab.label} {tab.count}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="space-y-3">
+                  {visibleApplications.map((application) => {
+                    const freelancer = getFreelancerProfile(application.freelancerId)
+                    const isShortlisting = externalActionSavingId === application.id
+                    const isHiring = hiringApplicationId === application.id
+                    return (
+                      <div
+                        key={application.id}
+                        className="rounded-base p-4"
+                        style={{ backgroundColor: bg }}
+                      >
+                        <div className="flex flex-col gap-3">
+                          <div
+                            className="rounded-base px-3 py-3 flex items-start justify-between gap-4 flex-wrap"
+                            style={{ backgroundColor: 'transparent' }}
+                          >
+                            <div className="min-w-0 flex items-start gap-3">
+                              <Avatar
+                                name={freelancer?.name ?? 'Freelancer'}
+                                src={freelancer?.avatarUrl}
+                                size="sm"
+                              />
+                              <div className="min-w-0">
+                                <Text className="font-medium truncate" style={{ color: dark }}>
+                                  {freelancer?.name ?? 'Freelancer'}
+                                </Text>
+                                <Text variant="sm" className="opacity-70 truncate" style={{ color: dark }}>
+                                  {freelancer?.email ?? formatRoleLabel(freelancer?.role)}
+                                </Text>
+                                <Text variant="sm" className="opacity-80 mt-0.5" style={{ color: dark }}>
+                                  Applied: {formatDate(application.createdAt)}
+                                </Text>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize"
+                                style={{ backgroundColor: `${primaryColor}16`, color: dark, border: `1px solid ${borderColor}` }}
+                              >
+                                {application.status}
+                              </span>
+                              <span
+                                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                                style={{ backgroundColor: fg, color: dark }}
+                              >
+                                {application.currency && application.proposedHourlyRate != null
+                                  ? `${formatMoney(application.proposedHourlyRate, application.currency)} / hr`
+                                  : application.currency && application.proposedFixed != null
+                                    ? `${formatMoney(application.proposedFixed, application.currency)} fixed`
+                                    : 'Rate not provided'}
+                              </span>
+                            </div>
+                          </div>
+                          {application.coverLetter ? (
+                            <div className="rounded-base px-3 py-2" style={{ backgroundColor: 'transparent' }}>
+                              <Text variant="sm" className="opacity-80 line-clamp-2" style={{ color: dark }}>
+                                {application.coverLetter}
+                              </Text>
+                            </div>
+                          ) : null}
+                          <div className="flex items-center gap-2 flex-wrap pt-1 rounded-base px-3 py-2" style={{ backgroundColor: 'transparent' }}>
+                            <button
+                              type="button"
+                              onClick={() => setPendingApplicationAction({ applicationId: application.id, kind: 'shortlist' })}
+                              disabled={isShortlisting || isHiring || application.status === 'hired' || application.status === 'shortlisted'}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium disabled:opacity-40"
+                              style={{
+                                color: dark,
+                                backgroundColor: fg,
+                                border: `0.5px solid ${borderColor ?? `${dark}44`}`,
+                              }}
+                            >
+                              <UserCheck className="w-3.5 h-3.5" />
+                              {isShortlisting ? 'Shortlisting...' : 'Shortlist'}
+                            </button>
+                            {application.status === 'hired' ? (
+                              <button
+                                type="button"
+                                onClick={() => setPendingApplicationAction({ applicationId: application.id, kind: 'revoke' })}
+                                disabled={isShortlisting || isHiring}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium disabled:opacity-40"
+                                style={{
+                                  color: dark,
+                                  backgroundColor: fg,
+                                  border: `0.5px solid ${borderColor ?? `${dark}44`}`,
+                                }}
+                              >
+                                <UserX className="w-3.5 h-3.5" />
+                                {isShortlisting ? 'Revoking...' : 'Revoke'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setPendingApplicationAction({ applicationId: application.id, kind: 'reject' })}
+                                disabled={isShortlisting || isHiring || application.status === 'rejected'}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium disabled:opacity-40"
+                                style={{
+                                  color: dark,
+                                  backgroundColor: fg,
+                                  border: `0.5px solid ${borderColor ?? `${dark}44`}`,
+                                }}
+                              >
+                                <UserX className="w-3.5 h-3.5" />
+                                {isShortlisting ? 'Rejecting...' : 'Reject'}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setPendingApplicationAction({ applicationId: application.id, kind: 'assign' })}
+                              disabled={
+                                isHiring ||
+                                isShortlisting ||
+                                application.status === 'withdrawn' ||
+                                !hireLeadId ||
+                                (!!hiredApplication && hiredApplication.id !== application.id)
+                              }
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium disabled:opacity-40"
+                              style={{
+                                color: dark,
+                                backgroundColor: fg,
+                                border: `0.5px solid ${borderColor ?? `${dark}44`}`,
+                              }}
+                            >
+                              <UserRound className="w-3.5 h-3.5" />
+                              {isHiring
+                                ? 'Assigning...'
+                                : hiredApplication?.id === application.id
+                                  ? 'Assigned'
+                                  : 'Assign'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {visibleApplications.length === 0 && (
+                    <Text variant="sm" className="opacity-75" style={{ color: dark }}>
+                      No applications in this status.
+                    </Text>
+                  )}
+                </div>
+              </Card>
+            </section>
+          )}
+
           {/* Timeline — Gantt-style diagram (phases / milestones by date); fills remaining space */}
+          {isInternalProject && (
           <section className="flex-1 min-h-0 flex flex-col mb-6 rounded-base overflow-hidden" style={{ backgroundColor: fg }}>
             <p className="text-sm opacity-70 font-medium mb-4 shrink-0 px-4 pt-4" style={{ fontSize: baseFontSize * 0.9, color: dark }}>
               Timeline
@@ -827,12 +1416,14 @@ const ProjectDetail = () => {
               />
             </div>
           </section>
+          )}
+
         </div>
       </div>
 
       {/* Chat toggle: top-left when sidebar closed; toggles sidebar with animation */}
       <AnimatePresence initial={false}>
-        {chatSidebarOpen ? (
+        {isInternalProject && chatSidebarOpen ? (
           <motion.div
             key="sidebar"
             initial={{ width: 0, opacity: 0 }}
@@ -868,17 +1459,13 @@ const ProjectDetail = () => {
                 await projectService.update(id, { name: payload.name, description: payload.description || undefined })
                 loadData()
               }}
-              onMarkAllAgreed={async () => {
-                if (!id) return
-                // Stub: when backend supports mark-all-agreed, call commentService.markAllAgreed(id) and loadData()
-              }}
               onLeaveGroup={() => setChatSidebarOpen(false)}
             />
           </motion.div>
         ) : null}
       </AnimatePresence>
 
-      <Modal open={addMilestoneOpen} onClose={() => !saving && setAddMilestoneOpen(false)}>
+      <Modal open={isInternalProject && addMilestoneOpen} onClose={() => !saving && setAddMilestoneOpen(false)}>
         <div className="p-6 flex flex-col" style={{ backgroundColor: current?.system?.foreground }}>
           <h2 className="font-medium mb-4" style={{ fontSize: baseFontSize, color: dark }}>Add milestone</h2>
           <div className="space-y-4">
@@ -903,71 +1490,73 @@ const ProjectDetail = () => {
               onChange={(v) => setMilestonePriority(v || 'medium')}
               placement="below"
             />
-            <div>
-              <label className="block mb-1"><Text variant="sm" style={{ color: dark }}>Assigned employees</Text></label>
-              <div className="flex gap-3 overflow-x-auto scroll-slim pb-1 -mx-0.5" style={{ minHeight: 168 }}>
-                {users.map((u) => {
-                  const selected = milestoneAssigneeIds.includes(u.id)
-                  const roleLabel = u.role ? u.role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : null
-                  const initials = u.name.trim().split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase() || '?'
-                  return (
-                    <label
-                      key={u.id}
-                      className="relative flex-shrink-0 w-[120px] aspect-[3/4] rounded-xl overflow-hidden cursor-pointer block transition hover:opacity-95"
-                      style={{
-                        boxShadow: borderColor ? `0 0 0 1px ${borderColor}` : undefined,
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={(e) => {
-                          if (e.target.checked) setMilestoneAssigneeIds((prev) => [...prev, u.id])
-                          else setMilestoneAssigneeIds((prev) => prev.filter((id) => id !== u.id))
-                        }}
-                        className="sr-only"
-                        aria-label={`Assign ${u.name}`}
-                      />
-                      <div className="absolute inset-0">
-                        {u.avatarUrl ? (
-                          <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div
-                            className="w-full h-full flex items-center justify-center font-medium text-3xl"
-                            style={{
-                              backgroundColor: bg ?? 'rgba(0,0,0,0.08)',
-                              color: primaryColor,
-                            }}
-                          >
-                            {initials}
-                          </div>
-                        )}
-                      </div>
-                      <div
-                        className="absolute inset-x-0 bottom-0 pt-8 pb-2 px-2 text-white text-xs"
+            {!isExternalOriginInternalProject && (
+              <div>
+                <label className="block mb-1"><Text variant="sm" style={{ color: dark }}>Assigned employees</Text></label>
+                <div className="flex gap-3 overflow-x-auto scroll-slim pb-1 -mx-0.5" style={{ minHeight: 168 }}>
+                  {users.map((u) => {
+                    const selected = milestoneAssigneeIds.includes(u.id)
+                    const roleLabel = u.role ? u.role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : null
+                    const initials = u.name.trim().split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase() || '?'
+                    return (
+                      <label
+                        key={u.id}
+                        className="relative flex-shrink-0 w-[120px] aspect-[3/4] rounded-xl overflow-hidden cursor-pointer block transition hover:opacity-95"
                         style={{
-                          background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
+                          boxShadow: borderColor ? `0 0 0 1px ${borderColor}` : undefined,
                         }}
                       >
-                        <p className="font-medium truncate">{u.name}</p>
-                        {roleLabel && <p className="truncate opacity-90">{roleLabel}</p>}
-                      </div>
-                      {selected && (
-                        <span
-                          className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: fg, color: primaryColor }}
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={(e) => {
+                            if (e.target.checked) setMilestoneAssigneeIds((prev) => [...prev, u.id])
+                            else setMilestoneAssigneeIds((prev) => prev.filter((id) => id !== u.id))
+                          }}
+                          className="sr-only"
+                          aria-label={`Assign ${u.name}`}
+                        />
+                        <div className="absolute inset-0">
+                          {u.avatarUrl ? (
+                            <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div
+                              className="w-full h-full flex items-center justify-center font-medium text-3xl"
+                              style={{
+                                backgroundColor: bg ?? 'rgba(0,0,0,0.08)',
+                                color: primaryColor,
+                              }}
+                            >
+                              {initials}
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="absolute inset-x-0 bottom-0 pt-8 pb-2 px-2 text-white text-xs"
+                          style={{
+                            background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
+                          }}
                         >
-                          <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </label>
-                  )
-                })}
-                {users.length === 0 && (
-                  <span className="text-sm opacity-70 flex items-center" style={{ color: dark }}>No users loaded</span>
-                )}
+                          <p className="font-medium truncate">{u.name}</p>
+                          {roleLabel && <p className="truncate opacity-90">{roleLabel}</p>}
+                        </div>
+                        {selected && (
+                          <span
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: fg, color: primaryColor }}
+                          >
+                            <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                          </span>
+                        )}
+                      </label>
+                    )
+                  })}
+                  {users.length === 0 && (
+                    <span className="text-sm opacity-70 flex items-center" style={{ color: dark }}>No users loaded</span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor }}>
             <Button variant="background" label="Cancel" onClick={() => !saving && setAddMilestoneOpen(false)} disabled={saving} />
@@ -977,7 +1566,7 @@ const ProjectDetail = () => {
       </Modal>
 
       {/* Add task modal */}
-      <Modal open={addTaskOpen} onClose={() => !saving && setAddTaskOpen(false)}>
+      <Modal open={isInternalProject && addTaskOpen} onClose={() => !saving && setAddTaskOpen(false)}>
         <div className="p-6 flex flex-col" style={{ backgroundColor: current?.system?.foreground }}>
           <h2 className="font-medium mb-4" style={{ fontSize: baseFontSize, color: dark }}>Add task</h2>
           <div className="space-y-4">
@@ -1032,7 +1621,7 @@ const ProjectDetail = () => {
       </Modal>
 
       <EditProjectModal
-        open={editOpen}
+        open={isInternalProject && editOpen}
         onClose={() => setEditOpen(false)}
         saving={editSaving}
         name={editName}
@@ -1049,14 +1638,14 @@ const ProjectDetail = () => {
 
       <DeleteProjectModal
         project={deleteOpen ? projectWithMeta : null}
-        open={deleteOpen}
+        open={isInternalProject && deleteOpen}
         onClose={() => setDeleteOpen(false)}
         saving={actionSaving}
         onConfirm={handleDeleteConfirm}
       />
 
       <SuspendProjectModal
-        project={suspendOpen ? projectWithMeta : null}
+        project={suspendOpen ? suspendModalProject : null}
         open={suspendOpen}
         onClose={() => setSuspendOpen(false)}
         saving={actionSaving}
@@ -1064,20 +1653,56 @@ const ProjectDetail = () => {
       />
 
       <ProjectListAnalyticsModal
-        open={analyticsOpen}
+        open={isInternalProject && analyticsOpen}
         onClose={() => setAnalyticsOpen(false)}
         chartDataByProject={analyticsChartData}
         trendData={analyticsTrendData}
         chartColors={analyticsChartColors}
       />
 
-      <Modal open={boardOpen} onClose={() => setBoardOpen(false)} variant="fullscreen">
+      <Modal open={isInternalProject && boardOpen} onClose={() => setBoardOpen(false)} variant="fullscreen">
         <BoardModal onClose={() => setBoardOpen(false)} initialProjectId={project.id} />
       </Modal>
 
-      <ProjectFilesModal open={folderModalOpen} onClose={() => setFolderModalOpen(false)} projectId={project.id} />
+      <ProjectFilesModal open={folderModalOpen} onClose={() => setFolderModalOpen(false)} projectId={filesProjectId} />
 
-      {user?.role === 'consultant' && (
+      <Modal
+        open={!!pendingApplicationAction}
+        onClose={() => !confirmActionLoading && setPendingApplicationAction(null)}
+      >
+        <div className="p-6 flex flex-col" style={{ backgroundColor: fg }}>
+          <h2 className="font-medium mb-3" style={{ fontSize: baseFontSize, color: dark }}>
+            Confirm action
+          </h2>
+          <Text variant="sm" className="opacity-85" style={{ color: dark }}>
+            {pendingApplicationAction?.kind === 'shortlist' && 'Shortlist this freelancer application?'}
+            {pendingApplicationAction?.kind === 'reject' && 'Reject this freelancer application?'}
+            {pendingApplicationAction?.kind === 'revoke' && 'Revoke this hire and move application back to shortlisted?'}
+            {pendingApplicationAction?.kind === 'assign' && 'Assign this freelancer to the project and create assignment?'}
+          </Text>
+          {pendingActionApplication && (
+            <Text variant="sm" className="opacity-75 mt-2" style={{ color: dark }}>
+              Candidate: {getFreelancerProfile(pendingActionApplication.freelancerId)?.name ?? 'Freelancer'}
+            </Text>
+          )}
+          <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor }}>
+            <Button
+              variant="background"
+              label="Cancel"
+              onClick={() => setPendingApplicationAction(null)}
+              disabled={confirmActionLoading}
+            />
+            <Button
+              label={pendingApplicationAction?.kind === 'assign' ? 'Confirm assign' : 'Confirm'}
+              onClick={handleConfirmApplicationAction}
+              loading={confirmActionLoading}
+              disabled={confirmActionLoading}
+            />
+          </footer>
+        </div>
+      </Modal>
+
+      {isInternalProject && user?.role === 'consultant' && (
         <LogTimeModal
           open={logTimeModalOpen}
           onClose={() => setLogTimeModalOpen(false)}
@@ -1087,7 +1712,7 @@ const ProjectDetail = () => {
         />
       )}
 
-      {!isContributor && (
+      {isInternalProject && !isContributor && (
         <ProjectBillingModal
           open={billingOpen}
           onClose={() => setBillingOpen(false)}

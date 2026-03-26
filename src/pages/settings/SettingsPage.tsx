@@ -1,12 +1,13 @@
-import { useEffect, useState, useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import Text from '../../components/base/Text'
 import { Card, Input, Button } from '../../components/ui'
 import { AppPageLayout } from '../../components/layout'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
-import { companyService, userService } from '../../services'
+import { companyService, projectFileService, projectService, userService } from '../../services'
 import type { themeMode } from '../../data/Themestore'
+import type { ProjectFileStorageSummary } from '../../types'
 import {
   Sun,
   Moon,
@@ -16,18 +17,8 @@ import {
 
 type SettingsSectionId = 'general' | 'appearance' | 'account'
 
-const VALID_SECTIONS: SettingsSectionId[] = ['general', 'appearance', 'account']
-
 const SettingsPage = () => {
-  const [searchParams] = useSearchParams()
-  const sectionParam = searchParams.get('section')
-  const activeSection: SettingsSectionId = useMemo(() => {
-    if (sectionParam && VALID_SECTIONS.includes(sectionParam as SettingsSectionId)) {
-      return sectionParam as SettingsSectionId
-    }
-    return 'appearance'
-  }, [sectionParam])
-
+  const [activeSection] = useState<SettingsSectionId>('account')
   const { current, mode, setTheme, setCustomTheme, customOverrides } = Themestore()
   const { user, setUser } = Authstore()
   const isCompanyAdmin = user?.role === 'company_admin' || user?.role === 'super_admin'
@@ -41,6 +32,7 @@ const SettingsPage = () => {
   const [taxRate, setTaxRate] = useState<number | ''>('')
   const [storageLimitMb, setStorageLimitMb] = useState<number | ''>('')
   const [storageUsedMb, setStorageUsedMb] = useState<number | ''>('')
+  const [companyStorageSummary, setCompanyStorageSummary] = useState<ProjectFileStorageSummary | null>(null)
 
   // Account (profile)
   const [profileName, setProfileName] = useState('')
@@ -80,6 +72,18 @@ const SettingsPage = () => {
       setTaxRate(typeof company.taxRate === 'number' ? company.taxRate : '')
       setStorageLimitMb(typeof company.storageLimitMb === 'number' ? company.storageLimitMb : '')
       setStorageUsedMb(typeof company.storageUsedMb === 'number' ? company.storageUsedMb : '')
+      try {
+        const projects = await projectService.listByCompany(user.companyId)
+        if (cancelled) return
+        if (projects.length === 0) {
+          setCompanyStorageSummary(null)
+          return
+        }
+        const summary = await projectFileService.storageSummary(projects[0].id)
+        if (!cancelled) setCompanyStorageSummary(summary)
+      } catch {
+        if (!cancelled) setCompanyStorageSummary(null)
+      }
     })()
     return () => {
       cancelled = true
@@ -134,6 +138,15 @@ const SettingsPage = () => {
   const bg = current?.system?.background ?? '#F4f4f4'
   const dark = current?.system?.dark ?? '#111'
   const primaryColor = current?.brand?.primary ?? '#682308'
+  const usedBytes = companyStorageSummary
+    ? companyStorageSummary.usedBytes
+    : ((typeof storageUsedMb === 'number' ? storageUsedMb : 0) * 1024 * 1024)
+  const limitBytes = companyStorageSummary
+    ? companyStorageSummary.limitBytes
+    : ((typeof storageLimitMb === 'number' && storageLimitMb > 0 ? storageLimitMb : 512) * 1024 * 1024)
+  const usedMb = usedBytes / (1024 * 1024)
+  const limitMb = limitBytes / (1024 * 1024)
+  const storagePercent = limitBytes > 0 ? Math.max(0, Math.min(100, (usedBytes / limitBytes) * 100)) : 0
 
   return (
     <AppPageLayout title="Settings" subtitle="Manage your account, company, and preferences" fullWidth>
@@ -195,6 +208,12 @@ const SettingsPage = () => {
                 noShadow
               >
                 <div className="space-y-3 max-w-xl">
+                  <div className="space-y-2 rounded-base p-3" style={{ background: bg }}>
+                    <Text variant="sm">{`${usedMb.toFixed(1)} MB / ${limitMb.toFixed(1)} MB used`}</Text>
+                    <div className="h-1.5 rounded-full" style={{ background: current?.system?.border }}>
+                      <div className="h-full rounded-full" style={{ width: `${storagePercent}%`, background: primaryColor }} />
+                    </div>
+                  </div>
                   <Input
                     label="Storage limit (MB)"
                     type="number"
@@ -369,6 +388,16 @@ const SettingsPage = () => {
                   </div>
                 </div>
               </Card>
+              {isCompanyAdmin && (
+                <Card title="Company storage usage" subtitle="Company-wide usage across all projects" noShadow>
+                  <div className="space-y-2 max-w-xl">
+                    <Text variant="sm">{`${usedMb.toFixed(1)} MB / ${limitMb.toFixed(1)} MB used`}</Text>
+                    <div className="h-1.5 rounded-full" style={{ background: current?.system?.border }}>
+                      <div className="h-full rounded-full" style={{ width: `${storagePercent}%`, background: primaryColor }} />
+                    </div>
+                  </div>
+                </Card>
+              )}
               <Card title="Security" subtitle="Password and sign-in" noShadow>
                 <div className="space-y-3">
                   <Text variant="sm" className="opacity-90" color={dark}>
