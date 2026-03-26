@@ -217,7 +217,7 @@ const CalendarPage = () => {
       </View>
 
       {/* Main fg section: calendar + sidebar */}
-      <View bg="fg" className="rounded-base shadow-custom p-4 lg:p-6 flex flex-col gap-6 flex-1 min-h-0 w-full">
+      <View bg="fg" noShadow className="rounded-base p-4 lg:p-6 flex flex-col gap-6 flex-1 min-h-0 w-full">
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 flex-1 min-h-0 w-full">
           {/* Calendar area - full width of column, height matches right panel */}
           <div className="min-w-0 flex flex-col flex-1 lg:w-[60%]">
@@ -309,6 +309,7 @@ const CalendarPage = () => {
           <Card
             title="What to do today"
             subtitle={todayEvents.length === 0 ? 'No events scheduled' : `${todayEvents.length} event${todayEvents.length !== 1 ? 's' : ''} today`}
+            noShadow
           >
             <ul className="space-y-0 max-h-[160px] overflow-y-auto scroll-slim">
               {todayEvents.length === 0 ? (
@@ -319,7 +320,7 @@ const CalendarPage = () => {
                 </li>
               ) : (
                 todayEvents.map((ev) => (
-                  <li key={ev.id} className="flex items-start gap-2 py-2 border-b last:border-b-0" style={{ borderColor: borderColor ?? 'rgba(0,0,0,0.08)' }}>
+                  <li key={ev.id} className="flex items-start gap-2 py-2 border-b last:border-b-0" style={{ borderColor }}>
                     <span className="shrink-0 w-2 h-2 rounded-full mt-1.5" style={{ backgroundColor: getEventColor(ev.type) }} aria-hidden />
                     <div className="min-w-0 flex-1">
                       <Text className="font-medium" style={{ color: dark }}>{ev.title}</Text>
@@ -333,6 +334,7 @@ const CalendarPage = () => {
           <Card
             title={selectedDate ? new Date(selectedDate + 'T12:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) : 'Pick a day'}
             subtitle={selectedDate ? `${selectedEvents.length} event${selectedEvents.length !== 1 ? 's' : ''}` : undefined}
+            noShadow
           >
             {selectedDate && (
               <ul className="space-y-0 max-h-[280px] overflow-y-auto scroll-slim">
@@ -383,7 +385,7 @@ const CalendarPage = () => {
           </Card>
 
           {selectedDate && user && (
-            <Card title="Add event" subtitle="Create an event for this day">
+            <Card title="Add event" subtitle="Create an event for this day" noShadow>
               <form onSubmit={handleAddEvent} className="space-y-3">
                 <Input label="Title" placeholder="Event title" value={addTitle} onChange={(e) => setAddTitle(e.target.value)} required />
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 items-start">

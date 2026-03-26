@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Themestore } from '../../data/Themestore'
+import { APP_ICON_SIZE } from './iconTokens'
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -17,15 +18,27 @@ export interface AvatarProps {
   inverted?: boolean
 }
 
-const sizeStyles = {
-  sm: 'h-8 w-8 text-[11px]',
-  md: 'h-10 w-10 text-[13px]',
-  lg: 'h-14 w-14 text-[18px]',
-  xl: 'h-20 w-20 text-[22px]',
-} as const
-
 const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false }: AvatarProps) => {
-  const sizeClass = sizeStyles[size] ?? sizeStyles.md
+  // Tie avatar size to the same icon scale used across the app.
+  // "sm" is intentionally a bit larger to better match header/sidebar visuals.
+  const sizePx =
+    size === 'sm'
+      ? Math.round(APP_ICON_SIZE * 1.8)
+      : size === 'md'
+        ? Math.round(APP_ICON_SIZE * 2.0)
+        : size === 'lg'
+          ? Math.round(APP_ICON_SIZE * 2.8)
+          : Math.round(APP_ICON_SIZE * 4.0) // xl
+
+  const initialsFontPx =
+    size === 'sm'
+      ? Math.round(APP_ICON_SIZE * 0.7)
+      : size === 'md'
+        ? Math.round(APP_ICON_SIZE * 0.75)
+        : size === 'lg'
+          ? 18
+          : 22
+
   const { current, mode } = Themestore()
   const [errored, setErrored] = useState(false)
   const showFallback = !src || errored
@@ -42,8 +55,10 @@ const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false 
 
   return (
     <div
-      className={`rounded-full flex items-center justify-center shrink-0 overflow-hidden ${sizeClass} ${className}`}
+      className={`rounded-full flex items-center justify-center shrink-0 overflow-hidden ${className}`}
       style={{
+        width: sizePx,
+        height: sizePx,
         backgroundColor: showFallback ? bgColor : undefined,
         color: showFallback ? textColor : undefined,
         ...borderStyle,
@@ -51,7 +66,9 @@ const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false 
       aria-hidden
     >
       {showFallback ? (
-        <span className="font-medium uppercase">{initials}</span>
+        <span className="font-medium uppercase" style={{ fontSize: initialsFontPx, lineHeight: 1 }}>
+          {initials}
+        </span>
       ) : (
         <img
           src={src}

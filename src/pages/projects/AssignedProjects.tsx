@@ -248,8 +248,8 @@ const ProjectList = () => {
     }
   }, [editProject, editName, editDescription, editLeadId, editDueDate, loadData])
 
-  const primaryColor = current?.brand?.primary ?? '#682308'
-  const secondaryColor = current?.brand?.secondary ?? '#FF9600'
+  const primaryColor = current?.brand?.primary ?? current?.system?.dark ?? '#111827'
+  const secondaryColor = current?.brand?.secondary ?? current?.system?.foreground ?? '#111827'
   const dark = current?.system?.dark
 
   const chartDataByProject = useMemo(
@@ -281,17 +281,16 @@ const ProjectList = () => {
   return (
     <>
       <div className="w-full h-full mx-auto flex flex-col min-h-0">
-        
+
 
         <Card
           className="p-0 overflow-hidden flex-1 min-h-0 flex flex-col mt-5"
+          noShadow
           titleSuffix={
             <div className="flex items-center justify-between gap-3 flex-1 min-w-0">
               <div
                 className="flex items-center flex-1 min-w-0 rounded-base overflow-hidden"
-                style={{
-                  border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.12)'}`,
-                }}
+                style={{ backgroundColor: current?.system?.background ?? undefined }}
               >
                 <div className="flex-1 min-w-0 relative flex items-center">
                   <Search
@@ -312,20 +311,20 @@ const ProjectList = () => {
                   />
                 </div>
                 {!isConsultant && (
-                <button
-                  type="button"
-                  onClick={() => setFilterOpen(true)}
-                  className="shrink-0 p-2.5 transition-opacity hover:opacity-100 opacity-90 focus:outline-none focus:ring-0"
-                  style={{
-                    color: dark,
-                    backgroundColor: filterOpen ? current?.system?.background : 'transparent',
-                  }}
-                  title="Filter"
-                  aria-label="Open filters"
-                  aria-expanded={filterOpen}
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterOpen(true)}
+                    className="shrink-0 p-2.5 transition-opacity hover:opacity-100 opacity-90 focus:outline-none focus:ring-0"
+                    style={{
+                      color: dark,
+                      backgroundColor: filterOpen ? current?.system?.background : 'transparent',
+                    }}
+                    title="Filter"
+                    aria-label="Open filters"
+                    aria-expanded={filterOpen}
+                  >
+                    <SlidersHorizontal className="w-4 h-4" />
+                  </button>
                 )}
               </div>
               <div className="shrink-0" style={{ fontSize: baseFontSize, color: dark }}>
@@ -334,40 +333,45 @@ const ProjectList = () => {
             </div>
           }
         >
-        <div className="flex-1 min-h-0 overflow-auto scroll-slim p-0">
-        {loading ? (
-          <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="p-4 min-h-[200px]" style={{ backgroundColor: current?.system?.background }}>
-                <Skeleton height="h-5" width="w-3/4" className="mb-2" />
-                <Skeleton height="h-4" width="w-full" className="mb-1" />
-                <Skeleton height="h-4" width="w-2/3" className="mb-4" />
-                <Skeleton height="h-8" width="w-24" />
-              </Card>
-            ))}
+          <div className="flex-1 min-h-0 overflow-auto scroll-slim p-0">
+            {loading ? (
+              <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <Card
+                    key={i}
+                    className="p-4 min-h-[200px]"
+                    noShadow
+                    style={{ backgroundColor: current?.system?.background }}
+                  >
+                    <Skeleton height="h-5" width="w-3/4" className="mb-2" />
+                    <Skeleton height="h-4" width="w-full" className="mb-1" />
+                    <Skeleton height="h-4" width="w-2/3" className="mb-4" />
+                    <Skeleton height="h-8" width="w-24" />
+                  </Card>
+                ))}
+              </div>
+            ) : sortedProjects.length === 0 ? (
+              <div className="p-8 text-center">
+                <Text variant="sm" className="opacity-70">
+                  {projectsWithMeta.length === 0
+                    ? 'No projects yet. Create one to get started.'
+                    : 'No projects match your search or filters.'}
+                </Text>
+              </div>
+            ) : (
+              <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
+                {sortedProjects.map((p) => (
+                  <ProjectCard
+                    key={p.id}
+                    project={p}
+                    onDelete={isConsultant ? undefined : () => setDeleteProject(p)}
+                    onEdit={isConsultant ? undefined : () => setEditProject(p)}
+                    onSuspend={isConsultant ? undefined : () => setSuspendProject(p)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        ) : sortedProjects.length === 0 ? (
-          <div className="p-8 text-center">
-            <Text variant="sm" className="opacity-70">
-              {projectsWithMeta.length === 0
-                ? 'No projects yet. Create one to get started.'
-                : 'No projects match your search or filters.'}
-            </Text>
-          </div>
-        ) : (
-          <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
-            {sortedProjects.map((p) => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                onDelete={isConsultant ? undefined : () => setDeleteProject(p)}
-                onEdit={isConsultant ? undefined : () => setEditProject(p)}
-                onSuspend={isConsultant ? undefined : () => setSuspendProject(p)}
-              />
-            ))}
-          </div>
-        )}
-        </div>
         </Card>
       </div>
 
@@ -391,63 +395,63 @@ const ProjectList = () => {
       )}
 
       {!isConsultant && (
-      <>
-      <CreateProjectModal
-        open={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        saving={createSaving}
-        name={createName}
-        description={createDescription}
-        leadId={createLeadId}
-        dueDate={createDueDate}
-        onDueDateChange={setCreateDueDate}
-        onNameChange={setCreateName}
-        onDescriptionChange={setCreateDescription}
-        onLeadIdChange={setCreateLeadId}
-        onSubmit={handleCreateProject}
-        leadOptions={leadOptions}
-      />
+        <>
+          <CreateProjectModal
+            open={createModalOpen}
+            onClose={() => setCreateModalOpen(false)}
+            saving={createSaving}
+            name={createName}
+            description={createDescription}
+            leadId={createLeadId}
+            dueDate={createDueDate}
+            onDueDateChange={setCreateDueDate}
+            onNameChange={setCreateName}
+            onDescriptionChange={setCreateDescription}
+            onLeadIdChange={setCreateLeadId}
+            onSubmit={handleCreateProject}
+            leadOptions={leadOptions}
+          />
 
-      <DeleteProjectModal
-        project={deleteProject}
-        open={!!deleteProject}
-        onClose={() => setDeleteProject(null)}
-        saving={actionSaving}
-        onConfirm={handleDeleteConfirm}
-      />
+          <DeleteProjectModal
+            project={deleteProject}
+            open={!!deleteProject}
+            onClose={() => setDeleteProject(null)}
+            saving={actionSaving}
+            onConfirm={handleDeleteConfirm}
+          />
 
-      <EditProjectModal
-        open={!!editProject}
-        onClose={() => setEditProject(null)}
-        saving={editSaving}
-        name={editName}
-        description={editDescription}
-        leadId={editLeadId}
-        dueDate={editDueDate}
-        onDueDateChange={setEditDueDate}
-        onNameChange={setEditName}
-        onDescriptionChange={setEditDescription}
-        onLeadIdChange={setEditLeadId}
-        onSubmit={handleEditSave}
-        leadOptions={leadOptions}
-      />
+          <EditProjectModal
+            open={!!editProject}
+            onClose={() => setEditProject(null)}
+            saving={editSaving}
+            name={editName}
+            description={editDescription}
+            leadId={editLeadId}
+            dueDate={editDueDate}
+            onDueDateChange={setEditDueDate}
+            onNameChange={setEditName}
+            onDescriptionChange={setEditDescription}
+            onLeadIdChange={setEditLeadId}
+            onSubmit={handleEditSave}
+            leadOptions={leadOptions}
+          />
 
-      <SuspendProjectModal
-        project={suspendProject}
-        open={!!suspendProject}
-        onClose={() => setSuspendProject(null)}
-        saving={actionSaving}
-        onConfirm={handleSuspendConfirm}
-      />
+          <SuspendProjectModal
+            project={suspendProject}
+            open={!!suspendProject}
+            onClose={() => setSuspendProject(null)}
+            saving={actionSaving}
+            onConfirm={handleSuspendConfirm}
+          />
 
-      <ProjectListAnalyticsModal
-        open={analyticsOpen}
-        onClose={() => setAnalyticsOpen(false)}
-        chartDataByProject={chartDataByProject}
-        trendData={trendData}
-        chartColors={chartColors}
-      />
-      </>
+          <ProjectListAnalyticsModal
+            open={analyticsOpen}
+            onClose={() => setAnalyticsOpen(false)}
+            chartDataByProject={chartDataByProject}
+            trendData={trendData}
+            chartColors={chartColors}
+          />
+        </>
       )}
     </>
   )

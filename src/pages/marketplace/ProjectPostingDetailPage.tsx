@@ -52,13 +52,14 @@ const ProjectPostingDetailPage = () => {
 
   return (
     <div className="w-full mx-auto space-y-4">
-      <View bg="fg" className="p-4">
+      <View bg="fg" className="p-4" noShadow>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-transparent hover:border-[var(--border-subtle)] transition-colors"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-opacity hover:opacity-90"
+              style={{ backgroundColor: current?.system?.background ?? undefined }}
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
@@ -66,12 +67,9 @@ const ProjectPostingDetailPage = () => {
               <div className="flex items-center gap-2">
                 <span
                   className="w-9 h-9 rounded-base flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${current?.accent?.purple ?? current?.brand?.secondary ?? '#FF9600'} 0%, ${current?.accent?.blue ?? current?.brand?.primary ?? '#682308'} 100%)`,
-                    boxShadow: '0 8px 22px rgba(0,0,0,0.12)',
-                  }}
+                  style={{ backgroundColor: current?.system?.background ?? 'rgba(0,0,0,0.04)' }}
                 >
-                  <BriefcaseBusiness className="w-5 h-5" style={{ color: current?.brand?.onPrimary ?? '#fff' }} />
+                  <BriefcaseBusiness className="w-5 h-5" style={{ color: current?.system?.dark }} />
                 </span>
                 <div>
                   <Text className="font-medium">Project details</Text>
@@ -96,7 +94,7 @@ const ProjectPostingDetailPage = () => {
       </View>
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)] gap-4">
-        <Card className="p-5 space-y-4">
+        <Card className="p-5 space-y-4" noShadow>
           {loading && (
             <div className="flex items-center gap-2">
               <Spinner size="sm" />
@@ -117,7 +115,7 @@ const ProjectPostingDetailPage = () => {
                   {posting.title}
                 </Text>
                 {created && (
-                  <Text variant="xs" className="opacity-70">
+                  <Text variant="sm" className="text-xs opacity-70">
                     Posted{' '}
                     {created.toLocaleDateString(undefined, {
                       month: 'short',
@@ -148,9 +146,9 @@ const ProjectPostingDetailPage = () => {
                         key={s}
                         className="px-2 py-1 rounded-full text-[11px]"
                         style={{
-                          background: `${current?.accent?.blue ?? current?.brand?.secondary ?? '#228BE6'}18`,
+                          backgroundColor: current?.system?.background ?? 'rgba(0,0,0,0.04)',
                           color: current?.system?.dark,
-                          border: `1px solid ${(current?.accent?.blue ?? current?.brand?.secondary ?? '#228BE6')}33`,
+                          opacity: 0.85,
                         }}
                       >
                         {s}
@@ -164,13 +162,13 @@ const ProjectPostingDetailPage = () => {
         </Card>
 
         <div className="space-y-4">
-          <Card className="p-5 space-y-3">
+          <Card className="p-5 space-y-3" noShadow>
             <Text variant="sm" className="font-medium">
               Budget & engagement model
             </Text>
             {posting ? (
               <div className="space-y-1">
-                <Text variant="xs" className="uppercase tracking-wide opacity-70">
+                <Text variant="sm" className="text-xs uppercase tracking-wide opacity-70">
                   {posting.budgetType}
                 </Text>
                 <Text variant="sm" className="font-medium">
@@ -188,7 +186,7 @@ const ProjectPostingDetailPage = () => {
             )}
           </Card>
 
-          <Card className="p-5 space-y-3">
+          <Card className="p-5 space-y-3" noShadow>
             <Text variant="sm" className="font-medium">
               About the client
             </Text>

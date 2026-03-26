@@ -8,4 +8,10 @@ export const commentService = {
   async add(payload: Omit<Comment, 'id' | 'createdAt'>): Promise<Comment> {
     return commentRepo.create(payload)
   },
+  async update(id: string, patch: Partial<Pick<Comment, 'body' | 'attachmentUrl' | 'attachmentType' | 'attachmentSize'>>): Promise<Comment | null> {
+    return commentRepo.update(id, patch)
+  },
+  async remove(id: string): Promise<boolean> {
+    return commentRepo.delete(id)
+  },
 }

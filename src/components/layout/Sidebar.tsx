@@ -6,6 +6,7 @@ import Text from '../base/Text'
 import Logo, { LOGIN_LOGO_URL } from '../base/Logo'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
+import { APP_ICON_SIZE, getMutedIconColor } from '../base/iconTokens'
 import {
   LayoutDashboard,
   FolderKanban,
@@ -29,55 +30,6 @@ type NavItem = {
   to: string
   label: string
   icon: React.ComponentType<{ size?: number }>
-}
-
-function getIconTint(to: string, accent?: { blue: string; purple: string; pink: string; green: string; yellow: string; teal: string }, fallback?: string) {
-  const a = accent
-  const map: Record<string, string | undefined> = {
-    '/app': a?.purple,
-    '/app/marketplace': a?.blue,
-    '/app/applications': a?.pink,
-    '/app/contracts': a?.teal,
-    '/app/analytics': a?.yellow,
-    '/app/projects': a?.purple,
-    '/app/assigned': a?.blue,
-    '/app/tasks': a?.green,
-    '/app/milestones': a?.yellow,
-    '/app/calendar': a?.teal,
-    '/app/notes': a?.pink,
-    '/app/reports': a?.purple,
-    '/app/invoices': a?.yellow,
-    '/app/consultants': a?.blue,
-    '/app/departments': a?.teal,
-    '/app/settings': a?.green,
-  }
-  return map[to] ?? fallback ?? '#FF9600'
-}
-
-function IconChip({
-  Icon,
-  isActive,
-  tint,
-}: {
-  Icon: React.ComponentType<{ size?: number }>
-  isActive: boolean
-  tint: string
-}) {
-  const bg = isActive ? `linear-gradient(135deg, ${tint} 0%, ${tint}CC 100%)` : `${tint}18`
-  const color = isActive ? '#fff' : tint
-  return (
-    <span
-      className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
-      style={{
-        background: bg,
-        boxShadow: isActive ? '0 10px 24px rgba(0,0,0,0.16)' : 'none',
-        color,
-      }}
-      aria-hidden
-    >
-      <Icon size={18} />
-    </span>
-  )
 }
 
 type SettingsSectionId = 'general' | 'appearance' | 'account'
@@ -126,7 +78,7 @@ const CONSULTANT_ROUTES = new Set([
   '/app/assigned',
 ])
 const FREELANCER_ROUTES = new Set([
-  '/app',
+  '/app/marketplace',
   '/app/applications',
   '/app/contracts',
   '/app/analytics',
@@ -165,10 +117,9 @@ const Sidebar = ({ open }: SidebarProps) => {
       return ALL_NAV.filter((item) => CONSULTANT_ROUTES.has(item.to))
     }
     if (user?.role === 'freelancer') {
-      // Freelancer UX: treat /app as Job board.
       return ALL_NAV
         .map((item) =>
-          item.to === '/app' ? { ...item, label: 'Job board', icon: Sparkles } : item
+          item.to === '/app/marketplace' ? { ...item, label: 'Job board', icon: Sparkles } : item
         )
         .filter((item) => FREELANCER_ROUTES.has(item.to))
     }
@@ -186,13 +137,12 @@ const Sidebar = ({ open }: SidebarProps) => {
     return SETTINGS_CHILDREN.filter((s) => s.id !== 'general' || isCompanyAdmin)
   }, [user?.role])
 
-  const linkStyle = (isActive: boolean) =>
-    isActive
-      ? {
-          backgroundColor: current?.system?.background,
-          color: current?.brand?.primary,
-        }
-      : { color: current?.system?.dark }
+  const isDark = Themestore((s) => s.mode) === 'dark'
+  const text = current?.system?.dark ?? '#111827'
+  const muted = getMutedIconColor(isDark ? 'dark' : 'light')
+  // const activeBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.035)'
+  const activeBg = current?.system?.background
+  const hoverBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.028)'
 
   return (
     <motion.div
@@ -211,34 +161,37 @@ const Sidebar = ({ open }: SidebarProps) => {
           borderColor: current?.system?.border ?? 'rgba(0,0,0,0.1)',
         }}
       >
-        <div className="px-4 pt-5 pb-4 flex items-center shrink-0">
+        <div className="px-5 pt-4 pb-4 flex items-center shrink-0">
           <Logo size="md" src={LOGIN_LOGO_URL} />
         </div>
-        <nav className="flex-1 overflow-y-auto scroll-slim px-3 pb-4 flex flex-col gap-0.5" aria-label="Main navigation">
+        <nav className="flex-1 overflow-y-auto scroll-slim pl-2 pb-6 flex flex-col gap-2" aria-label="Main navigation">
           {nav.map((item) => {
             if (item.to !== '/app/settings') {
+              const Icon = item.icon
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   end={item.to === '/app'}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors duration-150 opacity-90 hover:opacity-100 ${isActive ? 'opacity-100 font-semibold' : ''}`
+                  className={() =>
+                    `flex items-center gap-3 px-4 py-2 rounded-base text-left transition-colors duration-150 hover:bg-[rgba(0,0,0,0.028)]`
                   }
-                  style={({ isActive }) => linkStyle(isActive)}
+                  style={({ isActive }) => ({
+                    backgroundColor: isActive ? activeBg : 'transparent',
+                    color: isActive ? text : text,
+                  })}
                 >
-                  {({ isActive }) => {
-                    const tint = getIconTint(item.to, current?.accent, current?.brand?.secondary)
-                    const Icon = item.icon
-                    return (
-                      <>
-                        <IconChip Icon={Icon} isActive={isActive} tint={tint} />
-                        <Text variant="sm" className="font-medium tracking-tight">
-                          {item.label}
-                        </Text>
-                      </>
-                    )
-                  }}
+                  {({ isActive }) => (
+                    <>
+                      <span className="shrink-0" aria-hidden style={{ color: isActive ? current?.brand?.primary ?? text : muted }}>
+                        <Icon size={APP_ICON_SIZE} />
+                      </span>
+                      <Text variant="md" className={`tracking-tight ${isActive ? 'font-medium' : 'font-normal'}`}>
+                        {item.label}
+                      </Text>
+                      <span className="flex-1" />
+                    </>
+                  )}
                 </NavLink>
               )
             }
@@ -248,25 +201,30 @@ const Sidebar = ({ open }: SidebarProps) => {
                 <NavLink
                   to="/app/settings"
                   end={false}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150 opacity-90 hover:opacity-100 ${isActive ? 'opacity-100 font-medium' : ''}`
+                  className={() =>
+                    `flex items-center gap-3 px-4 py-2 rounded-base text-left transition-colors duration-150 hover:bg-[rgba(0,0,0,0.028)]`
                   }
-                  style={({ isActive }) => linkStyle(isActive)}
+                  style={({ isActive }) => ({
+                    backgroundColor: isActive ? activeBg : 'transparent',
+                    color: isActive ? text : text,
+                  })}
                 >
                   {({ isActive }) => {
-                    const tint = getIconTint(item.to, current?.accent, current?.brand?.secondary)
                     return (
                       <>
-                        <IconChip Icon={Icon} isActive={isActive} tint={tint} />
-                        <Text variant="sm" className="font-medium tracking-tight">
+                        <span className="shrink-0" aria-hidden style={{ color: isActive ? current?.brand?.primary ?? text : muted }}>
+                          <Icon size={APP_ICON_SIZE} />
+                        </span>
+                        <Text variant="md" className={`tracking-tight ${isActive ? 'font-medium' : 'font-normal'}`}>
                           {item.label}
                         </Text>
+                        <span className="flex-1" />
                       </>
                     )
                   }}
                 </NavLink>
                 {isSettingsPage && settingsChildren.length > 0 && (
-                  <ul className="mt-0.5 ml-3 pl-4 space-y-0.5" aria-label="Settings sections">
+                  <ul className="mt-1 ml-5 pl-6 space-y-1" aria-label="Settings sections">
                     {settingsChildren.map((child) => {
                       const to = `/app/settings?section=${child.id}`
                       const isChildActive =
@@ -276,14 +234,16 @@ const Sidebar = ({ open }: SidebarProps) => {
                         <li key={child.id}>
                           <NavLink
                             to={to}
-                            className="flex items-center py-2 pl-3 pr-3 rounded-md text-left transition-colors duration-150 opacity-80 hover:opacity-100 border-l-2"
+                            className="flex items-center py-2 pl-3 pr-3 rounded-base text-left transition-colors duration-150 border-l-2"
                             style={{
                               borderLeftColor: isChildActive ? (current?.brand?.primary ?? 'transparent') : 'transparent',
                               color: isChildActive ? (current?.brand?.primary ?? current?.system?.dark) : current?.system?.dark,
-                              fontWeight: isChildActive ? 600 : 500,
+                              // fontWeight: isChildActive ? 600 : 500,
+                              backgroundColor: isChildActive ? hoverBg : 'transparent',
+                              opacity: isChildActive ? 1 : 0.75,
                             }}
                           >
-                            <Text variant="sm" style={{ fontSize: '0.8125rem' }}>
+                            <Text variant="sm" className={isChildActive ? 'font-medium' : 'font-normal'}>
                               {child.label}
                             </Text>
                           </NavLink>

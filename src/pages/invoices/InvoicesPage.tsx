@@ -312,6 +312,7 @@ const MOCK_INVOICES: Invoice[] = (() => {
     },
   ]
 })()
+void MOCK_INVOICES
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
@@ -391,8 +392,7 @@ const InvoicesPage = () => {
         const list = await invoiceService.listByCompany(user.companyId)
         if (!cancelled) setInvoices(list)
       } catch {
-        // Fallback to mock if API isn't reachable during dev.
-        if (!cancelled) setInvoices([...MOCK_INVOICES])
+        if (!cancelled) setInvoices([])
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -576,20 +576,27 @@ const InvoicesPage = () => {
   const handleUnmarkPaidConfirm = () => {
     if (!unmarkPaidIds?.length) return
     setSaving(true)
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        unmarkPaidIds.includes(inv.id)
-          ? { ...inv, status: 'unpaid' as const, paidAt: undefined }
-          : inv
-      )
-    )
-    setUnmarkPaidIds(null)
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      unmarkPaidIds.forEach((id) => next.delete(id))
-      return next
-    })
-    setSaving(false)
+    ;(async () => {
+      try {
+        const updated = await Promise.all(
+          unmarkPaidIds.map(async (id) => (await invoiceService.update(id, { status: 'unpaid', paidAt: '' })) ?? null)
+        )
+        setInvoices((prev) =>
+          prev.map((inv) => {
+            const u = updated.find((x) => x?.id === inv.id)
+            return u ? u : inv
+          })
+        )
+        setUnmarkPaidIds(null)
+        setSelectedIds((prev) => {
+          const next = new Set(prev)
+          unmarkPaidIds.forEach((id) => next.delete(id))
+          return next
+        })
+      } finally {
+        setSaving(false)
+      }
+    })()
   }
 
   const total = invoices.length

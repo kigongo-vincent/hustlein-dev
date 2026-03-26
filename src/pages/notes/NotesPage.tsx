@@ -38,10 +38,10 @@ export default function NotesPage() {
   const { current, mode } = Themestore()
   const dark = current?.system?.dark
   const borderColor = current?.system?.border ?? 'rgba(0,0,0,0.1)'
-  const primary = current?.brand?.primary ?? '#682308'
-  const secondary = current?.brand?.secondary ?? '#FF9600'
-  const chartPrimary = mode === 'dark' ? (dark ?? '#e0e0e0') : primary
-  const chartSecondary = mode === 'dark' ? (secondary ?? '#FF9600') : secondary
+  const primary = current?.brand?.primary ?? dark ?? current?.system?.foreground
+  const secondary = current?.brand?.secondary ?? current?.system?.foreground ?? dark
+  const chartPrimary = mode === 'dark' ? (dark ?? primary) : primary
+  const chartSecondary = mode === 'dark' ? (secondary ?? chartPrimary) : secondary
 
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
@@ -235,7 +235,6 @@ export default function NotesPage() {
   const tooltipStyle = {
     fontSize: 13.5,
     backgroundColor: fg,
-    border: `1px solid ${borderColor}`,
     borderRadius: 4,
     color: dark,
   }
@@ -348,7 +347,7 @@ export default function NotesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {loading ? (
             [1, 2, 3].map((i) => (
-              <Card key={i} className="min-h-[7rem] py-4 px-4">
+              <Card key={i} className="min-h-[7rem] py-4 px-4" noShadow>
                 <Skeleton height="h-4" width="w-24" className="mb-2" />
                 <Skeleton height="h-4" width="w-16" className="mb-1" />
                 <Skeleton height="h-8" width="w-12" />
@@ -361,6 +360,7 @@ export default function NotesPage() {
                 title={s.label}
                 rightIcon={<StickyNote className="w-5 h-5 opacity-80" />}
                 className="min-h-[7rem] py-4 px-4"
+                noShadow
               >
                 <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
                   {s.value}
@@ -378,6 +378,7 @@ export default function NotesPage() {
         title="All notes"
         subtitle="Click to edit; change color from the card."
         className="p-0 overflow-hidden flex-1 min-h-0 flex flex-col mt-5"
+        noShadow
       >
         <div className="flex-1 min-h-0 overflow-auto scroll-slim">
           <div className="overflow-x-auto scroll-slim">
@@ -486,16 +487,16 @@ export default function NotesPage() {
             Notes analytics
           </h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card title="Notes over time" subtitle="Created per week" className="px-4 pb-4">
+            <Card title="Notes over time" subtitle="Created per week" className="px-4 pb-4" noShadow>
               {renderChartByWeek()}
             </Card>
-            <Card title="By color" subtitle="Notes per color" className="px-4 pb-4">
+            <Card title="By color" subtitle="Notes per color" className="px-4 pb-4" noShadow>
               {renderChartByColor()}
             </Card>
-            <Card title="Last 7 days" subtitle="Created per day" className="px-4 pb-4">
+            <Card title="Last 7 days" subtitle="Created per day" className="px-4 pb-4" noShadow>
               {renderChartByDayLast7()}
             </Card>
-            <Card title="Last 14 days" subtitle="Created vs updated" className="px-4 pb-4">
+            <Card title="Last 14 days" subtitle="Created vs updated" className="px-4 pb-4" noShadow>
               {renderChartLast14Days()}
             </Card>
           </div>

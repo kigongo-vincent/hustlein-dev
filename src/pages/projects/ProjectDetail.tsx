@@ -484,120 +484,120 @@ const ProjectDetail = () => {
             className="flex items-center gap-2 shrink-0 py-1 px-1 rounded-base"
             style={{ backgroundColor: `${fg}99`, backdropFilter: 'blur(8px)' }}
           >
-          <button
-            type="button"
-            onClick={() => setFolderModalOpen(true)}
-            className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: 'transparent' }}
-            title="Project files"
-            aria-label="Open files and folders"
-          >
-            <Folder className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              isContributor
-                ? user?.role === 'consultant'
-                  ? setLogTimeModalOpen(true)
-                  : navigate('/app/contracts')
-                : setAddMilestoneOpen(true)
-            }
-            className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: 'transparent' }}
-            title={isContributor ? 'Log time' : 'Add milestone'}
-            aria-label={isContributor ? 'Log time' : 'Add milestone'}
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-          {!isContributor && (
             <button
               type="button"
-              onClick={() => setBillingOpen(true)}
+              onClick={() => setFolderModalOpen(true)}
               className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
               style={{ color: dark, backgroundColor: 'transparent' }}
-              title="Billing"
-              aria-label="Open billing"
+              title="Project files"
+              aria-label="Open files and folders"
             >
-              <Receipt className="w-5 h-5" />
+              <Folder className="w-5 h-5" />
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setAnalyticsOpen(true)}
-            className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: 'transparent' }}
-            title="View analytics"
-            aria-label="View analytics"
-          >
-            <BarChart3 className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setBoardOpen(true)}
-            className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: 'transparent' }}
-            title="Board"
-            aria-label="Open board"
-          >
-            <LayoutGrid className="w-5 h-5" />
-          </button>
-          {!isContributor && (
-            <>
-          <button
-            type="button"
-            onClick={() => setEditOpen(true)}
-            className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: 'transparent' }}
-            title="Edit project"
-            aria-label="Edit project"
-          >
-            <Pencil className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setSuspendOpen(true)}
-            className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: 'transparent' }}
-            title={project?.status === 'suspended' ? 'Resume project' : 'Suspend project'}
-            aria-label={project?.status === 'suspended' ? 'Resume project' : 'Suspend project'}
-          >
-            {project?.status === 'suspended' ? (
-              <PlayCircle className="w-5 h-5" />
-            ) : (
-              <PauseCircle className="w-5 h-5" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setDeleteOpen(true)}
-            className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: 'transparent' }}
-            title="Delete project"
-            aria-label="Delete project"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-            </>
-          )}
-          <button
-            type="button"
-            onClick={() => setChatSidebarOpen((prev) => !prev)}
-            className="relative shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
-            style={{ color: dark, backgroundColor: 'transparent' }}
-            title={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
-            aria-label={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
-          >
-            <MessageSquare className="w-5 h-5" />
-            {comments.length > 0 && (
-              <span
-                className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-white text-xs font-medium px-1"
-                style={{ backgroundColor: current?.system?.error }}
+            <button
+              type="button"
+              onClick={() =>
+                isContributor
+                  ? user?.role === 'consultant'
+                    ? setLogTimeModalOpen(true)
+                    : navigate('/app/contracts')
+                  : setAddMilestoneOpen(true)
+              }
+              className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+              style={{ color: dark, backgroundColor: 'transparent' }}
+              title={isContributor ? 'Log time' : 'Add milestone'}
+              aria-label={isContributor ? 'Log time' : 'Add milestone'}
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+            {!isContributor && (
+              <button
+                type="button"
+                onClick={() => setBillingOpen(true)}
+                className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+                style={{ color: dark, backgroundColor: 'transparent' }}
+                title="Billing"
+                aria-label="Open billing"
               >
-                {comments.length > 99 ? '99+' : comments.length}
-              </span>
+                <Receipt className="w-5 h-5" />
+              </button>
             )}
-          </button>
+            <button
+              type="button"
+              onClick={() => setAnalyticsOpen(true)}
+              className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+              style={{ color: dark, backgroundColor: 'transparent' }}
+              title="View analytics"
+              aria-label="View analytics"
+            >
+              <BarChart3 className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setBoardOpen(true)}
+              className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+              style={{ color: dark, backgroundColor: 'transparent' }}
+              title="Board"
+              aria-label="Open board"
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </button>
+            {!isContributor && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+                  style={{ color: dark, backgroundColor: 'transparent' }}
+                  title="Edit project"
+                  aria-label="Edit project"
+                >
+                  <Pencil className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSuspendOpen(true)}
+                  className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+                  style={{ color: dark, backgroundColor: 'transparent' }}
+                  title={project?.status === 'suspended' ? 'Resume project' : 'Suspend project'}
+                  aria-label={project?.status === 'suspended' ? 'Resume project' : 'Suspend project'}
+                >
+                  {project?.status === 'suspended' ? (
+                    <PlayCircle className="w-5 h-5" />
+                  ) : (
+                    <PauseCircle className="w-5 h-5" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteOpen(true)}
+                  className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+                  style={{ color: dark, backgroundColor: 'transparent' }}
+                  title="Delete project"
+                  aria-label="Delete project"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => setChatSidebarOpen((prev) => !prev)}
+              className="relative shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+              style={{ color: dark, backgroundColor: 'transparent' }}
+              title={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
+              aria-label={chatSidebarOpen ? 'Close chat' : 'Open project chat'}
+            >
+              <MessageSquare className="w-5 h-5" />
+              {comments.length > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-white text-xs font-medium px-1"
+                  style={{ backgroundColor: current?.system?.error }}
+                >
+                  {comments.length > 99 ? '99+' : comments.length}
+                </span>
+              )}
+            </button>
           </div>
         </header>
 
@@ -1075,7 +1075,7 @@ const ProjectDetail = () => {
         <BoardModal onClose={() => setBoardOpen(false)} initialProjectId={project.id} />
       </Modal>
 
-      <ProjectFilesModal open={folderModalOpen} onClose={() => setFolderModalOpen(false)} />
+      <ProjectFilesModal open={folderModalOpen} onClose={() => setFolderModalOpen(false)} projectId={project.id} />
 
       {user?.role === 'consultant' && (
         <LogTimeModal

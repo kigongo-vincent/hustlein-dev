@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router'
+import { useGoogleLogin } from '@react-oauth/google'
 import View from '../../components/base/View'
 import Text from '../../components/base/Text'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
 import { Input, Button, AlertModal } from '../../components/ui'
 import { authService } from '../../services/authService'
 import { Themestore } from '../../data/Themestore'
+import AccountTypeModal, { type AccountType } from './AccountTypeModal'
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden>
@@ -37,6 +39,25 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const { current } = Themestore()
   const navigate = useNavigate()
+  const [accountModalOpen, setAccountModalOpen] = useState(false)
+  const pendingGoogleAccountTypeRef = useRef<AccountType | null>(null)
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async ({ access_token }) => {
+      setLoading(true)
+      try {
+        await authService.googleAuth(access_token, {
+          accountType: pendingGoogleAccountTypeRef.current ?? 'freelancer',
+        })
+        navigate('/app')
+      } catch {
+        setError('Google sign-in failed. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    },
+    onError: () => setError('Google sign-in failed. Please try again.'),
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,8 +74,20 @@ const Login = () => {
   }
 
   return (
-    <View bg="bg" className="flex-1 min-h-0 overflow-auto scroll-slim flex flex-col items-center justify-center p-6">
-      <View bg="fg" className="w-full max-w-md rounded-base shadow-custom p-[3rem]">
+    <>
+      <AccountTypeModal
+        open={accountModalOpen}
+        closeOnBackdrop
+        onClose={() => setAccountModalOpen(false)}
+        onSelect={(t) => {
+          pendingGoogleAccountTypeRef.current = t
+          setAccountModalOpen(false)
+          googleLogin()
+        }}
+      />
+
+      <View bg="bg" className="flex-1 min-h-0 overflow-auto scroll-slim flex flex-col items-center justify-center p-6">
+        <View bg="fg" className="w-full max-w-md rounded-base shadow-custom p-[3rem]">
         <div className="flex justify-center  my-10">
           <Logo size="lg" src={LOGIN_LOGO_URL} />
         </div>
@@ -69,6 +102,8 @@ const Login = () => {
             label="Email"
             type="email"
             placeholder="you@company.com"
+            name="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -78,6 +113,8 @@ const Login = () => {
               label="Password"
               type="password"
               placeholder="••••••••"
+              name="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -111,7 +148,7 @@ const Login = () => {
                 label="Continue with Google"
                 startIcon={<GoogleIcon />}
                 title="Google sign-in (optional)"
-                onClick={() => setError('Use email and password to sign in with the backend.')}
+                onClick={() => setAccountModalOpen(true)}
               />
             </>
           ) : null}
@@ -123,15 +160,16 @@ const Login = () => {
             </Text>
           </Link>
         </div>
+        </View>
+        <AlertModal
+          open={!!error}
+          title="Error"
+          message={error}
+          onClose={() => setError('')}
+          variant="error"
+        />
       </View>
-      <AlertModal
-        open={!!error}
-        title="Error"
-        message={error}
-        onClose={() => setError('')}
-        variant="error"
-      />
-    </View>
+    </>
   )
 }
 

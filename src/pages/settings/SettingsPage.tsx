@@ -28,7 +28,7 @@ const SettingsPage = () => {
     return 'appearance'
   }, [sectionParam])
 
-  const { current, mode, setTheme } = Themestore()
+  const { current, mode, setTheme, setCustomTheme, customOverrides } = Themestore()
   const { user, setUser } = Authstore()
   const isCompanyAdmin = user?.role === 'company_admin' || user?.role === 'super_admin'
 
@@ -48,6 +48,24 @@ const SettingsPage = () => {
   const [profileAvatarUrl, setProfileAvatarUrl] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileSaved, setProfileSaved] = useState(false)
+
+  const [bgImageInput, setBgImageInput] = useState(customOverrides?.system?.backgroundImage ?? '')
+
+  useEffect(() => {
+    setBgImageInput(customOverrides?.system?.backgroundImage ?? '')
+  }, [customOverrides?.system?.backgroundImage])
+
+  const handleSetBgImage = (value: string) => {
+    const trimmed = value.trim()
+    const newOverrides = { ...customOverrides, system: { ...customOverrides?.system } }
+    if (trimmed) {
+      const isUrl = trimmed.startsWith('http') || trimmed.startsWith('/')
+      newOverrides.system!.backgroundImage = isUrl ? `url(${trimmed})` : trimmed
+    } else {
+      delete newOverrides.system!.backgroundImage
+    }
+    setCustomTheme(newOverrides)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -126,6 +144,7 @@ const SettingsPage = () => {
               <Card
                 title="Company details"
                 subtitle="Used on invoices and across the workspace"
+                noShadow
               >
                 <div className="space-y-3 max-w-xl">
                   <Input
@@ -155,7 +174,7 @@ const SettingsPage = () => {
                   />
                 </div>
               </Card>
-              <Card title="Tax & billing" subtitle="Default tax rate applied to invoices">
+              <Card title="Tax & billing" subtitle="Default tax rate applied to invoices" noShadow>
                 <div className="space-y-3 max-w-xs">
                   <Input
                     label="Tax rate (%)"
@@ -173,6 +192,7 @@ const SettingsPage = () => {
               <Card
                 title="Storage"
                 subtitle="Workspace storage limit and current usage"
+                noShadow
               >
                 <div className="space-y-3 max-w-xl">
                   <Input
@@ -210,7 +230,8 @@ const SettingsPage = () => {
 
           {/* ——— Appearance ——— */}
           {activeSection === 'appearance' && (
-            <Card title="Theme" subtitle="Choose how the app looks">
+            <>
+            <Card title="Theme" subtitle="Choose how the app looks" noShadow>
               <div className="space-y-3">
                 <Text variant="sm" className="opacity-90" color={dark}>
                   Select light or dark mode. Your choice is saved automatically.
@@ -253,6 +274,52 @@ const SettingsPage = () => {
                 </div>
               </div>
             </Card>
+
+            <Card title="Background" subtitle="Customize the main content area background" noShadow>
+              <div className="space-y-4 max-w-xl">
+                <Text variant="sm" className="opacity-70" color={dark}>
+                  Paste an image URL or a CSS gradient value. Leave empty for the default solid color.
+                </Text>
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <Input
+                      label="Image URL or CSS gradient"
+                      placeholder="https://example.com/bg.jpg or linear-gradient(...)"
+                      value={bgImageInput}
+                      onChange={(e) => setBgImageInput(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    label="Apply"
+                    size="sm"
+                    onClick={() => handleSetBgImage(bgImageInput)}
+                    startIcon={<Save className="w-4 h-4 shrink-0" />}
+                  />
+                </div>
+                {current?.system?.backgroundImage && (
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-20 h-14 rounded-base shrink-0"
+                      style={{
+                        backgroundImage: current.system.backgroundImage,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundColor: bg,
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setBgImageInput(''); handleSetBgImage('') }}
+                      className="text-[12px] font-medium transition-opacity hover:opacity-80"
+                      style={{ color: current?.system?.error ?? 'red' }}
+                    >
+                      Remove background
+                    </button>
+                  </div>
+                )}
+              </div>
+            </Card>
+            </>
           )}
 
           {/* ——— Account ——— */}
@@ -261,6 +328,7 @@ const SettingsPage = () => {
               <Card
                 title="Profile"
                 subtitle="Name, email, and avatar visible to your team"
+                noShadow
               >
                 <div className="space-y-4 max-w-xl">
                   <Input
@@ -301,7 +369,7 @@ const SettingsPage = () => {
                   </div>
                 </div>
               </Card>
-              <Card title="Security" subtitle="Password and sign-in">
+              <Card title="Security" subtitle="Password and sign-in" noShadow>
                 <div className="space-y-3">
                   <Text variant="sm" className="opacity-90" color={dark}>
                     Change your password or recover your account via email.

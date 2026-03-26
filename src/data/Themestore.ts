@@ -12,6 +12,8 @@ export interface ThemeI {
     error: string;
     success: string;
     dark: string;
+    /** Optional CSS background-image value for the main content area (url, gradient, etc.) */
+    backgroundImage?: string;
   };
   brand: {
     primary: string;

@@ -29,16 +29,9 @@ export default function FreelancerAnalyticsPage() {
   const user = Authstore((s) => s.user)
   const dark = current?.system?.dark
 
-  const accents = current?.accent
-  const tints = useMemo(() => {
-    const list = [
-      accents?.purple ?? current?.brand?.secondary ?? '#FF9600',
-      accents?.blue ?? current?.brand?.primary ?? '#682308',
-      accents?.pink ?? '#E64980',
-      accents?.teal ?? '#0CA678',
-    ]
-    return list
-  }, [accents, current?.brand?.primary, current?.brand?.secondary])
+  const primary = current?.brand?.primary ?? current?.system?.dark ?? '#111827'
+  const secondary = current?.brand?.secondary ?? current?.system?.foreground ?? '#111827'
+  const neutralBg = current?.system?.background ?? 'rgba(0,0,0,0.04)'
 
   const [loading, setLoading] = useState(true)
   const [tasks, setTasks] = useState<Task[]>([])
@@ -76,32 +69,32 @@ export default function FreelancerAnalyticsPage() {
         value: String(contractsCount),
         caption: 'Across companies',
         icon: <BriefcaseBusiness className="w-5 h-5" />,
-        tint: tints[0],
+        tint: primary,
       },
       {
         label: 'Applications',
         value: String(applicationsCount),
         caption: 'Not withdrawn',
         icon: <Inbox className="w-5 h-5" />,
-        tint: tints[1],
+        tint: secondary,
       },
       {
         label: 'My tasks',
         value: String(tasks.length),
         caption: 'Assigned work',
         icon: <ListTodo className="w-5 h-5" />,
-        tint: tints[2],
+        tint: primary,
       },
       {
         label: 'Momentum',
         value: tasks.length > 0 ? 'Good' : '—',
         caption: 'Keep it rolling',
         icon: <Activity className="w-5 h-5" />,
-        tint: tints[3],
+        tint: secondary,
       },
     ] satisfies Stat[]
     return base
-  }, [contractsCount, applicationsCount, tasks.length, tints])
+  }, [contractsCount, applicationsCount, tasks.length, primary, secondary])
 
   const chartData = useMemo(() => {
     const now = new Date()
@@ -123,7 +116,6 @@ export default function FreelancerAnalyticsPage() {
   const tooltipContentStyle = {
     fontSize: 12,
     backgroundColor: current?.system?.foreground,
-    border: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
     borderRadius: 6,
     color: dark,
   }
@@ -140,12 +132,9 @@ export default function FreelancerAnalyticsPage() {
             <div className="flex items-center gap-2">
               <span
                 className="w-9 h-9 rounded-base flex items-center justify-center"
-                style={{
-                  background: `linear-gradient(135deg, ${tints[0]} 0%, ${tints[1]} 100%)`,
-                  boxShadow: '0 8px 22px rgba(0,0,0,0.12)',
-                }}
+                style={{ backgroundColor: neutralBg }}
               >
-                <Sparkles className="w-5 h-5" style={{ color: current?.brand?.onPrimary ?? '#fff' }} />
+                <Sparkles className="w-5 h-5" style={{ color: current?.system?.dark ?? undefined }} />
               </span>
               <div className="min-w-0">
                 <Text className="font-medium">Analytics</Text>
@@ -161,7 +150,7 @@ export default function FreelancerAnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {loading
           ? [1, 2, 3, 4].map((i) => (
-              <Card key={i} className="min-h-[7rem] py-4 px-4">
+              <Card key={i} className="min-h-[7rem] py-4 px-4" noShadow>
                 <Skeleton height="h-4" width="w-28" className="mb-2" />
                 <Skeleton height="h-8" width="w-16" />
               </Card>
@@ -174,12 +163,13 @@ export default function FreelancerAnalyticsPage() {
                 rightIcon={
                   <span
                     className="w-9 h-9 rounded-base flex items-center justify-center"
-                    style={{ backgroundColor: `${s.tint}18`, border: `1px solid ${s.tint}30`, color: s.tint }}
+                    style={{ backgroundColor: neutralBg, color: s.tint }}
                   >
                     {s.icon}
                   </span>
                 }
                 className="min-h-[7rem] py-4 px-4"
+                noShadow
               >
                 <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
                   {s.value}
@@ -188,7 +178,7 @@ export default function FreelancerAnalyticsPage() {
             ))}
       </div>
 
-      <Card title="Tasks created (last 7 days)" subtitle="A simple momentum signal" className="px-4 pb-4">
+      <Card title="Tasks created (last 7 days)" subtitle="A simple momentum signal" className="px-4 pb-4" noShadow>
         <div className="h-[280px] w-full">
           {loading ? (
             <div className="h-full flex items-center justify-center">
@@ -205,7 +195,7 @@ export default function FreelancerAnalyticsPage() {
                 <Line
                   type="monotone"
                   dataKey="tasks"
-                  stroke={tints[1]}
+                  stroke={secondary}
                   strokeWidth={2}
                   dot={{ r: 4 }}
                   name="Tasks"

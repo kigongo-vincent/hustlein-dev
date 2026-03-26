@@ -1,12 +1,12 @@
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router'
-import Text from '../base/Text'
+import Text, { baseFontSize } from '../base/Text'
 import Avatar from '../base/Avatar'
 import { Authstore } from '../../data/Authstore'
 import { Themestore } from '../../data/Themestore'
-import { ChevronRight, ChevronLeft, Settings, Sun, Moon } from 'lucide-react'
-import { Button } from '../ui'
-import { publish } from '../../utils/publish'
-import { toast } from 'react-toastify'
+import { ChevronRight, ChevronLeft, Settings, Sun, Moon, LogOut } from 'lucide-react'
+import { Button, Modal } from '../ui'
+import { APP_ICON_SIZE, getMutedIconColor } from '../base/iconTokens'
 
 type HeaderProps = {
   sidebarOpen: boolean
@@ -20,93 +20,105 @@ const Header = ({ sidebarOpen, onToggleSidebar }: HeaderProps) => {
   const { current, mode, setTheme } = Themestore()
   const navigate = useNavigate()
 
+  const [logoutOpen, setLogoutOpen] = useState(false)
+
   const onLogoutConfirm = () => {
     logout()
-    navigate('/auth/login')
+    setLogoutOpen(false)
+    navigate('/auth/login', { replace: true })
   }
-
-  const LogutOutModal = ({ id: _id }: { id: string }) => {
-    return (
-      <div className='flex-1 pt-4 '>
-        <Text variant='md' className='font-semibold' >Logout</Text>
-        <Text>Are you sure you want to logout</Text>
-        <div className='flex gap-2 items-center mt-4 justify-end'>
-          <Button onClick={() => toast.dismiss()} label='CANCEL' variant='secondary' />
-          <Button onClick={onLogoutConfirm} label='YES' />
-        </div>
-      </div>
-    )
-  }
-
-
-
 
   const handleLogout = () => {
-    publish(<LogutOutModal id='header' />, "", false)
+    setLogoutOpen(true)
   }
   const toggleTheme = () => setTheme(mode === 'light' ? 'dark' : 'light')
-  const dark = current?.system?.dark
+  const dark = current?.system?.dark ?? '#111827'
+  const border = current?.system?.border ?? 'rgba(0,0,0,0.08)'
+  const muted = getMutedIconColor(mode)
 
   return (
-    <div
-      className="h-14 flex items-center justify-between px-4 border-b shrink-0"
+    <>
+      <div
+      className="flex items-center justify-between px-4 shrink-0"
       style={{
         backgroundColor: current?.system?.foreground,
-        borderColor: current?.system?.border ?? 'rgba(0,0,0,0.1)',
+        borderBottom: `1px solid ${border}`,
+        fontSize: baseFontSize,
+        lineHeight: 1.5,
+        height: '64px', // taller header for improved visual balance
       }}
     >
-      <div className="flex items-center gap-3">
+      {/* Left: sidebar toggle + user */}
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={onToggleSidebar}
-          className="min-h-[44px] min-w-[44px] p-2 rounded-base opacity-80 hover:opacity-100 transition flex items-center justify-center"
-          style={{ color: dark }}
+          className="w-6 h-6 rounded-base opacity-55 hover:opacity-90 transition-opacity flex items-center justify-center"
+          style={{ color: muted }}
           title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           aria-expanded={sidebarOpen}
         >
-          {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+          {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
         </button>
-        <Link to="/app/profile" className="flex items-center gap-2 rounded-base hover:opacity-90 transition" style={{ color: dark }}>
-          <Avatar src={user?.avatarUrl} name={user?.name} size="md" />
-          <Text className="font-medium">
-            {user?.name ?? 'Guest'}
-          </Text>
+        <Link
+          to="/app/profile"
+          className="flex items-center gap-2.5 px-1 py-1 rounded-base hover:opacity-85 transition-opacity"
+          style={{ color: dark }}
+        >
+          <Avatar src={user?.avatarUrl} name={user?.name} size="sm" />
+          <Text className="font-semibold">{user?.name ?? 'Guest'}</Text>
         </Link>
       </div>
-      <div className="flex items-center gap-1">
+
+      {/* Right: icon actions */}
+      <div className="flex items-center gap-2">
         <Link
           to="/app/settings"
-          className="min-h-[44px] min-w-[44px] p-2 rounded-base opacity-80 hover:opacity-100 transition flex items-center justify-center"
-          style={{ color: dark }}
+          className="w-5 h-5 rounded-base hover:opacity-90 transition-opacity flex items-center justify-center"
+          style={{ color: muted }}
           title="Settings"
           aria-label="Settings"
         >
-          <Settings size={18} />
+          <Settings size={APP_ICON_SIZE} />
         </Link>
         <button
           type="button"
           onClick={toggleTheme}
-          className="min-h-[44px] min-w-[44px] p-2 rounded-base opacity-80 hover:opacity-100 transition flex items-center justify-center"
+          className="w-5 h-5 rounded-base hover:opacity-90 transition-opacity flex items-center justify-center"
           title={mode === 'light' ? 'Switch to dark' : 'Switch to light'}
           aria-label="Toggle theme"
-          style={{ color: dark }}
+          style={{ color: muted }}
         >
-          {mode === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          {mode === 'light' ? <Moon size={APP_ICON_SIZE} /> : <Sun size={APP_ICON_SIZE} />}
         </button>
+        <div
+          className="mx-1 h-4 w-px opacity-40"
+          style={{ background: border }}
+        />
         <button
           type="button"
-          style={{
-            backgroundColor: current?.system?.background,
-            color: dark,
-          }}
           onClick={handleLogout}
-          className="px-3 py-2 rounded-base opacity-90 hover:opacity-100 transition font-medium text-[13.5px]"
+          className="w-5 h-5 rounded-base hover:opacity-90 transition-opacity flex items-center justify-center"
+          title="Log out"
+          aria-label="Log out"
+          style={{ color: muted }}
         >
-          Log out
+          <LogOut size={APP_ICON_SIZE} />
         </button>
       </div>
-    </div>
+      </div>
+      <Modal open={logoutOpen} onClose={() => setLogoutOpen(false)}>
+        <div className="p-6">
+          <Text className="font-semibold mb-2">Logout</Text>
+          <Text>Are you sure you want to logout</Text>
+          <div className="flex gap-2 items-center mt-4 justify-end">
+            <Button onClick={() => setLogoutOpen(false)} label="CANCEL" variant="secondary" />
+            <Button onClick={onLogoutConfirm} label="YES" />
+          </div>
+        </div>
+      </Modal>
+    </>
   )
 }
 

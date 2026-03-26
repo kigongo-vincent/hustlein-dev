@@ -41,9 +41,19 @@ export interface ProjectPosting {
   status: MarketplacePostingStatus
   createdAt: string
   updatedAt: string
+  /** Present on API responses so freelancers can show company without listing all companies */
+  companyName?: string
+  companyLogoUrl?: string | null
 }
 
 export type ApplicationStatus = 'applied' | 'shortlisted' | 'rejected' | 'withdrawn' | 'hired'
+
+export interface ApplicationFile {
+  id: string
+  applicationId: string
+  name: string
+  url: string
+}
 
 export interface ProjectApplication {
   id: string
@@ -57,6 +67,7 @@ export interface ProjectApplication {
   status: ApplicationStatus
   createdAt: string
   updatedAt: string
+  attachments?: ApplicationFile[]
 }
 
 export interface HireResult {
@@ -251,6 +262,8 @@ export interface Company {
   address?: string
   phone?: string
   email?: string
+  /** Optional company logo URL (used in invoices and company completion) */
+  logoUrl?: string | null
 }
 
 // Department (company admin)

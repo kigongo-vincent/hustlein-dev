@@ -5,11 +5,19 @@ import Sidebar from './Sidebar'
 import Header from './Header'
 import { Themestore } from '../../data/Themestore'
 import Toasts from '../ui/Toasts'
+import { Authstore } from '../../data/Authstore'
+import { companyService } from '../../services'
+import type { Company } from '../../types'
+import CompanyCompletionModal from '../../pages/company/CompanyCompletionModal'
 
 const AppShell = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const current = Themestore((s) => s.current)
   const mode = Themestore((s) => s.mode)
+  const user = Authstore((s) => s.user)
+
+  const [companyForCompletion, setCompanyForCompletion] = useState<Company | null>(null)
+  const [loadingCompany, setLoadingCompany] = useState(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', mode)
@@ -26,6 +34,46 @@ const AppShell = () => {
     root.style.setProperty('--scrollbar-thumb-hover', thumbHover)
   }, [current, mode])
 
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!user?.companyId) {
+        setCompanyForCompletion(null)
+        return
+      }
+      setLoadingCompany(true)
+      try {
+        const c = await companyService.get(user.companyId)
+        if (!cancelled) setCompanyForCompletion(c)
+      } finally {
+        if (!cancelled) setLoadingCompany(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [user?.companyId])
+
+  const isCompanyComplete = (c: Company | null) => {
+    if (!c) return false
+    return (
+      !!c.logoUrl &&
+      c.name.trim().length > 0 &&
+      !!c.email?.trim() &&
+      !!c.phone?.trim() &&
+      !!c.address?.trim() &&
+      typeof c.taxRate === 'number' &&
+      typeof c.storageLimitMb === 'number' &&
+      typeof c.storageUsedMb === 'number'
+    )
+  }
+
+  const shouldBlockCompanyCompletion =
+    !!user?.companyId &&
+    (user?.role === 'company_admin' || user?.role === 'super_admin') &&
+    !loadingCompany &&
+    !isCompanyComplete(companyForCompletion)
+
   return (
     <View bg="bg" className="flex overflow-hidden" style={{ height: 'var(--app-viewport-height)' }}>
       <Sidebar open={sidebarOpen} />
@@ -34,12 +82,26 @@ const AppShell = () => {
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         />
-        <main className="flex-1 flex flex-col min-h-0 px-3 sm:px-4 py-2 overflow-hidden">
+        <main
+          className="flex-1 flex flex-col min-h-0 px-4 sm:px-5 py-3 overflow-hidden"
+          style={current?.system?.backgroundImage ? {
+            backgroundImage: current.system.backgroundImage,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+          } : undefined}
+        >
           <div className="flex-1 min-h-0 overflow-auto scroll-slim flex flex-col">
             <Outlet />
           </div>
         </main>
       </div>
+      <CompanyCompletionModal
+        open={shouldBlockCompanyCompletion}
+        company={companyForCompletion}
+        onUpdated={(updated) => setCompanyForCompletion(updated)}
+      />
       <Toasts />
     </View>
   )

@@ -84,11 +84,10 @@ const MyAssignmentsPage = () => {
               <span
                 className="w-9 h-9 rounded-base flex items-center justify-center"
                 style={{
-                  background: `linear-gradient(135deg, ${current?.accent?.teal ?? current?.brand?.secondary ?? '#FF9600'} 0%, ${current?.accent?.blue ?? current?.brand?.primary ?? '#682308'} 100%)`,
-                  boxShadow: '0 8px 22px rgba(0,0,0,0.12)',
+                  backgroundColor: current?.system?.background ?? 'rgba(0,0,0,0.04)',
                 }}
               >
-                <BriefcaseBusiness className="w-5 h-5" style={{ color: current?.brand?.onPrimary ?? '#fff' }} />
+                <BriefcaseBusiness className="w-5 h-5" style={{ color: current?.system?.dark }} />
               </span>
               <Text className="font-medium">Contracts</Text>
             </div>
@@ -102,7 +101,7 @@ const MyAssignmentsPage = () => {
         </div>
       </View>
 
-      <Card title="Engagements" subtitle="Projects you’re hired on" className="p-0 overflow-hidden">
+      <Card title="Engagements" subtitle="Projects you’re hired on" className="p-0 overflow-hidden" noShadow>
         {loading ? (
           <div className="p-6">
             <Text variant="sm" className="opacity-70">
@@ -119,9 +118,13 @@ const MyAssignmentsPage = () => {
             </div>
           </div>
         ) : (
-          <div className="divide-y" style={{ borderColor: current?.system?.border }}>
+          <div>
             {items.map((a) => (
-              <div key={a.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div
+                key={a.id}
+                className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b last:border-b-0"
+                style={{ borderColor: current?.system?.border ?? 'rgba(0,0,0,0.06)' }}
+              >
                 <div className="min-w-0">
                   <Text className="font-medium">{a.projectName}</Text>
                   <Text variant="sm" className="opacity-70 mt-0.5">
@@ -136,7 +139,7 @@ const MyAssignmentsPage = () => {
                 <div className="flex items-center gap-2 shrink-0">
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant="background"
                     label="Log time"
                     startIcon={<Clock className="w-4 h-4 shrink-0" />}
                     onClick={() => openLog(a)}
@@ -144,6 +147,7 @@ const MyAssignmentsPage = () => {
                   />
                   <Button
                     size="sm"
+                    variant="background"
                     label="Open project"
                     startIcon={<ArrowRight className="w-4 h-4 shrink-0" />}
                     onClick={() => navigate(`/app/projects/${a.projectId}`)}

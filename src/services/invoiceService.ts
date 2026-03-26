@@ -11,5 +11,8 @@ export const invoiceService = {
   async markPaid(id: string): Promise<Invoice | null> {
     return invoiceRepo.markPaid(id)
   },
+  async update(id: string, patch: Partial<Invoice>): Promise<Invoice | null> {
+    return invoiceRepo.update(id, patch)
+  },
 }
 

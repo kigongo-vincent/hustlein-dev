@@ -1,6 +1,6 @@
-# Hustle In — Frontend
+# HustleIN — Frontend
 
-React frontend for **Hustle In**, a project and consulting management app. Built with Vite, TypeScript, and Tailwind CSS.
+React frontend for **HustleIN**: a Kenyan-first workforce and operations platform designed for freelancers, consultants, and growing businesses. The name is a wordplay that reflects Kenya’s hustle culture. Built with Vite, TypeScript, and Tailwind CSS.
 
 ## Tech stack
 
@@ -46,6 +46,20 @@ React frontend for **Hustle In**, a project and consulting management app. Built
    ```
 
    App is available at `http://localhost:5173` (or the port Vite prints).
+
+## Demo login credentials
+
+If you run the backend with `SEED=1` (or `SEED=true`), the app is seeded with demo accounts (password: `password`).
+
+You can log in with:
+
+- Super Admin: `super@tekjuice.co.uk`
+- Company Admin (Tekjuice): `admin@tekjuice.co.uk`
+- Project Lead (Tekjuice): `lead@tekjuice.co.uk`
+- Consultant (Tekjuice): `consultant@tekjuice.co.uk`
+- Freelancer (Tekjuice): `freelancer@tekjuice.co.uk`
+
+Additional seeded accounts are also created for other companies (e.g. `globex.com` and `initech.co.ke` emails).
 
 ## Scripts
 

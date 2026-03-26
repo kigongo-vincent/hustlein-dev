@@ -102,6 +102,17 @@ html.platform-windows #root {
   border-radius: 4px;
 }
 
+/* Enforce max border-radius = 4px for Tailwind rounded utilities (except rounded-full). */
+.rounded-xs,
+.rounded-sm,
+.rounded-md,
+.rounded-lg,
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl {
+  border-radius: 4px !important;
+}
+
 /* Borderless inputs (e.g. settings hex fields) */
 .input-borderless {
   border: none;

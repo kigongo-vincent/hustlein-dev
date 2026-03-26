@@ -2,7 +2,11 @@
  * Centralized HTTP client. All requests go through here.
  * - Reads token from localStorage (key: hustle_token); add to requests when present.
  * - On 401, clears token and dispatches 'auth:logout' so the app can redirect to login.
+ * - Dev-local tokens (prefix hustle-dev-local-) skip auth:logout so the app stays
+ *   navigable without a running backend.
  */
+
+const DEV_TOKEN_PREFIX = 'hustle-dev-local-'
 
 const TOKEN_KEY = 'hustle_token'
 
@@ -55,6 +59,12 @@ async function request<T>(
   }
 
   if (res.status === 401) {
+    const tok = getStoredToken()
+    // Dev-local tokens mean there's no real backend running — silently ignore the 401
+    // so navigation works without kicking the user to the login redirect cascade.
+    if (tok?.startsWith(DEV_TOKEN_PREFIX)) {
+      return { data, status: res.status, ok: false }
+    }
     setStoredToken(null)
     window.dispatchEvent(new CustomEvent('auth:logout'))
   }

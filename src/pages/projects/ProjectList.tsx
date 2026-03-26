@@ -289,44 +289,44 @@ const ProjectList = () => {
     <>
       <div className="w-full h-full mx-auto flex flex-col min-h-0">
         <div className="shrink-0 space-y-4">
-        <View bg="bg" className="p-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Text className="font-medium">Projects</Text>
-              <Text variant="sm" className="opacity-80">
-                Upwork-style overview and analytics
-              </Text>
+          <View bg="bg" className="p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <Text className="font-medium">Projects</Text>
+                <Text variant="sm" className="opacity-80">
+                  Upwork-style overview and analytics
+                </Text>
+              </div>
+              <div className="flex items-center gap-2 flex-nowrap">
+                <Button
+                  variant="outlinePrimary"
+                  size="sm"
+                  label="Create project"
+                  startIcon={<Plus className="w-4 h-4 shrink-0" />}
+                  onClick={() => setCreateModalOpen(true)}
+                />
+                <Button
+                  variant="secondaryBrand"
+                  size="sm"
+                  label="View analytics"
+                  startIcon={<BarChart3 className="w-4 h-4 shrink-0" />}
+                  onClick={() => setAnalyticsOpen(true)}
+                  disabled={loading || projects.length === 0}
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2 flex-nowrap">
-              <Button
-                variant="outlinePrimary"
-                size="sm"
-                label="Create project"
-                startIcon={<Plus className="w-4 h-4 shrink-0" />}
-                onClick={() => setCreateModalOpen(true)}
-              />
-              <Button
-                variant="secondaryBrand"
-                size="sm"
-                label="View analytics"
-                startIcon={<BarChart3 className="w-4 h-4 shrink-0" />}
-                onClick={() => setAnalyticsOpen(true)}
-                disabled={loading || projects.length === 0}
-              />
-            </div>
-          </div>
-        </View>
+          </View>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {loading
-            ? [1, 2, 3].map((i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {loading
+              ? [1, 2, 3].map((i) => (
                 <Card key={i} className="min-h-[7rem] py-4 px-4">
                   <Skeleton height="h-4" width="w-24" className="mb-2" />
                   <Skeleton height="h-4" width="w-16" className="mb-1" />
                   <Skeleton height="h-8" width="w-12" />
                 </Card>
               ))
-            : statCards.map((s) => (
+              : statCards.map((s) => (
                 <Card
                   key={s.label}
                   title={s.label}
@@ -341,7 +341,7 @@ const ProjectList = () => {
                   </Text>
                 </Card>
               ))}
-        </div>
+          </div>
         </div>
 
         {/* Search + filter toggler (same row) */}

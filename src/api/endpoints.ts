@@ -23,6 +23,7 @@ export const endpoints = {
   auth: {
     login: () => path(['auth', 'login']),
     signup: () => path(['auth', 'signup']),
+    google: () => path(['auth', 'google']),
   },
 
   // Current user (from token)
@@ -31,6 +32,7 @@ export const endpoints = {
   // Companies
   companies: () => path(['companies']),
   company: (id: string) => path(['companies', id]),
+  companyLogoUpload: (companyId: string) => path(['companies', companyId, 'logo']),
 
   // Users
   users: () => path(['users']),
@@ -72,6 +74,7 @@ export const endpoints = {
   comments: (params: { entityType: string; entityId: string }) =>
     path(['comments'], params),
   commentsCreate: () => path(['comments']),
+  comment: (id: string) => path(['comments', id]),
 
   // Notes
   notes: () => path(['notes']),
@@ -106,6 +109,9 @@ export const endpoints = {
   marketplaceApplication: (applicationId: string) => path(['marketplace', 'applications', applicationId]),
   marketplaceMyApplications: () => path(['marketplace', 'applications', 'mine']),
   marketplaceHire: (applicationId: string) => path(['marketplace', 'applications', applicationId, 'hire']),
+  marketplaceApplicationFiles: (applicationId: string) => path(['marketplace', 'applications', applicationId, 'files']),
+  marketplaceApplicationFileUpload: (applicationId: string) =>
+    path(['marketplace', 'applications', applicationId, 'files', 'upload']),
 
   // Assignments
   myAssignments: () => path(['assignments', 'mine']),

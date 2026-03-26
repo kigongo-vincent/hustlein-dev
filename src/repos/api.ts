@@ -1,7 +1,7 @@
 /**
  * API-backed repos. All endpoints and HTTP are centralized in api/.
  */
-import { api, endpoints, assertOk } from '../api'
+import { api, endpoints, assertOk, getStoredToken } from '../api'
 import type {
   Company,
   User,
@@ -15,6 +15,7 @@ import type {
   Note,
   CalendarEvent,
   ProjectFile,
+  ApplicationFile,
   ProjectPosting,
   ProjectApplication,
   HireResult,
@@ -193,6 +194,10 @@ export const projectFileRepo = {
     const res = await api.post<ProjectFile>(endpoints.projectFiles(payload.projectId), payload)
     return assertOk(res) as ProjectFile
   },
+  async update(id: string, patch: Partial<Pick<ProjectFile, 'name' | 'url'>>): Promise<ProjectFile | null> {
+    const res = await api.put<ProjectFile>(endpoints.file(id), patch)
+    return okOrNull(res)
+  },
   async delete(id: string): Promise<boolean> {
     const res = await api.delete(endpoints.file(id))
     return res.ok
@@ -291,6 +296,14 @@ export const commentRepo = {
     const res = await api.post<Comment>(endpoints.commentsCreate(), payload)
     return assertOk(res) as Comment
   },
+  async update(id: string, patch: Partial<Pick<Comment, 'body' | 'attachmentUrl' | 'attachmentType' | 'attachmentSize'>>): Promise<Comment | null> {
+    const res = await api.put<Comment>(endpoints.comment(id), patch)
+    return okOrNull(res)
+  },
+  async delete(id: string): Promise<boolean> {
+    const res = await api.delete(endpoints.comment(id))
+    return res.ok
+  },
 }
 
 export const marketplaceRepo = {
@@ -305,6 +318,14 @@ export const marketplaceRepo = {
   async createPosting(payload: Omit<ProjectPosting, 'id' | 'companyId' | 'createdById' | 'status' | 'createdAt' | 'updatedAt'> & { status?: ProjectPosting['status']; companyId?: string }): Promise<ProjectPosting> {
     const res = await api.post<ProjectPosting>(endpoints.marketplaceProjects(), payload)
     return assertOk(res) as ProjectPosting
+  },
+  async updatePosting(id: string, patch: Partial<Omit<ProjectPosting, 'id' | 'companyId' | 'createdById' | 'createdAt' | 'updatedAt'>>): Promise<ProjectPosting | null> {
+    const res = await api.put<ProjectPosting>(endpoints.marketplaceProject(id), patch)
+    return okOrNull(res)
+  },
+  async deletePosting(id: string): Promise<boolean> {
+    const res = await api.delete(endpoints.marketplaceProject(id))
+    return res.ok
   },
   async apply(postingId: string, payload: Pick<ProjectApplication, 'coverLetter'> & Partial<Pick<ProjectApplication, 'proposedHourlyRate' | 'proposedFixed' | 'currency'>>): Promise<ProjectApplication> {
     const res = await api.post<ProjectApplication>(endpoints.marketplaceApply(postingId), payload)
@@ -325,6 +346,26 @@ export const marketplaceRepo = {
   async hire(applicationId: string, payload: { projectLeadId: string; billingType?: HireResult['billingType']; hourlyRate?: number; fixedBudget?: number; currency?: string; startDate?: string }): Promise<HireResult> {
     const res = await api.post<HireResult>(endpoints.marketplaceHire(applicationId), payload)
     return assertOk(res) as HireResult
+  },
+  async listApplicationFiles(applicationId: string): Promise<ApplicationFile[]> {
+    const res = await api.get<ApplicationFile[]>(endpoints.marketplaceApplicationFiles(applicationId))
+    return assertOk(res) as ApplicationFile[]
+  },
+  async uploadApplicationFile(applicationId: string, file: File): Promise<ApplicationFile> {
+    const token = getStoredToken()
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(endpoints.marketplaceApplicationFileUpload(applicationId), {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: form,
+    })
+    const data = (await res.json()) as ApplicationFile | { error?: string }
+    if (!res.ok) {
+      const err = typeof data === 'object' && data && 'error' in data ? data.error : `Upload failed (${res.status})`
+      throw new Error(String(err || 'Upload failed'))
+    }
+    return data as ApplicationFile
   },
 }
 
@@ -385,6 +426,10 @@ export const invoiceRepo = {
   },
   async markPaid(id: string): Promise<Invoice | null> {
     const res = await api.patch<Invoice>(endpoints.invoiceMarkPaid(id), {})
+    return okOrNull(res)
+  },
+  async update(id: string, patch: Partial<Invoice>): Promise<Invoice | null> {
+    const res = await api.put<Invoice>(endpoints.invoice(id), patch)
     return okOrNull(res)
   },
 }

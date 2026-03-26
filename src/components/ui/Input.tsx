@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, useRef, useState, useEffect } from 'react'
+import { InputHTMLAttributes, useRef, useState, useEffect, type ChangeEvent } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import Text from '../base/Text'
 import { baseFontSize } from '../base/Text'
@@ -52,6 +52,14 @@ const Input = ({
   const isPassword = typeProp === 'password'
   const inputType = isPassword ? (passwordVisible ? 'text' : 'password') : typeProp
 
+  // When the browser autofills, React state might not update via `onChange` in some browsers.
+  // We detect autofill start/cancel via CSS animation hooks and, in controlled mode, sync DOM -> React
+  // by firing `onChange` with the current input value.
+  const latestValueRef = useRef<string | undefined>(typeof value === 'string' ? value : undefined)
+  const latestOnChangeRef = useRef<typeof onChange>(onChange)
+  latestValueRef.current = typeof value === 'string' ? value : undefined
+  latestOnChangeRef.current = onChange
+
   const syncFilledFromInput = () => {
     const el = inputRef.current
     if (!el) return
@@ -80,11 +88,18 @@ const Input = ({
     const handleAnimation = (e: AnimationEvent) => {
       if (e.animationName === 'onAutoFillStart' || e.animationName === 'onAutoFillCancel') {
         syncFilledFromInput()
+        // Controlled inputs: keep parent state in sync with autofilled value.
+        const domValue = el.value
+        const currentValue = latestValueRef.current
+        if (latestOnChangeRef.current && typeof currentValue === 'string' && domValue !== currentValue) {
+          const evt = { target: { value: domValue } } as unknown as ChangeEvent<HTMLInputElement>
+          latestOnChangeRef.current(evt)
+        }
       }
     }
     el.addEventListener('animationstart', handleAnimation)
     return () => el.removeEventListener('animationstart', handleAnimation)
-  }, [])
+  }, [isControlled])
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     setIsFocused(true)

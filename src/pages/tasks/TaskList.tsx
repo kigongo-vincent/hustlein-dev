@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import Text from '../../components/base/Text'
-import { Card, Badge, Table, Select, Input } from '../../components/ui'
+import View from '../../components/base/View'
+import { Card, Badge, Select, Input } from '../../components/ui'
 import { AppPageLayout } from '../../components/layout'
 import { taskService, userService, projectService } from '../../services'
 import type { Task, Project } from '../../types'
@@ -92,27 +93,42 @@ const TaskList = () => {
         </div>
       </Card>
       <Card title="Task list" subtitle={`${filtered.length} tasks`}>
-        <Table headers={['Title', 'Owner', 'Priority', 'Due date', 'State']}>
-          {filtered.map((t) => (
-            <tr key={t.id}>
-              <td className="px-4 py-2">
-                <Text variant="sm">{t.title}</Text>
-              </td>
-              <td className="px-4 py-2">
-                <Text variant="sm">{owners[t.ownerId] ?? t.ownerId}</Text>
-              </td>
-              <td className="px-4 py-2">
-                <Badge variant={t.priority}>{t.priority}</Badge>
-              </td>
-              <td className="px-4 py-2">
-                <Text variant="sm">{t.dueDate ?? '—'}</Text>
-              </td>
-              <td className="px-4 py-2">
-                <Text variant="sm">{t.workflowStateId}</Text>
-              </td>
-            </tr>
-          ))}
-        </Table>
+        <View bg="fg" noShadow className="rounded-base overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr>
+                {['Title', 'Owner', 'Priority', 'Due date', 'State'].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 border-b">
+                    <Text variant="sm" className="font-medium">
+                      {h}
+                    </Text>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((t) => (
+                <tr key={t.id} className="border-b last:border-b-0">
+                  <td className="px-4 py-2">
+                    <Text variant="sm">{t.title}</Text>
+                  </td>
+                  <td className="px-4 py-2">
+                    <Text variant="sm">{owners[t.ownerId] ?? t.ownerId}</Text>
+                  </td>
+                  <td className="px-4 py-2">
+                    <Badge variant={t.priority}>{t.priority}</Badge>
+                  </td>
+                  <td className="px-4 py-2">
+                    <Text variant="sm">{t.dueDate ?? '—'}</Text>
+                  </td>
+                  <td className="px-4 py-2">
+                    <Text variant="sm">{t.workflowStateId}</Text>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </View>
       </Card>
       </div>
     </AppPageLayout>

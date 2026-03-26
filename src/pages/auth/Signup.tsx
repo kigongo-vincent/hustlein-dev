@@ -6,9 +6,10 @@ import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
 import { Input, Button, AlertModal } from '../../components/ui'
 import { authService } from '../../services/authService'
 import { Themestore } from '../../data/Themestore'
+import AccountTypeModal, { type AccountType } from './AccountTypeModal'
 
 const Signup = () => {
-  const [accountType, setAccountType] = useState<'freelancer' | 'company'>('freelancer')
+  const [accountType, setAccountType] = useState<AccountType | null>(null)
   const [name, setName] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [email, setEmail] = useState('')
@@ -51,130 +52,112 @@ const Signup = () => {
     }
   }
 
+  const isCompany = accountType === 'company'
+
   return (
-    <View bg="bg" className="flex-1 min-h-0 overflow-auto scroll-slim flex flex-col items-center justify-center p-6">
-      <View bg="fg" className="w-full max-w-md rounded-base shadow-custom p-[3rem]">
-        <div className="flex justify-center my-10">
-          <Logo size="lg" src={LOGIN_LOGO_URL} />
-        </div>
-        <div className="mb-[2rem] flex flex-col gap-2">
-          <Text variant="md" className="font-bold text-center">
-            Create account
-          </Text>
-          <Text variant="sm" className="text-center opacity-80">
-            Already have an account?{' '}
-            <Link to="/auth/login" className="underline" style={{ color: current?.brand?.secondary }}>
-              Sign in
-            </Link>
-          </Text>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Text variant="sm" className="font-medium">
-              Account type
+    <>
+      <AccountTypeModal
+        open={accountType === null}
+        closeOnBackdrop={false}
+        onClose={() => {
+          // Keep the modal blocking during onboarding.
+        }}
+        onSelect={(t) => setAccountType(t)}
+      />
+
+      <View bg="bg" className="flex-1 min-h-0 overflow-auto scroll-slim flex flex-col items-center justify-center p-6">
+        <View bg="fg" className="w-full max-w-md rounded-base shadow-custom p-[3rem]">
+          <div className="flex justify-center my-10">
+            <Logo size="lg" src={LOGIN_LOGO_URL} />
+          </div>
+          <div className="mb-[2rem] flex flex-col gap-2">
+            <Text variant="md" className="font-bold text-center">
+              Create account
             </Text>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setAccountType('freelancer')}
-                className="px-3 py-2 rounded-base text-sm  transition opacity-90 hover:opacity-100"
-                style={{
-                  // borderColor: current?.system?.border ?? 'rgba(0,0,0,0.12)',
-                  backgroundColor: accountType === 'freelancer' ? current?.system?.background : current?.system?.foreground,
-                  color: current?.system?.dark,
-                  fontWeight: accountType === 'freelancer' ? 600 : 500,
-                }}
-                aria-pressed={accountType === 'freelancer'}
-              >
-                Freelancer
-              </button>
-              <button
-                type="button"
-                onClick={() => setAccountType('company')}
-                className="px-3 py-2 rounded-base text-sm  transition opacity-90 hover:opacity-100"
-                style={{
-                  // borderColor: current?.system?.border ?? 'rgba(0,0,0,0.12)',
-                  backgroundColor: accountType === 'company' ? current?.system?.background : current?.system?.foreground,
-                  color: current?.system?.dark,
-                  fontWeight: accountType === 'company' ? 600 : 500,
-                }}
-                aria-pressed={accountType === 'company'}
-              >
-                Company
-              </button>
-            </div>
+            <Text variant="sm" className="text-center opacity-80">
+              Already have an account?{' '}
+              <Link to="/auth/login" className="underline" style={{ color: current?.brand?.secondary }}>
+                Sign in
+              </Link>
+            </Text>
           </div>
 
-          <Input
-            label="Name"
-            type="text"
-            placeholder="Your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="name"
-          />
-          {accountType === 'company' && (
-            <Input
-              label="Company name"
-              type="text"
-              placeholder="Your company"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              required
-              autoComplete="organization"
-            />
+          {accountType && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Name"
+                type="text"
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+              />
+              {isCompany && (
+                <Input
+                  label="Company name"
+                  type="text"
+                  placeholder="Your company"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  required
+                  autoComplete="organization"
+                />
+              )}
+              <Input
+                label="Email"
+                type="email"
+                placeholder={isCompany ? 'you@company.com' : 'you@email.com'}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+              <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+              <Input
+                label="Confirm password"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+              <Button
+                type="submit"
+                label={loading ? 'Creating account…' : 'Create account'}
+                fullWidth
+                disabled={loading}
+                loading={loading}
+              />
+            </form>
           )}
-          <Input
-            label="Email"
-            type="email"
-            placeholder={accountType === 'company' ? 'you@company.com' : 'you@email.com'}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-          <Input
-            label="Password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="new-password"
-          />
-          <Input
-            label="Confirm password"
-            type="password"
-            placeholder="••••••••"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            autoComplete="new-password"
-          />
-          <Button
-            type="submit"
-            label={loading ? 'Creating account…' : 'Create account'}
-            fullWidth
-            disabled={loading}
-            loading={loading}
-          />
-        </form>
-        <div className="mt-4 text-center">
-          <Link to="/auth/login">
-            <Text variant="sm" className="underline opacity-80">
-              ← Back to sign in
-            </Text>
-          </Link>
-        </div>
+
+          <div className="mt-4 text-center">
+            <Link to="/auth/login">
+              <Text variant="sm" className="underline opacity-80">
+                ← Back to sign in
+              </Text>
+            </Link>
+          </div>
+        </View>
+
+        <AlertModal
+          open={!!error}
+          title="Error"
+          message={error}
+          onClose={() => setError('')}
+          variant="error"
+        />
       </View>
-      <AlertModal
-        open={!!error}
-        title="Error"
-        message={error}
-        onClose={() => setError('')}
-        variant="error"
-      />
-    </View>
+    </>
   )
 }
 

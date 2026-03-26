@@ -17,6 +17,13 @@ export const Authstore = create<AuthstoreI>((set) => ({
   },
   logout: () => {
     setStoredToken(null)
+    // Prevent dev-only autologin from immediately re-authing after a user-initiated logout.
+    // (Protected route checks this key to decide whether to call `maybeDevAutologin()`.)
+    try {
+      localStorage.setItem('hustle-in-dev-autologin', 'false')
+    } catch {
+      // ignore (e.g. privacy mode / SSR)
+    }
     set({ user: null })
   },
 }))
