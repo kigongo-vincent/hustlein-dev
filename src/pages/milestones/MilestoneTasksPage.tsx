@@ -30,6 +30,7 @@ import {
 import View from '../../components/base/View'
 import Avatar from '../../components/base/Avatar'
 import { Authstore } from '../../data/Authstore'
+import { formatHours } from '../../components/ui/LogTimeModal'
 
 const chartTickStyle = { fontSize: 12 }
 
@@ -73,10 +74,21 @@ const MilestoneTasksPage = () => {
   const [logtime, setlogtime] = useState(false)
   const { user } = Authstore()
   const canRporttask = user?.role == "consultant" || user?.role == "freelancer"
+  const isOwner = (id: string): boolean => {
+    return user?.id == id
+  }
+
+
 
   const loadTasks = useCallback(() => {
     if (!milestoneId) return
-    taskService.listByMilestone(milestoneId).then(setTasks)
+    taskService.listByMilestone(milestoneId).then((tasks) => {
+      if (user?.role == "freelancer") {
+        setTasks(tasks?.filter(t => t?.ownerId == user?.id))
+      } else {
+        setTasks(tasks)
+      }
+    })
   }, [milestoneId])
 
   useEffect(() => {
@@ -414,7 +426,7 @@ const MilestoneTasksPage = () => {
           />
         ) : (
           <div className="overflow-x-auto">
-            <Table headers={['Title', 'Assignee', 'Priority', 'Due date', 'State', 'Actions']}>
+            <Table headers={['Title', 'Assignee', 'Priority', 'duration', 'State', 'Actions']}>
               {tasks.map((t) => (
                 <tr key={t.id}>
                   <td className="px-4 py-2">
@@ -435,8 +447,11 @@ const MilestoneTasksPage = () => {
                   <td className="px-4 py-2">
                     <Badge variant={t.priority}>{t.priority}</Badge>
                   </td>
-                  <td className="px-4 py-2">
+                  {/* <td className="px-4 py-2">
                     <Text variant="sm">{t.dueDate ? formatDate(t.dueDate) : '—'}</Text>
+                  </td> */}
+                  <td className="px-4 py-2">
+                    <Text variant="sm">{t.duration ? formatHours(t.duration) : '—'}</Text>
                   </td>
                   <td className="px-4 py-2">
                     <Text variant="sm">{stateName(t.workflowStateId)}</Text>
@@ -453,26 +468,33 @@ const MilestoneTasksPage = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => openEdit(t)}
-                        className="p-1.5 rounded-base opacity-70 hover:opacity-100 transition"
-                        style={{ color: dark }}
-                        title="Edit"
-                        aria-label="Edit task"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTaskId(t.id)}
-                        className="p-1.5 rounded-base opacity-70 hover:opacity-100 transition"
-                        style={{ color: current?.system?.error ?? dark }}
-                        title="Delete"
-                        aria-label="Delete task"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {
+                        isOwner(t?.ownerId)
+                        &&
+                        (<>
+                          <button
+                            type="button"
+                            disabled
+                            onClick={() => openEdit(t)}
+                            className="p-1.5 opacity-20 rounded-base  hover:opacity-100 transition"
+                            style={{ color: dark }}
+                            title="Edit"
+                            aria-label="Edit task"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTaskId(t.id)}
+                            className="p-1.5 rounded-base opacity-70 hover:opacity-100 transition"
+                            style={{ color: current?.system?.error ?? dark }}
+                            title="Delete"
+                            aria-label="Delete task"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>)
+                      }
                     </div>
                   </td>
                 </tr>
@@ -497,7 +519,8 @@ const MilestoneTasksPage = () => {
               {viewTask.description && (
                 <div>
                   <Text variant="sm" className="opacity-70 block mb-0.5">Description</Text>
-                  <Text variant="sm" style={{ color: dark }}>{viewTask.description}</Text>
+                  {/* <Text variant="sm" style={{ color: dark }}>{viewTask.description}</Text> */}
+                  <div style={{ color: current?.system?.dark }} dangerouslySetInnerHTML={{ __html: viewTask?.description }}></div>
                 </div>
               )}
               <div>
@@ -516,8 +539,8 @@ const MilestoneTasksPage = () => {
                   <Text style={{ color: dark }}>{stateName(viewTask.workflowStateId)}</Text>
                 </div>
                 <div>
-                  <Text variant="sm" className="opacity-70 block mb-0.5">Due date</Text>
-                  <Text style={{ color: dark }}>{viewTask.dueDate ? formatDate(viewTask.dueDate) : '—'}</Text>
+                  {/* <Text variant="sm" className="opacity-70 block mb-0.5">Due date</Text> */}
+                  {/* <Text style={{ color: dark }}>{viewTask.dueDate ? formatDate(viewTask.dueDate) : '—'}</Text> */}
                 </div>
               </div>
             </div>

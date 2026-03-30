@@ -9,6 +9,7 @@ type Props = { children: ReactNode }
 /** Split layout: photo left (~50% on md+), auth card and modals on the right. */
 export default function AuthBackground({ children }: Props) {
   const panelBg = Themestore((s) => s.current.system.background)
+  const { mode } = Themestore()
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden md:flex-row md:items-stretch">
@@ -24,7 +25,7 @@ export default function AuthBackground({ children }: Props) {
           loading="eager"
           fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-black/30" />
+        <div className={`absolute inset-0 ${mode == "dark" && "bg-black/30"}`} />
       </div>
       <div
         className="flex min-h-0 w-full flex-1 flex-col items-center justify-start overflow-y-auto scroll-slim px-4 py-6 sm:px-6 sm:py-8 md:w-1/2 md:justify-center"

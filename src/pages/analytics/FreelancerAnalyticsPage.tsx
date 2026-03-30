@@ -40,23 +40,23 @@ export default function FreelancerAnalyticsPage() {
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      try {
-        if (!user?.id) return
-        const [contracts, apps, myTasks] = await Promise.all([
-          assignmentService.listMine().catch(() => []),
-          marketplaceService.listMyApplications().catch(() => []),
-          taskService.listByOwner(user.id).catch(() => []),
-        ])
-        if (cancelled) return
-        setContractsCount(contracts.filter((c) => c.status === 'active').length)
-        setApplicationsCount(apps.filter((a) => a.status !== 'withdrawn').length)
-        setTasks(myTasks)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
+      ; (async () => {
+        setLoading(true)
+        try {
+          if (!user?.id) return
+          const [contracts, apps, myTasks] = await Promise.all([
+            assignmentService.listMine().catch(() => []),
+            marketplaceService.listMyApplications().catch(() => []),
+            taskService.listByOwner(user.id).catch(() => []),
+          ])
+          if (cancelled) return
+          setContractsCount(contracts.filter((c) => c.status === 'active').length)
+          setApplicationsCount(apps.filter((a) => a.status !== 'withdrawn').length)
+          setTasks(myTasks)
+        } finally {
+          if (!cancelled) setLoading(false)
+        }
+      })()
     return () => {
       cancelled = true
     }
@@ -150,32 +150,32 @@ export default function FreelancerAnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {loading
           ? [1, 2, 3, 4].map((i) => (
-              <Card key={i} className="min-h-[7rem] py-4 px-4" noShadow>
-                <Skeleton height="h-4" width="w-28" className="mb-2" />
-                <Skeleton height="h-8" width="w-16" />
-              </Card>
-            ))
+            <Card key={i} className="min-h-[7rem] py-4 px-4" noShadow>
+              <Skeleton height="h-4" width="w-28" className="mb-2" />
+              <Skeleton height="h-8" width="w-16" />
+            </Card>
+          ))
           : stats.map((s) => (
-              <Card
-                key={s.label}
-                title={s.label}
-                subtitle={s.caption}
-                rightIcon={
-                  <span
-                    className="w-9 h-9 rounded-base flex items-center justify-center"
-                    style={{ backgroundColor: neutralBg, color: s.tint }}
-                  >
-                    {s.icon}
-                  </span>
-                }
-                className="min-h-[7rem] py-4 px-4"
-                noShadow
-              >
-                <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
-                  {s.value}
-                </Text>
-              </Card>
-            ))}
+            <Card
+              key={s.label}
+              title={s.label}
+              subtitle={s.caption}
+              rightIcon={
+                <span
+                  className="w-9 h-9 rounded-base flex items-center justify-center"
+                  style={{ backgroundColor: neutralBg, color: s.tint }}
+                >
+                  {s.icon}
+                </span>
+              }
+              className="min-h-[7rem] py-4 px-4"
+              noShadow
+            >
+              <Text variant="lg" className="font-medium" style={{ fontSize: baseFontSize * 1.5 }}>
+                {s.value}
+              </Text>
+            </Card>
+          ))}
       </div>
 
       <Card title="Tasks created (last 7 days)" subtitle="A simple momentum signal" className="px-4 pb-4" noShadow>

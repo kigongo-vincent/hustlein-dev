@@ -10,6 +10,7 @@ export interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
   hint?: string
+  helperText?: string
   /** fill = solid background from theme; outline = transparent background (default outside auth) */
   mode?: InputMode
   /** Override background for the floating label (e.g. to match a colored modal) */
@@ -25,6 +26,7 @@ const Input = ({
   label,
   error,
   hint,
+  helperText,
   mode = 'outline',
   labelBackgroundColor,
   allowBrowserAutofill = false,

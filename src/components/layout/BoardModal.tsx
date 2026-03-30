@@ -423,14 +423,18 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
                             description="Add one with + or drag from another column."
                             className="py-4 px-0 text-center"
                           />
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            label={`Add to ${state.name}`}
-                            startIcon={<Plus className="w-4 h-4" />}
-                            onClick={() => openAddMilestone(state.id)}
-                            className="shrink-0"
-                          />
+                          {
+                            canTakeAction && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                label={`Add to ${state.name}`}
+                                startIcon={<Plus className="w-4 h-4" />}
+                                onClick={() => openAddMilestone(state.id)}
+                                className="shrink-0"
+                              />
+                            )
+                          }
                         </div>
                       ) : (
                         stateMilestones.map((m) => {
@@ -445,6 +449,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
                             >
                               <MilestoneCard
                                 milestone={m}
+
                                 assigneeIds={assigneeIds}
                                 userMap={userMap}
                                 users={users}

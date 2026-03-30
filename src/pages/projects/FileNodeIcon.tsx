@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Folder } from 'lucide-react'
 import type { FileNodeLike } from './projectFilesData'
 import { getFileNodeIcon } from './projectFilesData'
-import folderIconUrl from '../../assets/fs/folder.svg'
+import folderIconUrl from '../../assets/fs/folder.webp'
 
 const FOLDER_ICON_URL = folderIconUrl
 

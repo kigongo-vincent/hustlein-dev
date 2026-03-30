@@ -169,7 +169,7 @@ const ProjectDetail = () => {
   const isContributor = user?.role === 'consultant' || user?.role === 'freelancer'
   // const isInternalProject = !isMarketplacePostingDetail
   const isInternalProject = true
-  const isExternalOriginInternalProject = isInternalProject && project?.projectType === 'external'
+  const isExternalOriginInternalProject = project?.projectType === 'external'
   const canManageProject = isInternalProject && !isContributor
   const canContributeTasks = isInternalProject && isContributor
   const canManageExternalPosting =

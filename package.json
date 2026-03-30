@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@react-oauth/google": "^0.13.4",
+    "@svar-ui/react-gantt": "^2.6.1",
     "@tailwindcss/vite": "^4.1.18",
     "@tiptap/extension-mention": "^3.20.0",
     "@tiptap/pm": "^3.20.0",

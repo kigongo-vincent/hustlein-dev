@@ -3,6 +3,7 @@ import { baseFontSize, minFontSize } from '../../components/base/Text'
 import { CalendarClock, Target } from 'lucide-react'
 import type { Milestone } from '../../types'
 import { formatDate } from './utils'
+import { useNavigate } from 'react-router'
 
 /** Gold / Silver / Bronze priority icons */
 const PriorityGold = ({ className = 'w-5 h-5' }: { className?: string }) => (
@@ -83,8 +84,15 @@ export default function MilestoneCard({
   isDragging = false,
   className = '',
 }: MilestoneCardProps) {
+
+  const navigate = useNavigate()
+
   return (
     <div
+      onClick={() => {
+        // onClose()
+        navigate(`/app/projects/${m?.projectId}/milestones/${m.id}`)
+      }}
       className={`rounded-base flex flex-col ${compact ? 'gap-2 px-3 py-2.5' : 'gap-4 p-5'} ${className}`}
       style={{
         backgroundColor: fg,

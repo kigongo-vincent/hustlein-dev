@@ -5,7 +5,7 @@ import { Authstore } from '../../data/Authstore'
 import { Themestore } from '../../data/Themestore'
 import { projectService, milestoneService, taskService } from '../../services'
 import type { Milestone, Project } from '../../types'
-import { toast } from 'react-toastify'
+// import { toast } from 'react-toastify'
 
 /** Contrasting text color on a hex background: white or dark so step number is always readable. */
 function textOnBg(hex: string | undefined, dark: string | undefined): string {
@@ -34,6 +34,13 @@ export interface LogTimeModalProps {
 
 type Step = 1 | 2 | 3
 
+export const formatHours = (duration: number): string => {
+  if (!duration) return "_"
+  const h = Math.floor(duration / 60)
+  const m = duration % 60
+  return `${h}h ${m}m`
+}
+
 export default function LogTimeModal({ open, onClose, onSaved, initialDescription, initialTitle, initialProjectId, initialMilestoneId }: LogTimeModalProps) {
   const { current, mode } = Themestore()
   const user = Authstore((s) => s.user)
@@ -46,6 +53,7 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
   const [milestones, setMilestones] = useState<Milestone[]>([])
   const [loadingProjects, setLoadingProjects] = useState(false)
   const [loadingMilestones, setLoadingMilestones] = useState(false)
+  const [duration, setDuration] = useState(1)
 
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [selectedMilestoneId, setSelectedMilestoneId] = useState('')
@@ -54,6 +62,8 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
   const [saving, setSaving] = useState(false)
 
   const currentUserId = user?.id ?? ''
+
+
 
   useEffect(() => {
     if (!open) return
@@ -171,15 +181,16 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
     try {
       const task = await taskService.create({
         projectId: selectedProjectId,
-        milestoneId: selectedMilestoneId,
+        milestoneId: initialMilestoneId ? initialMilestoneId : selectedMilestoneId,
         title: title.trim(),
         description: description.trim() || undefined,
         workflowStateId: firstStateId,
+        duration: duration,
         ownerId: currentUserId,
         priority: 'medium',
         dependencyIds: [],
       })
-      onSaved?.(task)
+      onSaved?.({ ...task, duration: duration })
       onClose()
     }
     catch (e) {
@@ -192,7 +203,7 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
 
   const contentBg = mode === 'dark' ? (dark ? `${dark}18` : 'rgba(255,255,255,0.06)') : 'rgba(0,0,0,0.04)'
   const secondary = current?.brand?.secondary ?? '#FF9600'
-  const activeStepBg = secondary
+  const activeStepBg = current?.brand?.primary
   const activeStepColor = textOnBg(secondary, dark)
   const inactiveStepColor = dark ?? '#1a1a1a'
 
@@ -299,6 +310,16 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
               placeholder="Task or time log title"
               labelBackgroundColor={fg}
             />
+            <Input
+              hint={formatHours(duration)}
+              label="Duration (in minutes)"
+              value={duration?.toString()}
+              onChange={(e) => +e?.target?.value > 1200 ? setDuration(1200) : setDuration(+e.target.value)}
+              placeholder="How long did it take you to execute the task"
+              labelBackgroundColor={fg}
+            // max={1200}
+
+            />
             <div className="flex flex-col gap-2 flex-1 min-h-0">
               <Text variant="sm" className="font-medium opacity-90" style={{ color: dark }}>
                 Description
@@ -311,9 +332,9 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
                 toolbarPreset="full"
                 mode="fill"
                 borderless
-                contentBackgroundColor={contentBg}
+                // contentBackgroundColor={contentBg}
                 contentFontFamily="'Comic Sans MS', 'Comic Neue', Chalkboard, cursive"
-                contentFontSize={16}
+                contentFontSize={13.5}
                 enableMentions
                 className="min-h-0 flex flex-col [&>div]:min-h-0 [&>div]:flex-1 [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:flex-1"
               />

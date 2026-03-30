@@ -58,6 +58,8 @@ const HIDDEN_FOR_COMPANY_ADMIN = new Set([
   '/app/marketplace',
   '/app/applications',
   '/app/assigned',
+  '/app/analytics',
+  '/app/contracts'
 ])
 const CONSULTANT_ROUTES = new Set([
   '/app',
