@@ -2,7 +2,7 @@ import { useRoutes, useLocation, Navigate } from 'react-router'
 import { AnimatePresence } from 'framer-motion'
 import { motion } from 'framer-motion'
 import { Authstore } from '../data/Authstore'
-import Splashscreen from '../pages/auth/Splashscreen'
+import { Themestore } from '../data/Themestore'
 import Login from '../pages/auth/Login'
 import Signup from '../pages/auth/Signup'
 import ForgotPassword from '../pages/auth/ForgotPassword'
@@ -19,9 +19,10 @@ const pageTransition = {
 
 const Auth = () => {
   const user = Authstore((s) => s.user)
+  const authBg = Themestore((s) => s.current.system.background)
   const location = useLocation()
   const element = useRoutes([
-    { index: true, element: <Splashscreen /> },
+    { index: true, element: <Navigate to="login" replace /> },
     { path: 'login', element: <Login /> },
     { path: 'signup', element: <Signup /> },
     { path: 'forgot-password', element: <ForgotPassword /> },
@@ -43,7 +44,7 @@ const Auth = () => {
         exit={pageTransition.exit}
         transition={pageTransition.transition}
         className="w-full flex flex-col overflow-hidden"
-        style={{ height: 'var(--app-viewport-height)' }}
+        style={{ height: 'var(--app-viewport-height)', backgroundColor: authBg }}
       >
         {element}
       </motion.div>

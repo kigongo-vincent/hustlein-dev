@@ -5,6 +5,7 @@ import { Input, Button, Modal } from '../../components/ui'
 import { companyService } from '../../services'
 import type { Company } from '../../types'
 import { Themestore } from '../../data/Themestore'
+import { notifyError, notifySuccess } from '../../data/NotificationStore'
 
 interface Props {
   open: boolean
@@ -74,8 +75,11 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
     try {
       const uploadedUrl = await companyService.uploadLogo(company.id, file)
       setLogoUrl(uploadedUrl)
+      notifySuccess('Logo uploaded.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Logo upload failed.')
+      const msg = err instanceof Error ? err.message : 'Logo upload failed.'
+      setError(msg)
+      notifyError(msg)
     } finally {
       setUploading(false)
     }
@@ -97,7 +101,14 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
         storageUsedMb: numbers.used,
         logoUrl: logoUrl ?? undefined,
       })
-      if (updated) onUpdated(updated)
+      if (updated) {
+        onUpdated(updated)
+        notifySuccess('Company profile saved.')
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not save company.'
+      setError(msg)
+      notifyError(msg)
     } finally {
       setSaving(false)
     }

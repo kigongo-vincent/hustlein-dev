@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Themestore } from '../../data/Themestore'
-import { APP_ICON_SIZE } from './iconTokens'
+import { APP_ICON_SIZE, AVATAR_XL_PIXEL_SIZE } from './iconTokens'
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -23,35 +23,38 @@ const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false 
   // "sm" is intentionally a bit larger to better match header/sidebar visuals.
   const sizePx =
     size === 'sm'
-      ? Math.round(APP_ICON_SIZE * 1.8)
+      ? Math.round(APP_ICON_SIZE * 2.0)
       : size === 'md'
-        ? Math.round(APP_ICON_SIZE * 2.0)
+        ? Math.round(APP_ICON_SIZE * 2.2)
         : size === 'lg'
           ? Math.round(APP_ICON_SIZE * 2.8)
-          : Math.round(APP_ICON_SIZE * 4.0) // xl
+          : AVATAR_XL_PIXEL_SIZE // xl
 
   const initialsFontPx =
-    size === 'sm'
-      ? Math.round(APP_ICON_SIZE * 0.7)
-      : size === 'md'
-        ? Math.round(APP_ICON_SIZE * 0.75)
-        : size === 'lg'
-          ? 18
-          : 22
+    size === 'sm' || size === 'md'
+      ? Math.round(APP_ICON_SIZE * 0.75)
+      : size === 'lg'
+        ? 18
+        : 22
 
   const { current, mode } = Themestore()
   const [errored, setErrored] = useState(false)
   const showFallback = !src || errored
   const initials = getInitials(name || 'Guest')
-  const bgColor = inverted
-    ? 'rgba(255,255,255,0.25)'
-    : (current?.system?.background ?? 'rgba(0,0,0,0.08)')
-  const textColor = inverted ? '#fff' : current?.brand?.primary || current?.system?.dark || '#333'
+  const primary = current?.brand?.primary || '#682308'
   const isDark = mode === 'dark'
-  const borderStyle =
-    isDark && !inverted
-      ? { border: `2px solid ${current?.system?.border ?? 'rgba(255,255,255,0.12)'}` }
-      : undefined
+
+  let fallbackBg: string | undefined
+  let fallbackText: string | undefined
+  if (showFallback) {
+    if (inverted) {
+      fallbackBg = 'rgba(255,255,255,0.25)'
+      fallbackText = '#fff'
+    } else {
+      fallbackBg = `color-mix(in srgb, ${primary} 10%, transparent)`
+      fallbackText = isDark ? (current?.system?.dark ?? '#e0e0e0') : primary
+    }
+  }
 
   return (
     <div
@@ -59,9 +62,8 @@ const Avatar = ({ src, name = '', size = 'md', className = '', inverted = false 
       style={{
         width: sizePx,
         height: sizePx,
-        backgroundColor: showFallback ? bgColor : undefined,
-        color: showFallback ? textColor : undefined,
-        ...borderStyle,
+        backgroundColor: fallbackBg,
+        color: fallbackText,
       }}
       aria-hidden
     >

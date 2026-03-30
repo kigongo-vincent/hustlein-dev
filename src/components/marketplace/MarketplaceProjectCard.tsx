@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react'
-import Text, { baseFontSize } from '../base/Text'
+import { Fragment, useState, type ReactNode } from 'react'
+import Text, { baseFontSize, minFontSize } from '../base/Text'
 import type { Company, ProjectPosting, User } from '../../types'
+import { htmlToPlainPreview } from '../../utils/richText'
+import { postingBudgetLineParts } from '../../utils/marketplaceBudget'
 import type { ThemeI } from '../../data/Themestore'
-import { Wallet } from 'lucide-react'
 
 function normalizeCurrencyForIntl(code: string): string {
   const u = (code || 'UGX').trim().toUpperCase() || 'UGX'
@@ -39,7 +40,7 @@ function domainFromEmail(email?: string) {
   return parts[1]
 }
 
-/** Soft spotlight window for “days left” on open listings (UI-only; not enforced by API). */
+/** Soft spotlight window for open marketplace listings only (browse UI). */
 const MARKETPLACE_LISTING_WINDOW_DAYS = 30
 
 function listingSpotlightDaysLeft(createdAt: string): number {
@@ -48,6 +49,24 @@ function listingSpotlightDaysLeft(createdAt: string): number {
   const elapsedDays = Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24))
   return Math.max(0, MARKETPLACE_LISTING_WINDOW_DAYS - elapsedDays)
 }
+
+/** Calendar-day difference from local today to due date (ISO date string). */
+function calendarDaysFromTodayTo(isoDate: string): number {
+  const target = new Date(isoDate)
+  if (Number.isNaN(target.getTime())) return 0
+  const t0 = new Date()
+  t0.setHours(0, 0, 0, 0)
+  const t1 = new Date(target)
+  t1.setHours(0, 0, 0, 0)
+  return Math.round((t1.getTime() - t0.getTime()) / 86400000)
+}
+
+export type MarketplaceCardSpotlight =
+  /** Default on marketplace browse: synthetic window from listing `createdAt`. */
+  | { mode: 'listing_window' }
+  /** Project / application deadline from API (`Project.dueDate`). */
+  | { mode: 'due_date'; iso: string }
+  | { mode: 'hidden' }
 
 /** Resolve relative upload paths (e.g. /uploads/...) when VITE_API_URL is an absolute API base. */
 function resolvePublicAssetUrl(url?: string | null): string | undefined {
@@ -63,13 +82,7 @@ function resolvePublicAssetUrl(url?: string | null): string | undefined {
 }
 
 function budgetLines(p: ProjectPosting): string[] {
-  const cur = p.currency || 'UGX'
-  if (p.budgetType === 'hourly') return [`${formatMoney(p.hourlyMin, cur)} – ${formatMoney(p.hourlyMax, cur)} / hr`]
-  if (p.budgetType === 'fixed') return [`${formatMoney(p.fixedMin, cur)} – ${formatMoney(p.fixedMax, cur)}`]
-  return [
-    `${formatMoney(p.hourlyMin, cur)} – ${formatMoney(p.hourlyMax, cur)} / hr`,
-    `${formatMoney(p.fixedMin, cur)} – ${formatMoney(p.fixedMax, cur)} fixed`,
-  ]
+  return postingBudgetLineParts(p, formatMoney)
 }
 
 export type MarketplaceProjectCardActionTone = 'primary' | 'danger'
@@ -96,6 +109,15 @@ export type MarketplaceProjectCardProps = {
   actionOverride?: MarketplaceProjectCardActionOverride
   secondaryActionOverride?: MarketplaceProjectCardActionOverride
   onCardClick?: () => void
+  /** Card surface: default matches list cards (foreground); use `background` for page-tinted grids (e.g. assigned projects). */
+  cardSurface?: 'foreground' | 'background'
+  /**
+   * Top-right badge: default `listing_window` for job board.
+   * Use `due_date` with real `Project.dueDate` on assigned work; `hidden` when no deadline.
+   */
+  spotlight?: MarketplaceCardSpotlight
+  /** When false, hides Apply / Manage / override buttons; opening still uses `onCardClick` if set. */
+  showFooterActions?: boolean
 }
 
 const MarketplaceProjectCard = ({
@@ -112,6 +134,9 @@ const MarketplaceProjectCard = ({
   actionOverride,
   secondaryActionOverride,
   onCardClick,
+  cardSurface = 'foreground',
+  spotlight,
+  showFooterActions = true,
 }: MarketplaceProjectCardProps) => {
   const [primaryHover, setPrimaryHover] = useState(false)
   const [secondaryHover, setSecondaryHover] = useState(false)
@@ -169,18 +194,42 @@ const MarketplaceProjectCard = ({
   const logoMaxW = variant === 'featured' ? 200 : 168
 
   const green = theme.accent?.green ?? '#12B886'
-  const spotlightLeft = listingSpotlightDaysLeft(p.createdAt)
-  const remainingDays = spotlightLeft === 0 ? 1 : spotlightLeft
-  const badgeLabel = `${remainingDays} day${remainingDays === 1 ? '' : 's'} remaining`
-  const badgeSuccess = spotlightLeft >= 3
+  const spotlightMode: MarketplaceCardSpotlight = spotlight ?? { mode: 'listing_window' }
 
-  const created = p.createdAt ? new Date(p.createdAt) : null
-  const updated = p.updatedAt ? new Date(p.updatedAt) : null
+  let badgeLabel: string | null = null
+  let badgeTone: 'success' | 'warning' | 'danger' = 'success'
+
+  if (spotlightMode.mode === 'hidden') {
+    badgeLabel = null
+  } else if (spotlightMode.mode === 'due_date') {
+    const d = calendarDaysFromTodayTo(spotlightMode.iso)
+    if (d < 0) {
+      badgeLabel = `${-d} day${-d === 1 ? '' : 's'} overdue`
+      badgeTone = 'danger'
+    } else if (d === 0) {
+      badgeLabel = 'Due today'
+      badgeTone = 'warning'
+    } else {
+      badgeLabel = `${d} day${d === 1 ? '' : 's'} to deadline`
+      badgeTone = d > 7 ? 'success' : 'warning'
+    }
+  } else {
+    const spotlightLeft = listingSpotlightDaysLeft(p.createdAt)
+    const remainingDays = spotlightLeft === 0 ? 1 : spotlightLeft
+    badgeLabel = `${remainingDays} day${remainingDays === 1 ? '' : 's'} remaining`
+    badgeTone = spotlightLeft >= 3 ? 'success' : 'warning'
+  }
+
+  const badgeColor =
+    badgeTone === 'danger' ? errorColor : badgeTone === 'warning' ? (theme.accent?.yellow ?? '#FAB005') : green
+  const badgeBgAlpha = badgeTone === 'success' ? '22' : badgeTone === 'warning' ? '1e' : '18'
+
+  const cardBg = cardSurface === 'background' ? theme.system.background : theme.system.foreground
 
   return (
     <div
       className={`rounded-base shadow-custom ${pad} ${onCardClick ? 'cursor-pointer' : ''}`}
-      style={{ background: theme.system.foreground, color: theme.system.dark }}
+      style={{ background: cardBg, color: theme.system.dark }}
       onClick={onCardClick}
       role={onCardClick ? 'button' : undefined}
       tabIndex={onCardClick ? 0 : undefined}
@@ -212,7 +261,10 @@ const MarketplaceProjectCard = ({
                   className="w-12 h-12 rounded-base overflow-hidden shrink-0 flex items-center justify-center"
                   style={{ background: `${accent}18` }}
                 >
-                  <span className="text-[17px] font-semibold leading-none" style={{ color: accent }}>
+                  <span
+                    className="font-semibold leading-none"
+                    style={{ fontSize: baseFontSize * 1.35, color: accent }}
+                  >
                     {initial}
                   </span>
                 </div>
@@ -232,117 +284,127 @@ const MarketplaceProjectCard = ({
             </div>
           </div>
 
-          <Text
-            variant="sm"
-            className="shrink-0 rounded-full font-normal tracking-wide px-6 py-2 ml-auto inline-flex"
-            style={{ background: badgeSuccess ? `${green}22` : `${green}14`, color: green }}
-          >
-            {badgeLabel}
-          </Text>
+          {badgeLabel ? (
+            <Text
+              variant="sm"
+              className="shrink-0 rounded-full font-normal tracking-wide px-6 py-2 ml-auto inline-flex"
+              style={{ background: `${badgeColor}${badgeBgAlpha}`, color: badgeColor }}
+            >
+              {badgeLabel}
+            </Text>
+          ) : null}
         </div>
-
-        <span className="text-[11px] font-medium" style={{ opacity: 0.4 }}>
-          Posted {postedDate}
-          {updated && created && updated.getTime() !== created.getTime() ? ` · Updated ${formatPostingDate(p.updatedAt)}` : ''}
-        </span>
 
         <Text className="font-semibold leading-snug" style={{ fontSize: baseFontSize * 1.15 }}>
           {p.title}
         </Text>
 
         <Text className="leading-[1.75] whitespace-pre-wrap" style={{ fontSize: baseFontSize, opacity: 0.88 }}>
-          {p.description?.trim() || '—'}
+          {p.description?.trim() ? htmlToPlainPreview(p.description, 320) : '—'}
         </Text>
-
-        <div>
-          <div className="flex items-center gap-4 p-4 rounded-base" style={{ background: theme.system.background ?? 'rgba(0,0,0,0.06)' }}>
-            <div className="flex items-center justify-center w-10 h-10 rounded-full shrink-0" style={{ background: theme.system.foreground }}>
-              <Wallet className="w-5 h-5" style={{ color: theme.system.dark, opacity: 0.7 }} />
-            </div>
-            <div className="min-w-0">
-              <Text
-                variant="sm"
-                className="tracking-widest uppercase font-medium block mb-1"
-                style={{ color: theme.system.dark, opacity: 0.5 }}
-              >
-                {currencyCode} · {p.budgetType} rate
-              </Text>
-              {budgetLines(p).map((line, li) => (
-                <Text key={li} variant="sm" className="font-medium" style={{ opacity: 0.9 }}>
-                  {line}
-                </Text>
-              ))}
-            </div>
-          </div>
-        </div>
 
         <div style={{ height: 1, background: borderColor }} />
 
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          {p.requiredSkills && p.requiredSkills.length > 0 ? (
-            <div className="min-w-0 flex flex-wrap gap-2">
-              {p.requiredSkills.map((s) => {
-                const idx =
-                  Math.abs(s.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % Math.max(1, skillColors.length)
-                const c = skillColors[idx] ?? theme.brand.secondary ?? '#FF9600'
-                return (
-                  <span key={s} className="px-3 py-1 rounded-full text-[11px] font-medium" style={{ background: `${c}18`, color: c }}>
-                    {s}
-                  </span>
-                )
-              })}
-            </div>
-          ) : (
-            <div />
-          )}
+          <div className="min-w-0 flex flex-1 flex-wrap items-center gap-x-4 gap-y-2">
+            {p.requiredSkills && p.requiredSkills.length > 0 ? (
+              <div className="min-w-0 flex flex-wrap gap-2">
+                {p.requiredSkills.map((s) => {
+                  const idx =
+                    Math.abs(s.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % Math.max(1, skillColors.length)
+                  const c = skillColors[idx] ?? theme.brand.secondary ?? '#FF9600'
+                  return (
+                    <span
+                      key={s}
+                      className="px-3 py-1 rounded-full font-medium"
+                      style={{
+                        fontSize: Math.max(minFontSize, baseFontSize * 0.8),
+                        background: `${c}18`,
+                        color: c,
+                      }}
+                    >
+                      {s}
+                    </span>
+                  )
+                })}
+              </div>
+            ) : null}
+            <span
+              className="min-w-0 font-medium leading-snug inline-flex flex-wrap items-baseline gap-x-0"
+              style={{ color: theme.system.dark, fontSize: baseFontSize }}
+            >
+              <span style={{ opacity: 0.52 }}>{currencyCode}</span>
+              <span style={{ opacity: 0.4 }}>
+                {'\u00a0'}·{'\u00a0'}
+              </span>
+              <span style={{ opacity: 0.52 }}>{p.budgetType}</span>
+              <span style={{ opacity: 0.4 }}>
+                {'\u00a0'}·{'\u00a0'}
+              </span>
+              {budgetLines(p).map((line, i) => (
+                <Fragment key={i}>
+                  {i > 0 ? (
+                    <span style={{ opacity: 0.4 }}>
+                      {'\u00a0'}·{'\u00a0'}
+                    </span>
+                  ) : null}
+                  <span style={{ opacity: 0.92 }}>{line}</span>
+                </Fragment>
+              ))}
+            </span>
+          </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {secondaryActionOverride ? (
+          {showFooterActions ? (
+            <div className="flex items-center gap-2 shrink-0">
+              {secondaryActionOverride ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    secondaryClick()
+                  }}
+                  disabled={secondaryDisabled}
+                  onMouseEnter={() => setSecondaryHover(true)}
+                  onMouseLeave={() => setSecondaryHover(false)}
+                  className="px-4 py-2 flex items-center rounded-full font-medium border-0 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    fontSize: baseFontSize,
+                    backgroundColor: secondaryBgPrimary ? secondaryPrimary : (theme.system.background ?? 'rgba(0,0,0,0.06)'),
+                    color: secondaryBgPrimary ? secondaryOnPrimary : theme.system.dark,
+                  }}
+                  aria-label={secondaryLabel}
+                >
+                  <span className="inline-flex items-center gap-2 justify-center">
+                    {secondaryIcon ? secondaryIcon : null}
+                    {secondaryLabel}
+                  </span>
+                </button>
+              ) : null}
+
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation()
-                  secondaryClick()
+                  actionClick()
                 }}
-                disabled={secondaryDisabled}
-                onMouseEnter={() => setSecondaryHover(true)}
-                onMouseLeave={() => setSecondaryHover(false)}
-                className="px-5 py-2 rounded-full text-[13px] font-medium border-0 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed min-w-[160px]"
+                disabled={actionDisabled}
+                onMouseEnter={() => setPrimaryHover(true)}
+                onMouseLeave={() => setPrimaryHover(false)}
+                className="px-4 py-2 flex items-center rounded-full font-medium border-0 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
-                  backgroundColor: secondaryBgPrimary ? secondaryPrimary : (theme.system.background ?? 'rgba(0,0,0,0.06)'),
-                  color: secondaryBgPrimary ? secondaryOnPrimary : theme.system.dark,
+                  fontSize: baseFontSize,
+                  backgroundColor: actionPrimary ? primary : (theme.system.background ?? 'rgba(0,0,0,0.06)'),
+                  color: actionPrimary ? onPrimary : theme.system.dark,
                 }}
-                aria-label={secondaryLabel}
+                aria-label={actionAriaLabel}
               >
                 <span className="inline-flex items-center gap-2 justify-center">
-                  {secondaryIcon ? secondaryIcon : null}
-                  {secondaryLabel}
+                  {actionIcon ? actionIcon : null}
+                  {actionLabel}
                 </span>
               </button>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                actionClick()
-              }}
-              disabled={actionDisabled}
-              onMouseEnter={() => setPrimaryHover(true)}
-              onMouseLeave={() => setPrimaryHover(false)}
-              className="px-5 py-2 rounded-full text-[13px] font-medium border-0 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed min-w-[160px]"
-              style={{
-                backgroundColor: actionPrimary ? primary : (theme.system.background ?? 'rgba(0,0,0,0.06)'),
-                color: actionPrimary ? onPrimary : theme.system.dark,
-              }}
-              aria-label={actionAriaLabel}
-            >
-              <span className="inline-flex items-center gap-2 justify-center">
-                {actionIcon ? actionIcon : null}
-                {actionLabel}
-              </span>
-            </button>
-          </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

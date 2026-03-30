@@ -24,6 +24,7 @@ const Select = ({
   mode = 'outline',
   className = '',
   id,
+  autoComplete = 'off',
   ...rest
 }: Props) => {
   const { current } = Themestore()
@@ -53,6 +54,7 @@ const Select = ({
           color: current?.system?.dark,
         }}
         {...rest}
+        autoComplete={autoComplete}
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

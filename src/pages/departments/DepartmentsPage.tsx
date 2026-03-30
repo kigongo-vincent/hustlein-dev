@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Modal, Input, AlertModal, Skeleton } from '../../components/ui'
+import { Card, Button, Modal, Input, AlertModal, Skeleton, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { departmentService } from '../../services'
@@ -213,11 +213,7 @@ export default function DepartmentsPage() {
                 ))}
               </div>
             ) : byDescriptionData.length === 0 ? (
-              <div className="h-full flex items-center justify-center">
-                <Text variant="sm" className="opacity-70">
-                  No departments yet
-                </Text>
-              </div>
+              <EmptyState variant="chart" compact description="No departments yet" className="h-full min-h-[200px]" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={byDescriptionData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -277,11 +273,7 @@ export default function DepartmentsPage() {
             </Text>
           </div>
         ) : sorted.length === 0 ? (
-          <div className="p-8 text-center">
-            <Text variant="sm" className="opacity-70" style={{ color: dark }}>
-              No departments yet.
-            </Text>
-          </div>
+          <EmptyState variant="generic" title="No departments yet" description="Add a department to organize your team." className="p-8" />
         ) : (
           <div className="overflow-x-auto scroll-slim">
             <table className="w-full">
@@ -356,7 +348,7 @@ export default function DepartmentsPage() {
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor: current?.system?.border }}>
             <Button variant="background" label="Cancel" onClick={() => !saving && setFormOpen(false)} disabled={saving} />
-            <Button label={saving ? 'Saving…' : 'Save'} onClick={handleSave} disabled={saving || !name.trim()} />
+            <Button label="Save" onClick={handleSave} disabled={saving || !name.trim()} loading={saving} />
           </footer>
         </div>
       </Modal>

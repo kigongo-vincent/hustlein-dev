@@ -12,7 +12,7 @@ import {
 } from 'recharts'
 import Text, { baseFontSize } from '../../components/base/Text'
 import { ListTodo, CheckCircle, FolderKanban, BarChart3, Search, SlidersHorizontal, X } from 'lucide-react'
-import { Button, Card, CustomSelect } from '../../components/ui'
+import { Button, Card, CustomSelect, EmptyState } from '../../components/ui'
 import { AppPageLayout } from '../../components/layout'
 import { reportService, projectService } from '../../services'
 import { Themestore } from '../../data/Themestore'
@@ -138,9 +138,7 @@ const ReportsPage = () => {
       </div>
       <Card title="Progress over time" subtitle="Completed tasks by date">
         {progressData.length === 0 ? (
-          <Text variant="sm" className="opacity-70">
-            No data yet.
-          </Text>
+          <EmptyState variant="chart" compact description="No data yet." className="py-8 min-h-[200px]" />
         ) : (
           <div className="h-[240px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -180,9 +178,7 @@ const ReportsPage = () => {
       </Card>
       <Card title="Task completion by owner" subtitle="Completed vs total tasks">
         {visibleByOwner.length === 0 ? (
-          <Text variant="sm" className="opacity-70">
-            No data yet.
-          </Text>
+          <EmptyState variant="chart" compact description="No data yet." className="py-8 min-h-[200px]" />
         ) : (
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">

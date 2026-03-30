@@ -1,25 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import Text from '../../components/base/Text'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
+import Text, { baseFontSize, minFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Button, Card, Input, Modal, RichTextEditor } from '../../components/ui'
+import { Button, Card, Modal, RichTextEditor, SafeHtml, FileAttachmentDropzone, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { marketplaceService } from '../../services'
 import type { ApplicationStatus, ProjectApplication, ProjectPosting } from '../../types'
-import { Trash2, FileText, Eye, RefreshCw, XCircle } from 'lucide-react'
+import { Trash2, FileText, Eye, RefreshCw, XCircle, FolderKanban } from 'lucide-react'
 import MarketplaceProjectCard from '../../components/marketplace/MarketplaceProjectCard'
 import { notifyError, notifySuccess } from '../../data/NotificationStore'
-
-function htmlToPlainText(html?: string): string {
-  if (!html) return ''
-  if (typeof DOMParser === 'undefined') return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-  try {
-    const doc = new DOMParser().parseFromString(html, 'text/html')
-    const text = doc.body?.textContent ?? ''
-    return text.replace(/\s+/g, ' ').trim()
-  } catch {
-    return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-  }
-}
 
 function formatDate(iso?: string) {
   if (!iso) return '—'
@@ -51,6 +40,7 @@ function formatMoney(value?: number, currency = 'UGX') {
 }
 
 const MyApplicationsPage = () => {
+  const navigate = useNavigate()
   const { current } = Themestore()
   const dark = current?.system?.dark
 
@@ -64,7 +54,6 @@ const MyApplicationsPage = () => {
     try {
       const list = await marketplaceService.listMyApplications()
       if (shouldIgnore()) return
-      setApps(list)
 
       const uniquePostingIds = [...new Set(list.map((a) => a.postingId))]
       const results = await Promise.all(uniquePostingIds.map((id) => marketplaceService.getPosting(id)))
@@ -72,7 +61,10 @@ const MyApplicationsPage = () => {
       results.forEach((p) => {
         if (p) map[p.id] = p
       })
-      if (!shouldIgnore()) setPostingsById(map)
+      if (!shouldIgnore()) {
+        setApps(list)
+        setPostingsById(map)
+      }
     } catch {
       if (!shouldIgnore()) {
         setApps([])
@@ -101,6 +93,9 @@ const MyApplicationsPage = () => {
     try {
       const updated = await marketplaceService.updateApplicationStatus(a.id, 'withdrawn')
       setApps((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
+      notifySuccess('Application withdrawn.')
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not withdraw application.')
     } finally {
       setSaving(false)
     }
@@ -117,16 +112,11 @@ const MyApplicationsPage = () => {
   const [reapplyOpen, setReapplyOpen] = useState(false)
   const [reapplyPostingId, setReapplyPostingId] = useState<string | null>(null)
   const [applyCoverLetter, setApplyCoverLetter] = useState('')
-  const [applyProposedHourly, setApplyProposedHourly] = useState('')
-  const [applyProposedFixed, setApplyProposedFixed] = useState('')
   const [applyAttachments, setApplyAttachments] = useState<File[]>([])
-  const applyAttachmentInputRef = useRef<HTMLInputElement>(null)
 
   const openReapply = (a: ProjectApplication) => {
     setReapplyPostingId(a.postingId)
     setApplyCoverLetter(a.coverLetter ?? '')
-    setApplyProposedHourly(a.proposedHourlyRate != null ? String(a.proposedHourlyRate) : '')
-    setApplyProposedFixed(a.proposedFixed != null ? String(a.proposedFixed) : '')
     setApplyAttachments([])
     setReapplyOpen(true)
   }
@@ -137,8 +127,6 @@ const MyApplicationsPage = () => {
     try {
       const created = await marketplaceService.apply(reapplyPostingId, {
         coverLetter: applyCoverLetter,
-        proposedHourlyRate: applyProposedHourly ? Number(applyProposedHourly) : undefined,
-        proposedFixed: applyProposedFixed ? Number(applyProposedFixed) : undefined,
       })
 
       if (applyAttachments.length > 0) {
@@ -163,8 +151,6 @@ const MyApplicationsPage = () => {
       setApplyAttachments([])
       setReapplyPostingId(null)
       setApplyCoverLetter('')
-      setApplyProposedHourly('')
-      setApplyProposedFixed('')
       await refreshApps()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to re-apply.'
@@ -188,8 +174,6 @@ const MyApplicationsPage = () => {
     setReapplyOpen(false)
     setReapplyPostingId(null)
     setApplyCoverLetter('')
-    setApplyProposedHourly('')
-    setApplyProposedFixed('')
     setApplyAttachments([])
   }
 
@@ -279,8 +263,9 @@ const MyApplicationsPage = () => {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setActiveTab(t.id)}
-                  className="px-3 py-2 rounded-md text-[13px] font-medium transition-opacity whitespace-nowrap"
+                  className="px-3 py-2 rounded-md font-medium transition-opacity whitespace-nowrap"
                   style={{
+                    fontSize: baseFontSize,
                     backgroundColor: bg,
                     color,
                     opacity: active ? 1 : 0.7,
@@ -289,8 +274,9 @@ const MyApplicationsPage = () => {
                 >
                   {t.label}
                   <span
-                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
+                    className="font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
                     style={{
+                      fontSize: Math.max(minFontSize, baseFontSize * 0.8),
                       marginLeft: 8,
                       backgroundColor: active ? `${primary}22` : (current?.system?.background ?? 'rgba(0,0,0,0.04)'),
                       opacity: active ? 1 : 0.75,
@@ -314,29 +300,43 @@ const MyApplicationsPage = () => {
             </Text>
           </div>
         ) : apps.length === 0 ? (
-          <div className="p-8 text-center">
-            <Text variant="sm" className="opacity-80">
-              {statusEmptyText}
-            </Text>
-          </div>
+          <EmptyState variant="inbox" title="Nothing here yet" description={statusEmptyText} className="p-6" />
         ) : (
           <div className="p-3">
             {filteredApps.length === 0 ? (
-              <div className="p-8 text-center">
-                <Text variant="sm" className="opacity-80">
-                  {statusEmptyText}
-                </Text>
-              </div>
+              <EmptyState variant="inbox" title="Nothing here yet" description={statusEmptyText} className="p-6" />
             ) : (
               <div className="space-y-4">
                 {filteredApps.map((a) => {
                   const posting = postingsById[a.postingId]
                   const canWithdraw = a.status === 'applied' || a.status === 'shortlisted'
                   const canReapply = a.status === 'withdrawn' && posting?.status === 'open'
-                  if (!posting) return null
+                  if (!posting) {
+                    return (
+                      <div
+                        key={a.id}
+                        className="rounded-base border p-4"
+                        style={{ borderColor: current?.system?.border ?? 'rgba(0,0,0,0.08)' }}
+                      >
+                        <Text variant="sm" className="opacity-70">
+                          Could not load posting for this application. You can still open details if available.
+                        </Text>
+                      </div>
+                    )
+                  }
 
                   return (
                     <div key={a.id} className="space-y-3">
+                      {/* {a.status === 'hired' && a.linkedProjectId ? (
+                        <Button
+                          type="button"
+                          variant="primary"
+                          className="w-full sm:w-auto"
+                          startIcon={<FolderKanban className="w-4 h-4 shrink-0" />}
+                          label="Open project workspace"
+                          onClick={() => navigate(`/app/projects/${a.linkedProjectId}`)}
+                        />
+                      ) : null} */}
                       <MarketplaceProjectCard
                         posting={posting}
                         company={null}
@@ -433,29 +433,52 @@ const MyApplicationsPage = () => {
               </span>
             </div>
 
+            {detailsApp.status === 'hired' && detailsApp.linkedProjectId ? (
+              <Button
+                type="button"
+                variant="primary"
+                startIcon={<FolderKanban className="w-4 h-4 shrink-0" />}
+                label="Open project workspace"
+                onClick={() => {
+                  navigate(`/app/projects/${detailsApp.linkedProjectId}`)
+                  closeDetails()
+                }}
+              />
+            ) : null}
+
             <div
               className="rounded-base p-4"
               style={{ background: current?.system?.background ?? 'rgba(0,0,0,0.04)' }}
             >
-              <Text
-                variant="sm"
-                className="opacity-80 whitespace-pre-wrap"
-                style={{ lineHeight: 1.7 }}
-              >
-                {htmlToPlainText(detailsApp.coverLetter) || '—'}
-              </Text>
+              {detailsApp.coverLetter?.trim() ? (
+                <SafeHtml
+                  html={detailsApp.coverLetter}
+                  className="text-sm leading-relaxed"
+                  style={{
+                    color: current?.system?.dark ?? 'inherit',
+                    opacity: 0.92,
+                  }}
+                />
+              ) : (
+                <Text variant="sm" className="opacity-80" style={{ lineHeight: 1.7 }}>
+                  —
+                </Text>
+              )}
             </div>
 
             {(detailsApp.proposedHourlyRate != null || detailsApp.proposedFixed != null) && (
               <div className="flex flex-wrap items-center gap-3">
+                <Text variant="sm" className="opacity-50">
+                  Earlier application included proposed rates (no longer collected):
+                </Text>
                 {detailsApp.proposedHourlyRate != null && (
                   <Text variant="sm" className="opacity-75">
-                    Proposed: {formatMoney(detailsApp.proposedHourlyRate, detailsApp.currency)} / hr
+                    {formatMoney(detailsApp.proposedHourlyRate, detailsApp.currency)} / hr
                   </Text>
                 )}
                 {detailsApp.proposedFixed != null && (
                   <Text variant="sm" className="opacity-75">
-                    Proposed: {formatMoney(detailsApp.proposedFixed, detailsApp.currency)}
+                    {formatMoney(detailsApp.proposedFixed, detailsApp.currency)} fixed
                   </Text>
                 )}
               </div>
@@ -531,40 +554,11 @@ const MyApplicationsPage = () => {
             mode="fill"
             borderless
             enableMentions
+            linkInputMode="fields"
           />
 
           <div className="space-y-2">
-            <Text variant="sm" style={{ opacity: 0.55 }}>
-              Attach documents (CV / Resume)
-            </Text>
-            <input
-              ref={applyAttachmentInputRef}
-              type="file"
-              className="hidden"
-              multiple
-              accept="application/pdf,.pdf,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx,text/plain,.txt"
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? [])
-                setApplyAttachments(files)
-                e.target.value = ''
-              }}
-              aria-hidden
-            />
-            <div className="flex items-center gap-3 flex-wrap">
-              <Button
-                label={applyAttachments.length ? 'Replace files' : 'Add files'}
-                size="sm"
-                variant="background"
-                startIcon={<FileText className="w-4 h-4 shrink-0" />}
-                onClick={() => applyAttachmentInputRef.current?.click()}
-                disabled={saving}
-              />
-              {applyAttachments.length > 0 && (
-                <Text variant="sm" style={{ opacity: 0.45 }}>
-                  {applyAttachments.length} selected
-                </Text>
-              )}
-            </div>
+            <FileAttachmentDropzone files={applyAttachments} onFilesChange={setApplyAttachments} disabled={saving} />
 
             {applyAttachments.length > 0 && (
               <div className="space-y-2">
@@ -594,19 +588,6 @@ const MyApplicationsPage = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Proposed hourly rate"
-              value={applyProposedHourly}
-              onChange={(e) => setApplyProposedHourly(e.target.value)}
-            />
-            <Input
-              label="Proposed fixed budget"
-              value={applyProposedFixed}
-              onChange={(e) => setApplyProposedFixed(e.target.value)}
-            />
-          </div>
-
           <div className="flex justify-end gap-3 pt-2">
             <Button
               label="Cancel"
@@ -619,6 +600,7 @@ const MyApplicationsPage = () => {
               startIcon={<RefreshCw className="w-4 h-4 shrink-0" />}
               onClick={submitReapply}
               disabled={saving || !reapplyPostingId}
+              loading={saving}
             />
           </div>
         </div>

@@ -7,6 +7,9 @@ export type ProjectChatComposerProps = {
   onNewCommentChange: (v: string) => void
   onSend: () => void
   sending: boolean
+  /** When false, user cannot type or send (e.g. live WebSocket down). */
+  composeEnabled?: boolean
+  composeDisabledHint?: string
   onAttachmentSelect?: (file: File) => void
   dark: string
   primaryColor: string
@@ -19,6 +22,8 @@ export default function ProjectChatComposer({
   onNewCommentChange,
   onSend,
   sending,
+  composeEnabled = true,
+  composeDisabledHint = 'Waiting for live chat connection…',
   onAttachmentSelect,
   dark,
   primaryColor,
@@ -29,6 +34,7 @@ export default function ProjectChatComposer({
   const [pendingAttachment, setPendingAttachment] = useState<File | null>(null)
 
   const handleSend = () => {
+    if (!composeEnabled || sending || (!newComment.trim() && !pendingAttachment)) return
     onSend()
     setPendingAttachment(null)
   }
@@ -72,7 +78,8 @@ export default function ProjectChatComposer({
         <button
           type="button"
           onClick={() => attachmentInputRef.current?.click()}
-          className="shrink-0 p-2.5 rounded-lg opacity-70 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
+          disabled={!composeEnabled}
+          className="shrink-0 p-2.5 rounded-lg opacity-70 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0 disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ color: dark }}
           title="Add attachment"
           aria-label="Add attachment"
@@ -82,15 +89,22 @@ export default function ProjectChatComposer({
         <input
           value={newComment}
           onChange={(e) => onNewCommentChange(e.target.value)}
-          placeholder="Message"
-          className="flex-1 min-w-0 py-2.5 pr-2 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder:opacity-60"
+          placeholder={composeEnabled ? 'Message' : composeDisabledHint}
+          readOnly={!composeEnabled}
+          disabled={!composeEnabled}
+          aria-disabled={!composeEnabled}
+          className="flex-1 min-w-0 py-2.5 pr-2 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder:opacity-60 disabled:opacity-60 disabled:cursor-not-allowed"
           style={{ fontSize: baseFontSize, color: dark }}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && onSend()}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' || e.shiftKey) return
+            e.preventDefault()
+            handleSend()
+          }}
         />
         <button
           type="button"
           onClick={handleSend}
-          disabled={sending || (!newComment.trim() && !pendingAttachment)}
+          disabled={!composeEnabled || sending || (!newComment.trim() && !pendingAttachment)}
           className="shrink-0 p-2.5 rounded-lg transition-opacity focus:outline-none focus:ring-0 disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ color: primaryColor }}
           title="Send"

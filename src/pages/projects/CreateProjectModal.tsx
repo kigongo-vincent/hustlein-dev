@@ -75,10 +75,8 @@ const CreateProjectModal = ({
   const [extTitle, setExtTitle] = useState('')
   const [extDescription, setExtDescription] = useState('')
   const [extBudgetType, setExtBudgetType] = useState<MarketplaceBudgetType>('hybrid')
-  const [extHourlyMin, setExtHourlyMin] = useState('')
-  const [extHourlyMax, setExtHourlyMax] = useState('')
-  const [extFixedMin, setExtFixedMin] = useState('')
-  const [extFixedMax, setExtFixedMax] = useState('')
+  const [extHourlyRate, setExtHourlyRate] = useState('')
+  const [extFixedBudget, setExtFixedBudget] = useState('')
   const [extCurrency, setExtCurrency] = useState('UGX')
   const [extSkills, setExtSkills] = useState('')
 
@@ -86,10 +84,8 @@ const CreateProjectModal = ({
     setExtTitle('')
     setExtDescription('')
     setExtBudgetType('hybrid')
-    setExtHourlyMin('')
-    setExtHourlyMax('')
-    setExtFixedMin('')
-    setExtFixedMax('')
+    setExtHourlyRate('')
+    setExtFixedBudget('')
     setExtCurrency('UGX')
     setExtSkills('')
   }
@@ -126,15 +122,17 @@ const CreateProjectModal = ({
     if (!cur) return false
     const skillsOk = true // can be empty, backend will accept []
 
-    const hourlyOk = !!extHourlyMin.trim() && !!extHourlyMax.trim()
-    const fixedOk = !!extFixedMin.trim() && !!extFixedMax.trim()
+    const h = extHourlyRate.trim()
+    const f = extFixedBudget.trim()
+    const hourlyOk = !!h && !Number.isNaN(Number(h))
+    const fixedOk = !!f && !Number.isNaN(Number(f))
 
     if (!skillsOk) return false
 
     if (extBudgetType === 'hourly') return hourlyOk
     if (extBudgetType === 'fixed') return fixedOk
     return hourlyOk && fixedOk
-  }, [extTitle, extCurrency, extBudgetType, extHourlyMin, extHourlyMax, extFixedMin, extFixedMax])
+  }, [extTitle, extCurrency, extBudgetType, extHourlyRate, extFixedBudget])
 
   return (
     <Modal open={open} onClose={() => !saving && onClose()} variant="wide">
@@ -212,6 +210,7 @@ const CreateProjectModal = ({
                 label="Continue"
                 onClick={() => setStep('form')}
                 disabled={saving}
+                loading={saving}
               />
             </footer>
           </>
@@ -246,43 +245,25 @@ const CreateProjectModal = ({
                   placement="below"
                 />
 
-                {extBudgetType === 'hourly' || extBudgetType === 'hybrid' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <CurrencyInput
-                      label="Hourly min"
-                      value={extHourlyMin}
-                      onChange={setExtHourlyMin}
-                      currency={extCurrency}
-                      showCurrencySymbol={false}
-                    />
-                    <CurrencyInput
-                      label="Hourly max"
-                      value={extHourlyMax}
-                      onChange={setExtHourlyMax}
-                      currency={extCurrency}
-                      showCurrencySymbol={false}
-                    />
-                  </div>
-                ) : null}
+                {(extBudgetType === 'hourly' || extBudgetType === 'hybrid') && (
+                  <CurrencyInput
+                    label={extBudgetType === 'hybrid' ? 'Hourly rate' : 'Hourly rate (per hour)'}
+                    value={extHourlyRate}
+                    onChange={setExtHourlyRate}
+                    currency={extCurrency}
+                    showCurrencySymbol={false}
+                  />
+                )}
 
-                {extBudgetType === 'fixed' || extBudgetType === 'hybrid' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <CurrencyInput
-                      label="Fixed min"
-                      value={extFixedMin}
-                      onChange={setExtFixedMin}
-                      currency={extCurrency}
-                      showCurrencySymbol={false}
-                    />
-                    <CurrencyInput
-                      label="Fixed max"
-                      value={extFixedMax}
-                      onChange={setExtFixedMax}
-                      currency={extCurrency}
-                      showCurrencySymbol={false}
-                    />
-                  </div>
-                ) : null}
+                {(extBudgetType === 'fixed' || extBudgetType === 'hybrid') && (
+                  <CurrencyInput
+                    label={extBudgetType === 'hybrid' ? 'Fixed budget (total)' : 'Fixed budget'}
+                    value={extFixedBudget}
+                    onChange={setExtFixedBudget}
+                    currency={extCurrency}
+                    showCurrencySymbol={false}
+                  />
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <CustomSelect
@@ -352,15 +333,23 @@ const CreateProjectModal = ({
                       .map((s) => s.trim())
                       .filter(Boolean)
 
+                    const hourlyN = extHourlyRate.trim() ? Number(extHourlyRate) : undefined
+                    const fixedN = extFixedBudget.trim() ? Number(extFixedBudget) : undefined
+                    const hourlyMin =
+                      extBudgetType === 'hourly' || extBudgetType === 'hybrid' ? hourlyN : undefined
+                    const hourlyMax = hourlyMin
+                    const fixedMin = extBudgetType === 'fixed' || extBudgetType === 'hybrid' ? fixedN : undefined
+                    const fixedMax = fixedMin
+
                     onSubmit({
                       projectType: 'external',
                       title: extTitle.trim(),
                       description: extDescription.trim(),
                       budgetType: extBudgetType,
-                      hourlyMin: extHourlyMin.trim() ? Number(extHourlyMin) : undefined,
-                      hourlyMax: extHourlyMax.trim() ? Number(extHourlyMax) : undefined,
-                      fixedMin: extFixedMin.trim() ? Number(extFixedMin) : undefined,
-                      fixedMax: extFixedMax.trim() ? Number(extFixedMax) : undefined,
+                      hourlyMin,
+                      hourlyMax,
+                      fixedMin,
+                      fixedMax,
                       currency: extCurrency.trim() || 'UGX',
                       requiredSkills,
                     })

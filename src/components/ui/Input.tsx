@@ -14,6 +14,11 @@ export interface Props extends InputHTMLAttributes<HTMLInputElement> {
   mode?: InputMode
   /** Override background for the floating label (e.g. to match a colored modal) */
   labelBackgroundColor?: string
+  /**
+   * When false (default), sets autocomplete=off and a one-time readOnly until first focus so browsers
+   * (especially Chrome) do not inject credentials or autofill on initial load.
+   */
+  allowBrowserAutofill?: boolean
 }
 
 const Input = ({
@@ -22,6 +27,7 @@ const Input = ({
   hint,
   mode = 'outline',
   labelBackgroundColor,
+  allowBrowserAutofill = false,
   className = '',
   id,
   value,
@@ -32,12 +38,15 @@ const Input = ({
   onChange,
   placeholder,
   autoComplete,
+  readOnly: readOnlyProp,
+  disabled,
   type: typeProp = 'text',
   ...rest
 }: Props) => {
   const { current } = Themestore()
   const inputId = id ?? `input-${Math.random().toString(36).slice(2)}`
   const inputRef = useRef<HTMLInputElement>(null)
+  const [autofillGateReleased, setAutofillGateReleased] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [hasValue, setHasValue] = useState(() => {
@@ -51,6 +60,14 @@ const Input = ({
   const floated = isFocused || filled
   const isPassword = typeProp === 'password'
   const inputType = isPassword ? (passwordVisible ? 'text' : 'password') : typeProp
+  const blockLoadAutofill =
+    !allowBrowserAutofill &&
+    typeProp !== 'file' &&
+    typeProp !== 'hidden' &&
+    !disabled
+  const effectiveAutoComplete = blockLoadAutofill ? 'off' : autoComplete
+  const effectiveReadOnly =
+    readOnlyProp === true || (blockLoadAutofill && !autofillGateReleased)
 
   // When the browser autofills, React state might not update via `onChange` in some browsers.
   // We detect autofill start/cancel via CSS animation hooks and, in controlled mode, sync DOM -> React
@@ -102,6 +119,11 @@ const Input = ({
   }, [isControlled])
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (blockLoadAutofill && !autofillGateReleased) {
+      // Drop readonly immediately so typing works on this frame (React state updates async).
+      e.currentTarget.removeAttribute('readonly')
+      setAutofillGateReleased(true)
+    }
     setIsFocused(true)
     onFocus?.(e)
   }
@@ -131,7 +153,6 @@ const Input = ({
           type={inputType}
           value={value}
           defaultValue={defaultValue}
-          autoComplete={autoComplete}
           placeholder={floated ? placeholder : undefined}
           aria-label={label}
           aria-invalid={!!error}
@@ -147,6 +168,9 @@ const Input = ({
             color: current?.system?.dark,
           }}
           {...rest}
+          readOnly={effectiveReadOnly}
+          disabled={disabled}
+          autoComplete={effectiveAutoComplete}
         />
         {isPassword && (
           <button

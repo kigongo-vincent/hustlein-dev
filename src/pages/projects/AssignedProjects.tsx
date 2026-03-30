@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import Text, { baseFontSize } from '../../components/base/Text'
-import { Card, Skeleton } from '../../components/ui'
+import View from '../../components/base/View'
+import { Card, Skeleton, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { useProjectListModal } from '../../data/ModalStore'
-import { projectService, userService, taskService, marketplaceService } from '../../services'
-import type { Project } from '../../types'
+import { projectService, userService, taskService, marketplaceService, assignmentService } from '../../services'
+import type { Project, ProjectPosting } from '../../types'
 import { Search, SlidersHorizontal, X, FolderKanban, ListTodo, UserCheck, User } from 'lucide-react'
 import { Authstore } from '../../data/Authstore'
+import { notifyError, notifySuccess } from '../../data/NotificationStore'
 import {
   PEXELS_AVATAR_FALLBACKS,
   PEXELS_AVATAR_LIST,
@@ -24,7 +26,7 @@ import DeleteProjectModal from './DeleteProjectModal'
 import SuspendProjectModal from './SuspendProjectModal'
 import ProjectListAnalyticsModal from './ProjectListAnalyticsModal'
 
-const ProjectList = () => {
+const AssignedProjects = () => {
   const { current } = Themestore()
   const navigate = useNavigate()
   const user = Authstore((s) => s.user)
@@ -56,6 +58,10 @@ const ProjectList = () => {
   const [editSaving, setEditSaving] = useState(false)
   const [suspendProject, setSuspendProject] = useState<ProjectWithMeta | null>(null)
   const [actionSaving, setActionSaving] = useState(false)
+  /** Hired marketplace work: internal project id → posting id for `/app/projects/:id?external=1` (same as company admin). */
+  const [postingIdByLinkedProjectId, setPostingIdByLinkedProjectId] = useState<Record<string, string>>({})
+  /** Fetched posting rows (company name/logo, budget, skills) keyed by posting id. */
+  const [postingDetailsById, setPostingDetailsById] = useState<Record<string, ProjectPosting>>({})
 
   const isConsultant = user?.role === 'consultant'
   const isFreelancer = user?.role === 'freelancer'
@@ -71,7 +77,16 @@ const ProjectList = () => {
       let projectList: Project[]
       if ((isConsultant || isFreelancer) && user?.id) {
         const tasks = await taskService.listByOwner(user.id)
-        const projectIds = [...new Set(tasks.map((t) => t.projectId).filter(Boolean))]
+        const idSet = new Set<string>(tasks.map((t) => t.projectId).filter(Boolean) as string[])
+        if (isFreelancer) {
+          try {
+            const mine = await assignmentService.listMine()
+            mine.forEach((a) => idSet.add(a.projectId))
+          } catch {
+            /* assignments optional if API fails */
+          }
+        }
+        const projectIds = [...idSet]
         const results = await Promise.all(projectIds.map((id) => projectService.get(id)))
         projectList = results.filter((p): p is Project => p != null)
       } else if (isProjectLead && user?.id) {
@@ -108,8 +123,42 @@ const ProjectList = () => {
       )
       setTaskCountByProject(counts)
       setMembersByProject(members)
+
+      if (isFreelancer && user?.id) {
+        try {
+          const myApps = await marketplaceService.listMyApplications()
+          const map: Record<string, string> = {}
+          for (const a of myApps) {
+            if (a.linkedProjectId && a.postingId) {
+              map[a.linkedProjectId] = a.postingId
+            }
+          }
+          setPostingIdByLinkedProjectId(map)
+          const uniquePostingIds = [...new Set(Object.values(map))]
+          const details: Record<string, ProjectPosting> = {}
+          await Promise.all(
+            uniquePostingIds.map(async (pid) => {
+              try {
+                const po = await marketplaceService.getPosting(pid)
+                if (po?.id) details[po.id] = po
+              } catch {
+                /* ignore single posting failure */
+              }
+            })
+          )
+          setPostingDetailsById(details)
+        } catch {
+          setPostingIdByLinkedProjectId({})
+          setPostingDetailsById({})
+        }
+      } else {
+        setPostingIdByLinkedProjectId({})
+        setPostingDetailsById({})
+      }
     } catch {
       setProjects([])
+      setPostingIdByLinkedProjectId({})
+      setPostingDetailsById({})
     } finally {
       setLoading(false)
     }
@@ -205,6 +254,7 @@ const ProjectList = () => {
           setCreateLeadId('')
           setCreateDueDate('')
           loadData()
+          notifySuccess('Project created.')
           return
         }
 
@@ -226,6 +276,9 @@ const ProjectList = () => {
         setCreateDescription('')
         setCreateLeadId('')
         setCreateDueDate('')
+        notifySuccess('Marketplace posting created.')
+      } catch (err) {
+        notifyError(err instanceof Error ? err.message : 'Could not create project.')
       } finally {
         setCreateSaving(false)
       }
@@ -249,6 +302,9 @@ const ProjectList = () => {
       await projectService.delete(deleteProject.id)
       setDeleteProject(null)
       loadData()
+      notifySuccess('Project deleted.')
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not delete project.')
     } finally {
       setActionSaving(false)
     }
@@ -262,6 +318,9 @@ const ProjectList = () => {
       await projectService.update(suspendProject.id, { status: nextStatus })
       setSuspendProject(null)
       loadData()
+      notifySuccess(nextStatus === 'suspended' ? 'Project suspended.' : 'Project resumed.')
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not update project status.')
     } finally {
       setActionSaving(false)
     }
@@ -279,6 +338,9 @@ const ProjectList = () => {
       })
       setEditProject(null)
       loadData()
+      notifySuccess('Project updated.')
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not update project.')
     } finally {
       setEditSaving(false)
     }
@@ -351,10 +413,22 @@ const ProjectList = () => {
     }
   }, [])
 
+  const goToProjectDetail = useCallback(
+    (p: ProjectWithMeta) => {
+      const postingId = postingIdByLinkedProjectId[p.id]
+      if (postingId) {
+        navigate(`/app/projects/${postingId}?external=1`)
+        return
+      }
+      navigate(`/app/projects/${p.id}`)
+    },
+    [navigate, postingIdByLinkedProjectId],
+  )
+
   return (
     <>
-      <div className="w-full h-full mx-auto flex flex-col min-h-0">
-        <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div className="w-full h-full mx-auto flex flex-col min-h-0 gap-4">
+        <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {loading
             ? [1, 2, 3, 4].map((i) => (
                 <Card key={i} className="min-h-[7rem] py-4 px-4">
@@ -380,61 +454,74 @@ const ProjectList = () => {
               ))}
         </div>
 
-        <Card
-          className="p-0 overflow-hidden flex-1 min-h-0 flex flex-col mt-5"
-          noShadow
-          titleSuffix={
-            <div className="flex items-center justify-between gap-3 flex-1 min-w-0">
-              <div
-                className="flex items-center flex-1 min-w-0 rounded-base overflow-hidden"
-                style={{ backgroundColor: current?.system?.background ?? undefined }}
-              >
-                <div className="flex-1 min-w-0 relative flex items-center">
-                  <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-60 pointer-events-none shrink-0"
-                    style={{ color: dark }}
-                  />
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="search for projects..."
-                    className="w-full py-2 pl-9 pr-3 bg-transparent focus:outline-none focus:ring-0 border-0 placeholder:opacity-60"
-                    style={{
-                      fontSize: baseFontSize,
-                      lineHeight: 1.5,
-                      color: dark,
-                    }}
-                    aria-label="Search projects"
-                  />
-                  {searchQuery && (
-                    <button type="button" onClick={() => setSearchQuery('')} className="shrink-0 opacity-35 hover:opacity-80 transition-opacity mr-2">
-                      <X className="w-3.5 h-3.5" style={{ color: current?.system?.dark }} />
-                    </button>
-                  )}
-                </div>
-                {!isConsultant && (
+        <View
+            bg="fg"
+            noShadow
+            className="rounded-base px-3 sm:px-4 py-2.5 flex flex-row flex-wrap items-center gap-2.5 sm:gap-3 shrink-0"
+          >
+            <div
+              className="flex items-stretch flex-1 min-w-[min(100%,12rem)] h-10 rounded-base overflow-hidden"
+              style={{ backgroundColor: current?.system?.background ?? undefined }}
+            >
+              <div className="flex-1 min-w-0 relative flex items-center h-full">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-60 pointer-events-none shrink-0"
+                  style={{ color: dark }}
+                />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="search for projects..."
+                  className="w-full h-full min-h-0 py-0 pl-9 pr-2 bg-transparent focus:outline-none focus:ring-0 border-0 placeholder:opacity-60 leading-10"
+                  style={{
+                    fontSize: baseFontSize,
+                    color: dark,
+                  }}
+                  aria-label="Search projects"
+                />
+                {searchQuery && (
                   <button
                     type="button"
-                    onClick={() => setFilterOpen(true)}
-                    className="shrink-0 p-2.5 transition-opacity hover:opacity-100 opacity-90 focus:outline-none focus:ring-0"
-                    style={{
-                      color: dark,
-                      backgroundColor: filterOpen ? current?.system?.background : 'transparent',
-                    }}
-                    title="Filter"
-                    aria-label="Open filters"
-                    aria-expanded={filterOpen}
+                    onClick={() => setSearchQuery('')}
+                    className="shrink-0 h-full px-2 flex items-center opacity-35 hover:opacity-80 transition-opacity"
                   >
-                    <SlidersHorizontal className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" style={{ color: current?.system?.dark }} />
                   </button>
                 )}
               </div>
-              <div className="shrink-0" style={{ fontSize: baseFontSize, color: dark }}>
-                {loading ? '—' : `${sortedProjects.length} project${sortedProjects.length !== 1 ? 's' : ''}`}
-              </div>
+              {!isConsultant && (
+                <button
+                  type="button"
+                  onClick={() => setFilterOpen(true)}
+                  className="shrink-0 w-10 h-10 flex items-center justify-center transition-opacity hover:opacity-100 opacity-90 focus:outline-none focus:ring-0"
+                  style={{
+                    color: dark,
+                    backgroundColor: filterOpen ? current?.system?.background : 'transparent',
+                  }}
+                  title="Filter"
+                  aria-label="Open filters"
+                  aria-expanded={filterOpen}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          }
-        >
+            <div className="flex items-center justify-center sm:justify-end shrink-0">
+              <span
+                className="inline-flex size-10 items-center justify-center rounded-full text-sm font-semibold tabular-nums"
+                style={{
+                  backgroundColor: current?.system?.error,
+                  color: '#fff',
+                }}
+                title={loading ? undefined : `${sortedProjects.length} project${sortedProjects.length !== 1 ? 's' : ''}`}
+                aria-label={loading ? 'Project count loading' : `${sortedProjects.length} project${sortedProjects.length !== 1 ? 's' : ''}`}
+              >
+                {loading ? '—' : sortedProjects.length}
+              </span>
+            </div>
+        </View>
+
+        <Card className="p-0 overflow-hidden flex-1 min-h-0 flex flex-col" noShadow>
           <div className="flex-1 min-h-0 overflow-auto scroll-slim p-0">
             {loading ? (
               <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
@@ -453,20 +540,32 @@ const ProjectList = () => {
                 ))}
               </div>
             ) : sortedProjects.length === 0 ? (
-              <div className="p-8 text-center">
-                <Text variant="sm" className="opacity-70">
-                  {projectsWithMeta.length === 0
-                    ? 'No projects yet. Create one to get started.'
-                    : 'No projects match your search or filters.'}
-                </Text>
-              </div>
+              <EmptyState
+                variant={projectsWithMeta.length === 0 ? 'folder' : 'search'}
+                title={projectsWithMeta.length === 0 ? 'No projects yet' : 'Nothing matches'}
+                description={
+                  projectsWithMeta.length === 0
+                    ? 'Create one to get started.'
+                    : 'No projects match your search or filters.'
+                }
+                className="p-4"
+              />
             ) : (
               <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
-                {sortedProjects.map((p) => (
-                  isFreelancer ? (
+                {sortedProjects.map((p) => {
+                  const linkedPostingId = postingIdByLinkedProjectId[p.id]
+                  const postingForCard =
+                    linkedPostingId && postingDetailsById[linkedPostingId]
+                      ? postingDetailsById[linkedPostingId]
+                      : toMarketplacePosting(p)
+                  const spotlight = p.dueDate
+                    ? ({ mode: 'due_date' as const, iso: p.dueDate })
+                    : ({ mode: 'hidden' as const })
+
+                  return isFreelancer ? (
                     <MarketplaceProjectCard
                       key={p.id}
-                      posting={toMarketplacePosting(p)}
+                      posting={postingForCard}
                       company={null}
                       isFreelancer={false}
                       theme={current}
@@ -474,11 +573,10 @@ const ProjectList = () => {
                       variant="default"
                       viewerUser={null}
                       viewerIsCompanyAdmin={false}
-                      onCardClick={() => navigate(`/app/projects/${p.id}`)}
-                      actionOverride={{
-                        label: 'View project',
-                        onClick: () => navigate(`/app/projects/${p.id}`),
-                      }}
+                      cardSurface="background"
+                      spotlight={spotlight}
+                      showFooterActions={false}
+                      onCardClick={() => goToProjectDetail(p)}
                     />
                   ) : (
                     <ProjectCard
@@ -489,7 +587,7 @@ const ProjectList = () => {
                       onSuspend={isConsultant ? undefined : () => setSuspendProject(p)}
                     />
                   )
-                ))}
+                })}
               </div>
             )}
           </div>
@@ -579,4 +677,4 @@ const ProjectList = () => {
   )
 }
 
-export default ProjectList
+export default AssignedProjects

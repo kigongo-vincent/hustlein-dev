@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -6,15 +6,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <title>HustleIN — Kenyan-first workforce & operations</title>
     <meta
       name="description"
       content="A Kenyan-first workforce and operations platform designed for freelancers, consultants, and growing businesses. HustleIN is a wordplay that reflects Kenya's hustle culture."
     />
+    <style>
+      html,
+      body {
+        height: 100vh;
+        margin: 0;
+      }
+      #static-boot-splash {
+        box-sizing: border-box;
+        min-height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        background: #000;
+        font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
+        padding: 2.5rem 1rem;
+      }
+      #static-boot-splash .splash-spacer {
+        min-height: 0;
+        flex-shrink: 0;
+      }
+      #static-boot-splash .splash-brand {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: static-splash-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      #static-boot-splash .splash-brand img {
+        width: min(150px, 45vw);
+        height: auto;
+        display: block;
+        object-fit: contain;
+      }
+      #static-boot-splash .splash-foot {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.4);
+        text-align: center;
+        animation: static-splash-fade 0.4s ease-out 0.4s both;
+      }
+      #static-boot-splash .splash-foot a {
+        color: inherit;
+        text-decoration: underline;
+      }
+      @keyframes static-splash-in {
+        from {
+          opacity: 0;
+          transform: scale(0.92);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @keyframes static-splash-fade {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <script>
+      /* Match Themestore default system.background; run first in body so document.body exists (avoids white flash on /auth). */
+      (function () {
+        try {
+          var raw = localStorage.getItem("hustle-in-theme");
+          var dark = raw && JSON.parse(raw).mode === "dark";
+          var bg = dark ? "#0a0a0a" : "#F4f4f4";
+          var fg = dark ? "#141414" : "#f9f9f9";
+          var el = document.documentElement;
+          el.setAttribute("data-theme", dark ? "dark" : "light");
+          el.style.setProperty("--bg", bg);
+          el.style.setProperty("--fg", fg);
+          el.style.backgroundColor = bg;
+          document.body.style.backgroundColor = bg;
+        } catch (e) {}
+      })();
+    </script>
+    <div id="root">
+      <div
+        id="static-boot-splash"
+        style="height: 100vh"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <div class="splash-spacer" aria-hidden="true"></div>
+        <div class="splash-brand">
+          <img
+            src="/splash-logo-white.png"
+            width="150"
+            height="40"
+            alt="HustleIN"
+          />
+        </div>
+        <p class="splash-foot">
+          Powered by
+          <a
+            href="https://tekjuice.co.uk"
+            target="_blank"
+            rel="noopener noreferrer"
+            >tekjuice.co.uk</a
+          >
+        </p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

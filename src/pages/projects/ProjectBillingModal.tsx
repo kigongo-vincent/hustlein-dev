@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Text, { baseFontSize } from '../../components/base/Text'
-import { Button, Card, CustomSelect, Input, Modal } from '../../components/ui'
+import { Button, Card, CustomSelect, Input, Modal, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { billingService } from '../../services'
 import type { BillingMilestone, Invoice, ProjectAssignment, TimesheetEntry } from '../../types'
@@ -176,7 +176,7 @@ export default function ProjectBillingModal({ open, onClose, projectId, projectN
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <Card title="Timesheets (submitted)" subtitle={`${minutesToHours(submittedMinutes)}h pending approval`} className="p-4">
             {timesheets.length === 0 ? (
-              <Text variant="sm" className="opacity-70">No submitted entries.</Text>
+              <EmptyState variant="invoice" compact description="No submitted entries." className="py-4 px-0" />
             ) : (
               <div className="space-y-2">
                 {timesheets.slice(0, 12).map((t) => (
@@ -215,7 +215,7 @@ export default function ProjectBillingModal({ open, onClose, projectId, projectN
 
             <div className="mt-4 space-y-2">
               {milestones.length === 0 ? (
-                <Text variant="sm" className="opacity-70">No billing milestones yet.</Text>
+                <EmptyState variant="task" compact description="No billing milestones yet." className="py-4 px-0" />
               ) : (
                 milestones.slice(0, 10).map((m) => (
                   <div key={m.id} className="flex items-start justify-between gap-3">

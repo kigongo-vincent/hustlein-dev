@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router'
 import Text, { baseFontSize } from '../../components/base/Text'
 import { Card } from '../../components/ui'
+import { htmlToPlainPreview } from '../../utils/richText'
 import { Themestore } from '../../data/Themestore'
 import Avatar from '../../components/base/Avatar'
 import {
@@ -57,9 +58,10 @@ const ProjectCard = ({ project: p, onDelete, onEdit, onSuspend }: ProjectCardPro
     return [a?.blue, a?.purple, a?.pink, a?.green, a?.yellow, a?.teal].filter(Boolean) as string[]
   }, [current?.accent])
 
-  const description = (p.description && p.description.trim().length > 0
-    ? p.description.trim()
-    : DEFAULT_PROJECT_DESCRIPTION)
+  const description =
+    p.description && p.description.trim().length > 0
+      ? htmlToPlainPreview(p.description, 280)
+      : DEFAULT_PROJECT_DESCRIPTION
 
   const content = (
     <Card
@@ -76,7 +78,7 @@ const ProjectCard = ({ project: p, onDelete, onEdit, onSuspend }: ProjectCardPro
         </Text>
         {dueBadge ? (
           <span
-            className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap"
+            className="shrink-0 p-1 rounded-full text-[11px] font-semibold whitespace-nowrap"
             style={
               dueBadge.tone === 'success'
                 ? { background: `${green}22`, color: green }

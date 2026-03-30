@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Modal, Button, Input } from '../../components/ui'
+import { Modal, Button, Input, EmptyState } from '../../components/ui'
 import Text, { baseFontSize } from '../../components/base/Text'
 import { Themestore } from '../../data/Themestore'
 import { projectFileService } from '../../services/projectFileService'
@@ -314,7 +314,7 @@ export default function ProjectFilesModal({ open, onClose, projectId }: ProjectF
               <MoreHorizontal className="w-4 h-4" />
             </button>
             <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload} />
-            <Button label="Upload" size="sm" startIcon={<Upload className="w-4 h-4" />} onClick={() => fileInputRef.current?.click()} disabled={saving} />
+            <Button label="Upload" size="sm" startIcon={<Upload className="w-4 h-4" />} onClick={() => fileInputRef.current?.click()} disabled={saving} loading={saving} />
             <Button label="Refresh" size="sm" variant="background" startIcon={<RefreshCw className="w-4 h-4" />} onClick={load} disabled={loading || saving} />
           </div>
         </div>
@@ -354,7 +354,7 @@ export default function ProjectFilesModal({ open, onClose, projectId }: ProjectF
               {message}
             </div>
           )}
-          <div className="relative w-full md:w-[320px]">
+          {/* <div className="relative w-full md:w-[320px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: theme.mutedText }} />
             <input
               value={search}
@@ -363,7 +363,7 @@ export default function ProjectFilesModal({ open, onClose, projectId }: ProjectF
               className="w-full h-10 pl-9 pr-3 rounded-base border bg-transparent text-sm outline-none"
               style={{ borderColor: theme.border, color: theme.text }}
             />
-          </div>
+          </div> */}
         </div>
 
         <div className="grid grid-cols-12 min-h-[420px] max-h-[60vh]">
@@ -385,7 +385,7 @@ export default function ProjectFilesModal({ open, onClose, projectId }: ProjectF
               {loading ? (
                 <Text variant="sm" className="opacity-70 px-2 py-1">Loading…</Text>
               ) : filtered.length === 0 ? (
-                <Text variant="sm" className="opacity-70 px-2 py-1">No files yet.</Text>
+                <EmptyState variant="file" compact title="No files yet" description="Upload or add links from the toolbar." className="py-4 px-1" />
               ) : (
                 renderTree(null)
               )}
@@ -408,7 +408,7 @@ export default function ProjectFilesModal({ open, onClose, projectId }: ProjectF
                   </span>
                 ))}
               </div>
-              <div className="opacity-70 text-sm">View settings</div>
+              {/* <div className="opacity-70 text-sm">View settings</div> */}
             </div>
             <div className="px-4 py-2 border-b flex items-center gap-2" style={{ borderColor: theme.border }}>
               <button type="button" className="h-8 w-8 rounded-base border flex items-center justify-center" style={{ borderColor: theme.border, color: theme.text }} onClick={() => setActiveFolderId(null)}>
@@ -467,7 +467,7 @@ export default function ProjectFilesModal({ open, onClose, projectId }: ProjectF
                 <Text variant="sm" className="opacity-70 mb-2">Files</Text>
                 <div className="space-y-2">
                   {currentFiles.length === 0 ? (
-                    <Text variant="sm" className="opacity-70">No files yet.</Text>
+                    <EmptyState variant="file" compact description="No files in this folder yet." className="py-6 px-0" />
                   ) : currentFiles.map((f) => (
                     <div key={f.id} className="p-3 rounded-base border flex items-center gap-3" style={{ borderColor: theme.border, background: theme.subtleBg }}>
                       {f.type === 'link' ? <Link2 className="w-4 h-4" style={{ color: theme.mutedText }} /> : <File className="w-4 h-4" style={{ color: theme.mutedText }} />}
@@ -502,7 +502,7 @@ export default function ProjectFilesModal({ open, onClose, projectId }: ProjectF
           <Input label="Folder name" value={folderName} onChange={(e) => setFolderName(e.target.value)} />
           <div className="flex justify-end gap-2">
             <Button label="Cancel" variant="background" onClick={() => setFolderModalOpen(false)} />
-            <Button label="Create folder" onClick={handleCreateFolder} disabled={saving || !folderName.trim()} />
+            <Button label="Create folder" onClick={handleCreateFolder} disabled={saving || !folderName.trim()} loading={saving} />
           </div>
         </div>
       </Modal>
@@ -514,7 +514,7 @@ export default function ProjectFilesModal({ open, onClose, projectId }: ProjectF
           <Input label="Link URL" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
           <div className="flex justify-end gap-2">
             <Button label="Cancel" variant="background" onClick={() => setLinkModalOpen(false)} />
-            <Button label="Add link" onClick={handleCreateLink} disabled={saving || !linkName.trim() || !linkUrl.trim()} />
+            <Button label="Add link" onClick={handleCreateLink} disabled={saving || !linkName.trim() || !linkUrl.trim()} loading={saving} />
           </div>
         </div>
       </Modal>
@@ -533,6 +533,7 @@ export default function ProjectFilesModal({ open, onClose, projectId }: ProjectF
                 label="Save"
                 onClick={handleSaveEdit}
                 disabled={saving || !editing.name.trim() || (editing.type !== 'folder' && !editing.url.trim())}
+                loading={saving}
               />
             </div>
           </div>

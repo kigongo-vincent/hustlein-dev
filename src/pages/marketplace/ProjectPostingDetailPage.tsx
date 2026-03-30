@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Spinner } from '../../components/ui'
+import { Card, Button, Spinner, SafeHtml } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { marketplaceService } from '../../services/marketplaceService'
 import type { ProjectPosting } from '../../types'
@@ -130,9 +130,15 @@ const ProjectPostingDetailPage = () => {
                 <Text variant="sm" className="font-medium">
                   Project overview
                 </Text>
-                <Text variant="sm" className="opacity-80 whitespace-pre-line">
-                  {posting.description || 'No description provided.'}
-                </Text>
+                {posting.description?.trim() ? (
+                  <div className="text-sm opacity-80">
+                    <SafeHtml html={posting.description} />
+                  </div>
+                ) : (
+                  <Text variant="sm" className="opacity-80 whitespace-pre-line">
+                    No description provided.
+                  </Text>
+                )}
               </div>
 
               {posting.requiredSkills && posting.requiredSkills.length > 0 && (

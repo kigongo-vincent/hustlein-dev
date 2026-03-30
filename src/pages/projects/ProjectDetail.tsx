@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router'
-import { AnimatePresence, motion } from 'framer-motion'
 import Text, { baseFontSize, minFontSize } from '../../components/base/Text'
 import Avatar from '../../components/base/Avatar'
-import { Card, Button, Badge, Modal, CustomSelect, DateSelectInput, Input, Skeleton } from '../../components/ui'
+import { Card, Button, Badge, Modal, CustomSelect, DateSelectInput, Input, Skeleton, SafeHtml, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { useProjectDetailModal } from '../../data/ModalStore'
@@ -37,11 +36,12 @@ import {
   UserCheck,
   UserX,
   UserRound,
+  FileText,
 } from 'lucide-react'
 
 import { formatDate, getChartColors } from './utils'
 import type { ProjectWithMeta } from './types'
-import ProjectChatSidebar from './ProjectChatSidebar'
+import ProjectWorkspaceChat from './chat/ProjectWorkspaceChat'
 import ProjectFilesModal from './ProjectFilesModal'
 import ProjectBillingModal from './ProjectBillingModal'
 import EditProjectModal from './EditProjectModal'
@@ -51,7 +51,7 @@ import ProjectListAnalyticsModal from './ProjectListAnalyticsModal'
 import BoardModal from '../../components/layout/BoardModal'
 import ProjectTimelineGantt from './ProjectTimelineGantt'
 import LogTimeModal from '../../components/ui/LogTimeModal'
-
+import { postingBudgetSummary } from '../../utils/marketplaceBudget'
 const DONE_STATE_ID = 's6'
 
 function normalizeCurrencyForIntl(code: string): string {
@@ -79,6 +79,22 @@ function formatMoney(value?: number, currency = 'UGX') {
 function formatRoleLabel(role?: UserRole) {
   if (!role) return 'Freelancer'
   return role.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())
+}
+
+/** List applications for a posting and merge file metadata when the list payload omits attachments. */
+async function loadApplicationsWithFilesForPosting(postingId: string): Promise<ProjectApplication[]> {
+  const apps = await marketplaceService.listApplications(postingId)
+  return Promise.all(
+    apps.map(async (app) => {
+      if (app.attachments?.length) return app
+      try {
+        const files = await marketplaceService.listApplicationFiles(app.id)
+        return files.length > 0 ? { ...app, attachments: files } : app
+      } catch {
+        return app
+      }
+    }),
+  )
 }
 
 const ProjectDetail = () => {
@@ -113,8 +129,6 @@ const ProjectDetail = () => {
   const [comments, setComments] = useState<Comment[]>([])
   const [users, setUsers] = useState<{ id: string; name: string; email?: string; avatarUrl?: string; role?: UserRole; lastSeen?: string }[]>([])
   const [loading, setLoading] = useState(true)
-  const [newComment, setNewComment] = useState('')
-  const [commentSending, setCommentSending] = useState(false)
   const [addMilestoneOpen, setAddMilestoneOpen] = useProjectDetailModal(id, 'addMilestone')
   const [addTaskOpen, setAddTaskOpen] = useProjectDetailModal(id, 'addTask')
   const [milestoneName, setMilestoneName] = useState('')
@@ -147,60 +161,126 @@ const ProjectDetail = () => {
   const navigate = useNavigate()
   const externalFromRoute = location.pathname.includes('/app/marketplace/')
   const externalFromQuery = new URLSearchParams(location.search).get('external') === '1'
-  const isExternalContext = externalFromRoute || externalFromQuery
+  /** True only when URL is /app/marketplace/:id or ?external=1 — not when /app/projects/:postingId is resolved as a posting. */
+  const isExternalRouteOrQuery = externalFromRoute || externalFromQuery
+  const [resolvedAsMarketplacePosting, setResolvedAsMarketplacePosting] = useState(false)
+  /** Marketplace posting detail: explicit external URL, or same UUID opened under /app/projects/:id (no project row — posting id). */
+  const isMarketplacePostingDetail = isExternalRouteOrQuery || resolvedAsMarketplacePosting
   const isContributor = user?.role === 'consultant' || user?.role === 'freelancer'
-  const isInternalProject = !isExternalContext
+  // const isInternalProject = !isMarketplacePostingDetail
+  const isInternalProject = true
   const isExternalOriginInternalProject = isInternalProject && project?.projectType === 'external'
   const canManageProject = isInternalProject && !isContributor
   const canContributeTasks = isInternalProject && isContributor
-  const canManageExternalPosting = isExternalContext && (user?.role === 'company_admin' || user?.role === 'super_admin')
+  const canManageExternalPosting =
+    isMarketplacePostingDetail && (user?.role === 'company_admin' || user?.role === 'super_admin')
+  /** Gantt + chat: internal projects always; marketplace when linked workspace exists or a hire exists (chat uses posting id + server resolution). */
+  const showWorkspaceViews =
+    isInternalProject ||
+    (isMarketplacePostingDetail &&
+      (Boolean(externalLinkedProjectId) ||
+        externalApplications.some((a) => a.status === 'hired')))
 
   const loadData = useCallback(async () => {
     if (!id) return
     setLoading(true)
+    setResolvedAsMarketplacePosting(false)
     try {
-      if (isExternalContext) {
-        const [posting, userList] = await Promise.all([
-          marketplaceService.getPosting(id),
-          user?.role === 'freelancer' ? Promise.resolve([]) : userService.list(),
-        ])
+      type MarketplaceUserRow = {
+        id: string
+        name: string
+        email?: string
+        avatarUrl?: string
+        role?: UserRole
+        lastSeen?: string
+      }
 
-        setExternalPosting(posting ?? null)
-        if (posting) {
-          const apps = await marketplaceService.listApplications(posting.id)
-          setExternalApplications(apps)
+      const loadMarketplacePostingWorkspace = async (
+        posting: ProjectPosting,
+        userList: MarketplaceUserRow[],
+      ) => {
+        // API forbids freelancers from POST /marketplace/projects/:id/applications; use mine only.
+        let apps: ProjectApplication[] = []
+        if (user?.role === 'freelancer') {
+          try {
+            const mine = await marketplaceService.listMyApplications()
+            apps = mine.filter((a) => a.postingId === posting.id)
+          } catch {
+            apps = []
+          }
+        } else {
+          try {
+            apps = await loadApplicationsWithFilesForPosting(posting.id)
+          } catch {
+            apps = []
+          }
+        }
+        setExternalApplications(apps)
 
-          // External marketplace detail pages use posting IDs. Files/folders belong to
-          // the real internal project created at hire time, so resolve that project id.
-          const storageKey = `marketplace:posting:${posting.id}:projectId`
-          const mappedProjectId = localStorage.getItem(storageKey)
-          if (mappedProjectId) {
-            setExternalLinkedProjectId(mappedProjectId)
-          } else if (apps.some((application) => application.status === 'hired')) {
+        const hasHired = apps.some((a) => a.status === 'hired')
+        let workspaceComments: Comment[] = []
+        if (hasHired) {
+          try {
+            workspaceComments = await commentService.listByEntity('doc', posting.id)
+          } catch {
+            workspaceComments = []
+          }
+        }
+
+        const storageKey = `marketplace:posting:${posting.id}:projectId`
+        let linkedProjectId: string | null = localStorage.getItem(storageKey)
+        if (!linkedProjectId) {
+          const hired = apps.find((a) => a.status === 'hired' && a.linkedProjectId)
+          if (hired?.linkedProjectId) {
+            linkedProjectId = hired.linkedProjectId
+            localStorage.setItem(storageKey, hired.linkedProjectId)
+          } else if (user?.role !== 'freelancer' && apps.some((a) => a.status === 'hired')) {
             try {
               const allProjects = await projectService.list()
               const matched = allProjects
                 .filter((candidate) => candidate.companyId === posting.companyId && candidate.name === posting.title)
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-              setExternalLinkedProjectId(matched?.id ?? null)
+              linkedProjectId = matched?.id ?? null
               if (matched?.id) localStorage.setItem(storageKey, matched.id)
             } catch {
-              setExternalLinkedProjectId(null)
+              linkedProjectId = null
             }
-          } else {
-            setExternalLinkedProjectId(null)
           }
-        } else {
-          setExternalApplications([])
-          setExternalLinkedProjectId(null)
         }
-        setProjectAssignments([])
-        setTasks([])
-        setMilestones([])
-        setComments([])
 
-        if (posting) {
-          // Build a lightweight project shape so internal detail layout can be reused.
+        let workspaceAssignments: ProjectAssignment[] = []
+        let workspaceTasks: Task[] = []
+        let workspaceMilestones: Milestone[] = []
+        let workspaceProject: Project | null = null
+        if (linkedProjectId) {
+          const verified = await projectService.get(linkedProjectId)
+          if (!verified) {
+            localStorage.removeItem(storageKey)
+            linkedProjectId = null
+          } else {
+            workspaceProject = verified
+            const settled = await Promise.allSettled([
+              taskService.listByProject(linkedProjectId),
+              milestoneService.listByProject(linkedProjectId),
+              assignmentService.listByProject(linkedProjectId),
+            ])
+            workspaceTasks =
+              settled[0].status === 'fulfilled' ? (settled[0].value ?? []) : []
+            workspaceMilestones =
+              settled[1].status === 'fulfilled' ? (settled[1].value ?? []) : []
+            workspaceAssignments =
+              settled[2].status === 'fulfilled' ? (settled[2].value ?? []) : []
+          }
+        }
+        setExternalLinkedProjectId(linkedProjectId)
+        setProjectAssignments(workspaceAssignments)
+        setTasks(workspaceTasks)
+        setMilestones(workspaceMilestones)
+        setComments(workspaceComments)
+
+        if (workspaceProject) {
+          setProject(workspaceProject)
+        } else {
           setProject({
             id: posting.id,
             companyId: posting.companyId,
@@ -213,49 +293,166 @@ const ProjectDetail = () => {
             status: posting.status === 'closed' ? 'suspended' : 'active',
             projectType: 'external',
           })
-        } else {
-          setProject(null)
         }
 
-        const visibleUsers = user?.role === 'freelancer' && user
-          ? [{ id: user.id, name: user.name, email: user.email, avatarUrl: user.avatarUrl, role: user.role, lastSeen: user.lastSeen }]
-          : userList.map((u) => ({ id: u.id, name: u.name, email: u.email, avatarUrl: u.avatarUrl, role: u.role, lastSeen: u.lastSeen }))
+        const visibleUsers =
+          user?.role === 'freelancer' && user
+            ? [
+              {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                avatarUrl: user.avatarUrl,
+                role: user.role,
+                lastSeen: user.lastSeen,
+              },
+            ]
+            : userList.map((u) => ({
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              avatarUrl: u.avatarUrl,
+              role: u.role,
+              lastSeen: u.lastSeen,
+            }))
         setUsers(visibleUsers)
         setHireLeadId((prev) => prev || user?.id || visibleUsers[0]?.id || '')
+      }
+
+      if (isExternalRouteOrQuery) {
+        const [posting, userList] = await Promise.all([
+          marketplaceService.getPosting(id),
+          user?.role === 'freelancer' ? Promise.resolve([] as MarketplaceUserRow[]) : userService.list(),
+        ])
+
+        setExternalPosting(posting ?? null)
+        if (posting) {
+          await loadMarketplacePostingWorkspace(posting, userList)
+        } else {
+          setExternalApplications([])
+          setExternalLinkedProjectId(null)
+          setProjectAssignments([])
+          setTasks([])
+          setMilestones([])
+          setComments([])
+          setProject(null)
+          const visibleUsers =
+            user?.role === 'freelancer' && user
+              ? [
+                {
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                  avatarUrl: user.avatarUrl,
+                  role: user.role,
+                  lastSeen: user.lastSeen,
+                },
+              ]
+              : userList.map((u) => ({
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                avatarUrl: u.avatarUrl,
+                role: u.role,
+                lastSeen: u.lastSeen,
+              }))
+          setUsers(visibleUsers)
+        }
+
         return
       }
 
-      const [proj, taskList, milestoneList, commentList, userList, assignments] = await Promise.all([
-        projectService.get(id),
-        taskService.listByProject(id),
-        milestoneService.listByProject(id),
-        commentService.listByEntity('doc', id),
-        user?.role === 'freelancer' ? Promise.resolve([]) : userService.list(),
-        assignmentService.listByProject(id),
-      ])
+      const proj = await projectService.get(id)
+      if (proj) {
+        setExternalPosting(null)
+        setExternalApplications([])
+        setExternalLinkedProjectId(null)
+        const [taskList, milestoneList, commentList, userList, assignments] = await Promise.all([
+          taskService.listByProject(id),
+          milestoneService.listByProject(id),
+          commentService.listByEntity('doc', id),
+          user?.role === 'freelancer' ? Promise.resolve([] as MarketplaceUserRow[]) : userService.list(),
+          assignmentService.listByProject(id),
+        ])
+        setProject(proj)
+        setTasks(taskList)
+        setMilestones(milestoneList)
+        setComments(commentList)
+        setProjectAssignments(assignments)
+        const visibleUsers =
+          user?.role === 'freelancer' && user
+            ? [
+              {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                avatarUrl: user.avatarUrl,
+                role: user.role,
+                lastSeen: user.lastSeen,
+              },
+            ]
+            : userList.map((u) => ({
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              avatarUrl: u.avatarUrl,
+              role: u.role,
+              lastSeen: u.lastSeen,
+            }))
+        setUsers(visibleUsers)
+        return
+      }
+
+      const posting = await marketplaceService.getPosting(id)
+      if (posting) {
+        setResolvedAsMarketplacePosting(true)
+        setExternalPosting(posting)
+        const userList =
+          user?.role === 'freelancer' ? [] : await userService.list()
+        await loadMarketplacePostingWorkspace(posting, userList)
+        return
+      }
+
       setExternalPosting(null)
       setExternalApplications([])
       setExternalLinkedProjectId(null)
-      setProject(proj ?? null)
-      setTasks(taskList)
-      setMilestones(milestoneList)
-      setComments(commentList)
-      setProjectAssignments(assignments)
-      const visibleUsers = user?.role === 'freelancer' && user
-        ? [{ id: user.id, name: user.name, email: user.email, avatarUrl: user.avatarUrl, role: user.role, lastSeen: user.lastSeen }]
-        : userList.map((u) => ({ id: u.id, name: u.name, email: u.email, avatarUrl: u.avatarUrl, role: u.role, lastSeen: u.lastSeen }))
+      setProjectAssignments([])
+      setTasks([])
+      setMilestones([])
+      setComments([])
+      setProject(null)
+      const visibleUsers =
+        user?.role === 'freelancer' && user
+          ? [
+            {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              avatarUrl: user.avatarUrl,
+              role: user.role,
+              lastSeen: user.lastSeen,
+            },
+          ]
+          : (await userService.list()).map((u) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            avatarUrl: u.avatarUrl,
+            role: u.role,
+            lastSeen: u.lastSeen,
+          }))
       setUsers(visibleUsers)
     } finally {
       setLoading(false)
     }
-  }, [id, isExternalContext, user?.role, user?.id, user?.name, user?.avatarUrl, user?.lastSeen])
+  }, [id, isExternalRouteOrQuery, user?.role, user?.id, user?.name, user?.avatarUrl, user?.lastSeen])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
   useEffect(() => {
-    if (!isExternalContext || externalApplications.length === 0) {
+    if (!isMarketplacePostingDetail || externalApplications.length === 0) {
       setApplicationFreelancers({})
       return
     }
@@ -263,32 +460,45 @@ const ProjectDetail = () => {
       new Set(
         externalApplications
           .map((application) => application.freelancerId)
-          .filter((uid) => !!uid && !users.some((u) => u.id === uid))
+          .filter(
+            (uid) =>
+              !!uid &&
+              !users.some((u) => u.id === uid) &&
+              !applicationFreelancers[uid]
+          )
       )
     )
     if (missingIds.length === 0) return
     let cancelled = false
-    ;(async () => {
-      const fetched = await Promise.all(
-        missingIds.map(async (uid) => {
-          try {
-            return await userService.get(uid)
-          } catch {
-            return null
-          }
+      ; (async () => {
+        const placeholderUser = (uid: string): User => ({
+          id: uid,
+          name: 'Unknown user',
+          email: '',
+          companyId: '',
+          role: 'freelancer',
         })
-      )
-      if (cancelled) return
-      const map: Record<string, User> = {}
-      fetched.forEach((entry) => {
-        if (entry?.id) map[entry.id] = entry
-      })
-      setApplicationFreelancers((prev) => ({ ...prev, ...map }))
-    })()
+        const fetched = await Promise.all(
+          missingIds.map(async (uid) => {
+            try {
+              const u = await userService.get(uid)
+              return u ?? placeholderUser(uid)
+            } catch {
+              return placeholderUser(uid)
+            }
+          })
+        )
+        if (cancelled) return
+        const map: Record<string, User> = {}
+        fetched.forEach((entry) => {
+          if (entry?.id) map[entry.id] = entry
+        })
+        setApplicationFreelancers((prev) => ({ ...prev, ...map }))
+      })()
     return () => {
       cancelled = true
     }
-  }, [isExternalContext, externalApplications, users])
+  }, [isMarketplacePostingDetail, externalApplications, users])
 
   useEffect(() => {
     if (addMilestoneOpen && !milestoneTarget) {
@@ -317,20 +527,19 @@ const ProjectDetail = () => {
     }
   }, [addTaskOpen, user?.role, user?.id, taskOwnerId])
 
+  const onPeerMessagesReadThrough = useCallback((createdAtMs: number) => {
+    setChatReadAt((prev) => Math.max(prev, createdAtMs))
+  }, [])
+
+  /** Opening the chat treats existing history as caught up; new peer lines use intersection + WS/poll. */
   useEffect(() => {
     if (!chatSidebarOpen) return
-    setChatReadAt(Date.now())
-  }, [chatSidebarOpen, comments.length])
+    setChatReadAt((prev) => Math.max(prev, Date.now()))
+  }, [chatSidebarOpen])
 
   const userMap = useMemo(() => {
     const m: Record<string, string> = {}
     users.forEach((u) => (m[u.id] = u.name))
-    return m
-  }, [users])
-
-  const userAvatarMap = useMemo(() => {
-    const m: Record<string, string | undefined> = {}
-    users.forEach((u) => (m[u.id] = u.avatarUrl))
     return m
   }, [users])
 
@@ -361,21 +570,27 @@ const ProjectDetail = () => {
     if (fromAssignments.length > 0) return [...new Set(fromAssignments)]
     return [...new Set(tasks.map((t) => t.ownerId).filter(Boolean))]
   }, [tasks, projectAssignments])
-  const canManageExternalHiring = isExternalContext && (user?.role === 'company_admin' || user?.role === 'super_admin')
+  const canManageExternalHiring = isMarketplacePostingDetail && (user?.role === 'company_admin' || user?.role === 'super_admin')
   const hiredApplication = useMemo(
     () => externalApplications.find((application) => application.status === 'hired') ?? null,
     [externalApplications]
   )
+  /** Internal project id for files, Gantt, project update, and chat WebSocket room. */
   const filesProjectId = useMemo(() => {
     if (!project) return ''
-    if (isExternalContext) return externalLinkedProjectId ?? project.id
+    if (isMarketplacePostingDetail) {
+      if (externalLinkedProjectId) return externalLinkedProjectId
+      // Workspace project loaded: real project id differs from posting id in the URL.
+      if (project.id && project.id !== id) return project.id
+      return ''
+    }
     return project.id
-  }, [project, isExternalContext, externalLinkedProjectId])
+  }, [project, isMarketplacePostingDetail, externalLinkedProjectId, id])
   const getFreelancerProfile = useCallback((freelancerId: string) => {
     return users.find((u) => u.id === freelancerId) ?? applicationFreelancers[freelancerId] ?? null
   }, [users, applicationFreelancers])
   const heroAssignedConsultants = useMemo(() => {
-    if (isExternalContext) {
+    if (isMarketplacePostingDetail) {
       const byId = new Map<string, { id: string; name: string; avatarUrl?: string }>()
       externalApplications
         .filter((application) => application.status === 'hired')
@@ -399,7 +614,7 @@ const ProjectDetail = () => {
       name: userMap[uid] ?? uid,
       avatarUrl: users.find((u) => u.id === uid)?.avatarUrl,
     }))
-  }, [isExternalContext, externalApplications, getFreelancerProfile, project, tasks, userMap, users])
+  }, [isMarketplacePostingDetail, externalApplications, getFreelancerProfile, project, tasks, userMap, users])
   const applicationTabs = useMemo(() => {
     const counts = {
       all: externalApplications.length,
@@ -441,23 +656,6 @@ const ProjectDetail = () => {
     { value: 'medium', label: 'Medium' },
     { value: 'low', label: 'Low' },
   ]
-
-  const handleAddComment = useCallback(async () => {
-    if (!id || !user?.id || !newComment.trim()) return
-    setCommentSending(true)
-    try {
-      await commentService.add({
-        entityType: 'doc',
-        entityId: id,
-        authorId: user.id,
-        body: newComment.trim(),
-      })
-      setNewComment('')
-      loadData()
-    } finally {
-      setCommentSending(false)
-    }
-  }, [id, user?.id, newComment, loadData])
 
   const handleAddMilestone = useCallback(async () => {
     if (!id || !milestoneName.trim() || !milestoneTarget) return
@@ -510,42 +708,30 @@ const ProjectDetail = () => {
     }
   }, [id, taskTitle, taskMilestoneId, taskOwnerId, taskPriority, taskDueDate, loadData])
 
-  const chatParticipantIds = useMemo(
+  const workspaceUsersForChat = useMemo(
     () =>
-      project
-        ? [...new Set([project.projectLeadId, ...comments.map((c) => c.authorId)])]
-        : [],
-    [project, comments]
+      users.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        avatarUrl: u.avatarUrl,
+        role: u.role,
+        lastSeen: u.lastSeen,
+      })),
+    [users],
   )
-  const chatParticipantCount = chatParticipantIds.length
 
-  const chatLastSeenByAuthor = useMemo(() => {
-    const m: Record<string, string> = {}
-    chatParticipantIds.forEach((authorId) => {
-      const u = users.find((usr) => usr.id === authorId)
-      if (authorId === user?.id || u?.lastSeen === 'online') {
-        m[authorId] = 'online'
-      } else if (u?.lastSeen) {
-        m[authorId] = u.lastSeen
-      } else {
-        m[authorId] = new Date(Date.now() - 10 * 60000).toISOString()
-      }
-    })
-    return m
-  }, [chatParticipantIds, user?.id, users])
-
-  const chatAdminUserIds = useMemo(
-    () => users.filter((u) => u.role === 'company_admin' || u.role === 'super_admin').map((u) => u.id),
-    [users]
+  const handleUpdateProjectFromChat = useCallback(
+    async (payload: { name: string; description: string }) => {
+      if (!filesProjectId) return
+      await projectService.update(filesProjectId, {
+        name: payload.name,
+        description: payload.description || undefined,
+      })
+      await loadData()
+    },
+    [filesProjectId, loadData],
   )
-  const chatLeadUserIds = useMemo(() => {
-    const ids = new Set<string>()
-    if (project?.projectLeadId) ids.add(project.projectLeadId)
-    users.forEach((u) => {
-      if (u.role === 'project_lead') ids.add(u.id)
-    })
-    return Array.from(ids)
-  }, [project?.projectLeadId, users])
 
   const projectWithMeta: ProjectWithMeta | null = useMemo(() => {
     if (!project) return null
@@ -615,7 +801,7 @@ const ProjectDetail = () => {
     if (!id) return
     setActionSaving(true)
     try {
-      if (isExternalContext) {
+      if (isMarketplacePostingDetail) {
         const nextPostingStatus = externalPosting?.status === 'closed' ? 'open' : 'closed'
         await marketplaceService.updatePosting(id, { status: nextPostingStatus })
       } else {
@@ -627,14 +813,14 @@ const ProjectDetail = () => {
     } finally {
       setActionSaving(false)
     }
-  }, [id, isExternalContext, externalPosting?.status, project?.status, loadData])
+  }, [id, isMarketplacePostingDetail, externalPosting?.status, project?.status, loadData])
 
   const handleShortlistApplication = useCallback(async (applicationId: string) => {
     if (!id) return
     setExternalActionSavingId(applicationId)
     try {
       await marketplaceService.updateApplicationStatus(applicationId, 'shortlisted')
-      const refreshed = await marketplaceService.listApplications(id)
+      const refreshed = await loadApplicationsWithFilesForPosting(id)
       setExternalApplications(refreshed)
     } finally {
       setExternalActionSavingId(null)
@@ -646,7 +832,7 @@ const ProjectDetail = () => {
     setExternalActionSavingId(applicationId)
     try {
       await marketplaceService.updateApplicationStatus(applicationId, status)
-      const refreshed = await marketplaceService.listApplications(id)
+      const refreshed = await loadApplicationsWithFilesForPosting(id)
       setExternalApplications(refreshed)
     } finally {
       setExternalActionSavingId(null)
@@ -665,7 +851,7 @@ const ProjectDetail = () => {
         setExternalLinkedProjectId(hireResult.projectId)
       }
       if (id) {
-        const refreshed = await marketplaceService.listApplications(id)
+        const refreshed = await loadApplicationsWithFilesForPosting(id)
         setExternalApplications(refreshed)
       }
     } finally {
@@ -828,7 +1014,7 @@ const ProjectDetail = () => {
               {project.name}
             </Text>
             <Text variant="sm" className="opacity-70 truncate" style={{ color: dark }}>
-              {isExternalContext
+              {isMarketplacePostingDetail
                 ? `Posted by: ${leadName} · ${(externalPosting?.requiredSkills?.length ?? 0)} skill${(externalPosting?.requiredSkills?.length ?? 0) !== 1 ? 's' : ''}`
                 : `Lead: ${leadName} · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`}
             </Text>
@@ -921,10 +1107,10 @@ const ProjectDetail = () => {
                   onClick={() => setSuspendOpen(true)}
                   className="shrink-0 p-2 rounded-base opacity-80 hover:opacity-100 transition-opacity focus:outline-none focus:ring-0"
                   style={{ color: dark, backgroundColor: 'transparent' }}
-                  title={isExternalContext ? (externalPosting?.status === 'closed' ? 'Resume project' : 'Suspend project') : (project?.status === 'suspended' ? 'Resume project' : 'Suspend project')}
-                  aria-label={isExternalContext ? (externalPosting?.status === 'closed' ? 'Resume project' : 'Suspend project') : (project?.status === 'suspended' ? 'Resume project' : 'Suspend project')}
+                  title={isMarketplacePostingDetail ? (externalPosting?.status === 'closed' ? 'Resume project' : 'Suspend project') : (project?.status === 'suspended' ? 'Resume project' : 'Suspend project')}
+                  aria-label={isMarketplacePostingDetail ? (externalPosting?.status === 'closed' ? 'Resume project' : 'Suspend project') : (project?.status === 'suspended' ? 'Resume project' : 'Suspend project')}
                 >
-                  {(isExternalContext ? externalPosting?.status === 'closed' : project?.status === 'suspended') ? (
+                  {(isMarketplacePostingDetail ? externalPosting?.status === 'closed' : project?.status === 'suspended') ? (
                     <PlayCircle className="w-5 h-5" />
                   ) : (
                     <PauseCircle className="w-5 h-5" />
@@ -943,7 +1129,7 @@ const ProjectDetail = () => {
                 </button>
               </>
             )}
-            {isInternalProject && (
+            {showWorkspaceViews && (
               <button
                 type="button"
                 onClick={() => setChatSidebarOpen((prev) => !prev)}
@@ -974,7 +1160,7 @@ const ProjectDetail = () => {
               style={{ color: dark, fontSize: baseFontSize }}
             >
               <ChevronLeft className="w-4 h-4 shrink-0" />
-              {isExternalContext ? 'Marketplace Projects' : 'Projects'}
+              {isMarketplacePostingDetail ? 'Marketplace Projects' : 'Projects'}
             </Link>
             <span className="opacity-50" style={{ color: dark }}>/</span>
             <span style={{ color: dark, fontSize: baseFontSize }} className="font-medium truncate max-w-[200px]">
@@ -993,30 +1179,25 @@ const ProjectDetail = () => {
                       <p className="font-medium truncate" style={{ fontSize: baseFontSize, color: dark }}>
                         {project.name}
                       </p>
-                      {project.status && (
-                        <Badge variant={project.status === 'suspended' ? 'warning' : 'success'}>
-                          {project.status === 'suspended' ? 'Suspended' : 'Active'}
-                        </Badge>
-                      )}
+                      <Badge variant={(project.status ?? 'active') === 'suspended' ? 'warning' : 'success'}>
+                        {(project.status ?? 'active') === 'suspended' ? 'Suspended' : 'Active'}
+                      </Badge>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm opacity-70 mb-0.5" style={{ fontSize: Math.max(minFontSize, baseFontSize * 0.8), color: dark }}>
                       Description
                     </p>
-                    <p
-                      className="opacity-90 overflow-hidden"
-                      style={{
-                        fontSize: baseFontSize,
-                        color: dark,
-                        lineHeight: 1.55,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical' as const,
-                      }}
+                    <div
+                      className="opacity-90 max-h-48 overflow-y-auto"
+                      style={{ fontSize: baseFontSize, color: dark, lineHeight: 1.55 }}
                     >
-                      {project.description || '—'}
-                    </p>
+                      {project.description?.trim() ? (
+                        <SafeHtml html={project.description} className="opacity-90" />
+                      ) : (
+                        <span>—</span>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <p className="text-sm opacity-70 mb-2" style={{ fontSize: Math.max(minFontSize, baseFontSize * 0.8), color: dark }}>
@@ -1087,15 +1268,11 @@ const ProjectDetail = () => {
                         <div className="flex items-center gap-2 min-w-0">
                           <Target className="w-4 h-4 shrink-0 opacity-70" style={{ color: dark }} />
                           <span className="opacity-70 shrink-0" style={{ color: dark }}>
-                            {isExternalContext ? 'Budget' : 'Milestones'}
+                            {isMarketplacePostingDetail ? 'Budget' : 'Milestones'}
                           </span>
                           <span style={{ color: dark }}>
-                            {isExternalContext && externalPosting
-                              ? externalPosting.budgetType === 'hourly'
-                                ? `${formatMoney(externalPosting.hourlyMin, externalPosting.currency)} – ${formatMoney(externalPosting.hourlyMax, externalPosting.currency)} / hr`
-                                : externalPosting.budgetType === 'fixed'
-                                  ? `${formatMoney(externalPosting.fixedMin, externalPosting.currency)} – ${formatMoney(externalPosting.fixedMax, externalPosting.currency)}`
-                                  : `${formatMoney(externalPosting.hourlyMin, externalPosting.currency)} – ${formatMoney(externalPosting.hourlyMax, externalPosting.currency)} / hr • ${formatMoney(externalPosting.fixedMin, externalPosting.currency)} – ${formatMoney(externalPosting.fixedMax, externalPosting.currency)} fixed`
+                            {isMarketplacePostingDetail && externalPosting
+                              ? postingBudgetSummary(externalPosting, formatMoney)
                               : milestones.length
                                 ? `${milestones.length} set`
                                 : 'None'}
@@ -1103,9 +1280,9 @@ const ProjectDetail = () => {
                         </div>
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="opacity-70 shrink-0" style={{ color: dark }}>
-                            {isExternalContext ? 'Posting status' : 'Assigned consultants'}
+                            {isMarketplacePostingDetail ? 'Posting status' : 'Assigned consultants'}
                           </span>
-                          {isExternalContext && externalPosting ? (
+                          {isMarketplacePostingDetail && externalPosting ? (
                             <span style={{ color: dark }}>
                               {hiredApplication
                                 ? `Assigned to ${getFreelancerProfile(hiredApplication.freelancerId)?.name ?? 'Freelancer'}`
@@ -1151,7 +1328,7 @@ const ProjectDetail = () => {
                           )}
                         </div>
                       </div>
-                      {isExternalContext && (
+                      {isMarketplacePostingDetail && (
                         <div className="flex items-start gap-2 min-w-0 flex-wrap">
                           {externalPosting?.requiredSkills && externalPosting.requiredSkills.length > 0 ? (
                             <span className="flex flex-wrap gap-2">
@@ -1204,7 +1381,7 @@ const ProjectDetail = () => {
             </Card>
           </section>
 
-          {isExternalContext && canManageExternalHiring && (
+          {isMarketplacePostingDetail && canManageExternalHiring && (
             <section className="mb-6">
               <Card className="p-5" style={{ backgroundColor: fg }}>
                 <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -1234,6 +1411,7 @@ const ProjectDetail = () => {
                         onClick={() => setApplicationStatusTab(tab.key)}
                         className="px-3 py-1.5 rounded-base border transition-opacity font-medium"
                         style={{
+                          fontSize: baseFontSize,
                           borderColor: selected ? `${primaryColor}55` : borderColor,
                           color: dark,
                           backgroundColor: selected ? `${primaryColor}16` : 'transparent',
@@ -1286,23 +1464,63 @@ const ProjectDetail = () => {
                               >
                                 {application.status}
                               </span>
-                              <span
-                                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                                style={{ backgroundColor: fg, color: dark }}
-                              >
-                                {application.currency && application.proposedHourlyRate != null
-                                  ? `${formatMoney(application.proposedHourlyRate, application.currency)} / hr`
-                                  : application.currency && application.proposedFixed != null
-                                    ? `${formatMoney(application.proposedFixed, application.currency)} fixed`
-                                    : 'Rate not provided'}
-                              </span>
+                              {(application.proposedHourlyRate != null || application.proposedFixed != null) && (
+                                <span
+                                  className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                                  style={{ backgroundColor: fg, color: dark }}
+                                >
+                                  {[
+                                    application.proposedHourlyRate != null
+                                      ? `${formatMoney(application.proposedHourlyRate, application.currency)} / hr`
+                                      : null,
+                                    application.proposedFixed != null
+                                      ? `${formatMoney(application.proposedFixed, application.currency)} fixed`
+                                      : null,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(' + ')}
+                                </span>
+                              )}
                             </div>
                           </div>
-                          {application.coverLetter ? (
+                          {application.coverLetter?.trim() ? (
                             <div className="rounded-base px-3 py-2" style={{ backgroundColor: 'transparent' }}>
-                              <Text variant="sm" className="opacity-80 line-clamp-2" style={{ color: dark }}>
-                                {application.coverLetter}
+                              <div
+                                className="max-h-48 overflow-y-auto scroll-slim"
+                                style={{
+                                  fontSize: Math.max(minFontSize, baseFontSize * 0.875),
+                                  color: dark,
+                                  lineHeight: 1.55,
+                                }}
+                              >
+                                <SafeHtml html={application.coverLetter} className="opacity-90" />
+                              </div>
+                            </div>
+                          ) : null}
+                          {application.attachments && application.attachments.length > 0 ? (
+                            <div className="rounded-base px-3 py-2" style={{ backgroundColor: 'transparent' }}>
+                              <Text variant="sm" className="opacity-60 mb-1.5 block" style={{ color: dark }}>
+                                Attachments
                               </Text>
+                              <div className="flex flex-wrap gap-2">
+                                {application.attachments.map((att) => (
+                                  <a
+                                    key={att.id}
+                                    href={att.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[12px] font-medium transition-opacity hover:opacity-90 max-w-full"
+                                    style={{
+                                      backgroundColor: bg ?? 'rgba(0,0,0,0.04)',
+                                      color: dark,
+                                      border: borderColor ? `1px solid ${borderColor}` : undefined,
+                                    }}
+                                  >
+                                    <FileText className="w-4 h-4 shrink-0" style={{ opacity: 0.7 }} />
+                                    <span className="truncate max-w-[200px]">{att.name}</span>
+                                  </a>
+                                ))}
+                              </div>
                             </div>
                           ) : null}
                           <div className="flex items-center gap-2 flex-wrap pt-1 rounded-base px-3 py-2" style={{ backgroundColor: 'transparent' }}>
@@ -1381,9 +1599,7 @@ const ProjectDetail = () => {
                     )
                   })}
                   {visibleApplications.length === 0 && (
-                    <Text variant="sm" className="opacity-75" style={{ color: dark }}>
-                      No applications in this status.
-                    </Text>
+                    <EmptyState variant="inbox" compact title="No applications in this status" description="Try another tab or check back later." className="py-6 px-2" />
                   )}
                 </div>
               </Card>
@@ -1391,79 +1607,58 @@ const ProjectDetail = () => {
           )}
 
           {/* Timeline — Gantt-style diagram (phases / milestones by date); fills remaining space */}
-          {isInternalProject && (
-          <section className="flex-1 min-h-0 flex flex-col mb-6 rounded-base overflow-hidden" style={{ backgroundColor: fg }}>
-            <p className="text-sm opacity-70 font-medium mb-4 shrink-0 px-4 pt-4" style={{ fontSize: baseFontSize * 0.9, color: dark }}>
-              Timeline
-            </p>
-            <div className="flex-1 min-h-0 flex flex-col rounded-base overflow-hidden px-4 pb-4">
-              <ProjectTimelineGantt
-                project={project}
-                milestones={milestones}
-                tasks={tasks}
-                userMap={userMap}
-                users={users}
-                primaryColor={primaryColor}
-                secondaryColor={secondaryColor}
-                dark={dark ?? '#111'}
-                fg={fg ?? '#fff'}
-                bg={bg ?? '#f4f4f4'}
-                borderColor={borderColor}
-                darkMode={darkMode}
-                doneStateId={DONE_STATE_ID}
-                successColor={current?.system?.success}
-                currentUserId={user?.id}
-              />
-            </div>
-          </section>
+          {showWorkspaceViews && (
+            <section className="flex-1 min-h-0 flex flex-col mb-6 rounded-base overflow-hidden" style={{ backgroundColor: fg }}>
+              <p className="text-sm opacity-70 font-medium mb-4 shrink-0 px-4 pt-4" style={{ fontSize: baseFontSize * 0.9, color: dark }}>
+                Timeline
+              </p>
+              <div className="flex-1 min-h-0 flex flex-col rounded-base overflow-hidden px-4 pb-4">
+                <ProjectTimelineGantt
+                  project={project}
+                  milestones={milestones}
+                  tasks={tasks}
+                  userMap={userMap}
+                  users={users}
+                  primaryColor={primaryColor}
+                  secondaryColor={secondaryColor}
+                  dark={dark ?? '#111'}
+                  fg={fg ?? '#fff'}
+                  bg={bg ?? '#f4f4f4'}
+                  borderColor={borderColor}
+                  darkMode={darkMode}
+                  doneStateId={DONE_STATE_ID}
+                  successColor={current?.system?.success}
+                  currentUserId={user?.id}
+                />
+              </div>
+            </section>
           )}
 
         </div>
       </div>
 
-      {/* Chat toggle: top-left when sidebar closed; toggles sidebar with animation */}
-      <AnimatePresence initial={false}>
-        {isInternalProject && chatSidebarOpen ? (
-          <motion.div
-            key="sidebar"
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: '30vw', opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'tween', duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="min-w-0 shrink-0 overflow-hidden flex flex-col h-full"
-            style={{ maxWidth: '30vw', minWidth: '30vw' }}
-          >
-            <ProjectChatSidebar
-              projectName={project.name}
-              participantCount={chatParticipantCount}
-              comments={comments}
-              userMap={userMap}
-              userAvatarMap={userAvatarMap}
-              lastSeenByAuthor={chatLastSeenByAuthor}
-              adminUserIds={chatAdminUserIds}
-              leadUserIds={chatLeadUserIds}
-              currentUserId={user?.id}
-              newComment={newComment}
-              onNewCommentChange={setNewComment}
-              sending={commentSending}
-              onSend={handleAddComment}
-              participants={users.filter((u) => chatParticipantIds.includes(u.id)).map((u) => ({
-                id: u.id,
-                name: u.name,
-                avatarUrl: u.avatarUrl,
-                role: u.role,
-              }))}
-              projectDescription={project.description ?? undefined}
-              onSaveGroupSettings={async (payload) => {
-                if (!id) return
-                await projectService.update(id, { name: payload.name, description: payload.description || undefined })
-                loadData()
-              }}
-              onLeaveGroup={() => setChatSidebarOpen(false)}
-            />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {showWorkspaceViews && project && id ? (
+        <ProjectWorkspaceChat
+          open={chatSidebarOpen}
+          routeId={id}
+          isMarketplacePostingDetail={isMarketplacePostingDetail}
+          isContributor={isContributor}
+          project={project}
+          externalPosting={externalPosting}
+          externalApplications={externalApplications}
+          applicationFreelancers={applicationFreelancers}
+          workspaceUsers={workspaceUsersForChat}
+          currentUser={user}
+          comments={comments}
+          setComments={setComments}
+          refreshWorkspace={loadData}
+          wsRoomProjectId={filesProjectId}
+          filesProjectId={filesProjectId}
+          onUpdateProjectFromChat={handleUpdateProjectFromChat}
+          onCloseSidebar={() => setChatSidebarOpen(false)}
+          onPeerMessagesReadThrough={onPeerMessagesReadThrough}
+        />
+      ) : null}
 
       <Modal open={isInternalProject && addMilestoneOpen} onClose={() => !saving && setAddMilestoneOpen(false)}>
         <div className="p-6 flex flex-col" style={{ backgroundColor: current?.system?.foreground }}>
@@ -1560,13 +1755,13 @@ const ProjectDetail = () => {
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor }}>
             <Button variant="background" label="Cancel" onClick={() => !saving && setAddMilestoneOpen(false)} disabled={saving} />
-            <Button label="Add milestone" onClick={handleAddMilestone} disabled={saving || !milestoneName.trim() || !milestoneTarget} />
+            <Button label="Add milestone" onClick={handleAddMilestone} disabled={saving || !milestoneName.trim() || !milestoneTarget} loading={saving} />
           </footer>
         </div>
       </Modal>
 
       {/* Add task modal */}
-      <Modal open={isInternalProject && addTaskOpen} onClose={() => !saving && setAddTaskOpen(false)}>
+      {/* <Modal open={isInternalProject && addTaskOpen} onClose={() => !saving && setAddTaskOpen(false)}>
         <div className="p-6 flex flex-col" style={{ backgroundColor: current?.system?.foreground }}>
           <h2 className="font-medium mb-4" style={{ fontSize: baseFontSize, color: dark }}>Add task</h2>
           <div className="space-y-4">
@@ -1615,10 +1810,14 @@ const ProjectDetail = () => {
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor }}>
             <Button variant="background" label="Cancel" onClick={() => !saving && setAddTaskOpen(false)} disabled={saving} />
-            <Button label="Add task" onClick={handleAddTask} disabled={saving || !taskTitle.trim() || !taskOwnerId} />
+            <Button label="Add task" onClick={handleAddTask} disabled={saving || !taskTitle.trim() || !taskOwnerId} loading={saving} />
           </footer>
         </div>
-      </Modal>
+      </Modal> */}
+
+      <LogTimeModal initialProjectId={project?.id} onClose={() => !saving && setAddTaskOpen(false)} open={isInternalProject && addTaskOpen} onSaved={(t) => {
+        navigate(`/app/projects/${project?.id}/milestones/${(t as Task)?.milestoneId}`)
+      }} />
 
       <EditProjectModal
         open={isInternalProject && editOpen}

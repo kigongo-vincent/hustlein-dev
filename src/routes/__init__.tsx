@@ -58,12 +58,12 @@ const RootRedirect = () => {
 
   if (restoring) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] text-[var(--primary-dark)]">
         <Spinner size="md" />
       </div>
     )
   }
-  return <Navigate to={user ? '/app' : '/auth'} replace />
+  return <Navigate to={user ? '/app' : '/auth/login'} replace />
 }
 
 const __init__ = () => {

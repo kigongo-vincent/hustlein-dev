@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Text from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Modal, Input, Textarea } from '../../components/ui'
+import { Card, Button, Modal, Input, Textarea, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { assignmentService, billingService } from '../../services'
 import type { MyAssignment } from '../../types'
@@ -132,14 +132,14 @@ const MyAssignmentsPage = () => {
             </Text>
           </div>
         ) : items.length === 0 ? (
-          <div className="p-8 text-center">
-            <Text variant="sm" className="opacity-80">
-              No contracts yet. Get hired from the marketplace first.
-            </Text>
-            <div className="mt-3 flex justify-center">
-              <Button label="Browse marketplace" onClick={() => navigate('/app/marketplace')} />
-            </div>
-          </div>
+          <EmptyState
+            variant="assignment"
+            title="No contracts yet"
+            description="Get hired from the marketplace first."
+            className="p-8"
+          >
+            <Button label="Browse marketplace" onClick={() => navigate('/app/marketplace')} />
+          </EmptyState>
         ) : (
           <div>
             {items.map((a) => (
@@ -211,7 +211,7 @@ const MyAssignmentsPage = () => {
 
           <div className="flex justify-end gap-2">
             <Button label="Cancel" variant="background" onClick={() => setLogFor(null)} />
-            <Button label={saving ? 'Saving…' : 'Submit'} onClick={saveLog} disabled={saving} />
+            <Button label="Submit" onClick={saveLog} disabled={saving} loading={saving} />
           </div>
         </div>
       </Modal>

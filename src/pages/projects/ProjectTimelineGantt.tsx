@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import Text, { baseFontSize } from '../../components/base/Text'
+import EmptyState from '../../components/ui/EmptyState'
 import Avatar from '../../components/base/Avatar'
 import type { Project, Milestone, Task } from '../../types'
 import { NOTE_COLORS } from '../../types'
@@ -190,19 +191,14 @@ export default function ProjectTimelineGantt({
   }
 
   if (milestones.length === 0) {
-    const emptyPad = darkMode ? 20 : 16
     return (
-      <div
-        className="rounded-base flex items-center justify-center overflow-hidden"
-        style={{
-          backgroundColor: fg,
-          minHeight: 120,
-          padding: emptyPad,
-        }}
-      >
-        <Text variant="sm" className={darkMode ? 'opacity-90' : 'opacity-70'} style={{ color: dark }}>
-          No milestones yet. Add milestones to see the timeline.
-        </Text>
+      <div className="rounded-base overflow-hidden" style={{ backgroundColor: fg, minHeight: 120 }}>
+        <EmptyState
+          variant="folder"
+          title="No milestones yet"
+          description="Add milestones to see the timeline."
+          className="py-8"
+        />
       </div>
     )
   }

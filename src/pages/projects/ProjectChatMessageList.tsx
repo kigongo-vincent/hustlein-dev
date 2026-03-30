@@ -1,7 +1,8 @@
-import { useRef, useEffect } from 'react'
+import { useLayoutEffect, useRef, useEffect, type RefObject } from 'react'
 import Avatar from '../../components/base/Avatar'
 import Text, { baseFontSize, minFontSize } from '../../components/base/Text'
-import { MessageSquare, FileText, Shield, UserStar, CheckCheck } from 'lucide-react'
+import EmptyState from '../../components/ui/EmptyState'
+import { FileText, Shield, UserStar, CheckCheck } from 'lucide-react'
 import type { Comment } from '../../types'
 import { formatLastSeen, formatTimeShort } from './utils'
 import type { LastSeenByAuthor } from './projectChatTypes'
@@ -20,6 +21,8 @@ export type ProjectChatMessageListProps = {
   foreground: string
   /** Theme border color for badge ring (dark mode friendly) */
   borderColor?: string
+  scrollRootRef?: RefObject<HTMLDivElement | null>
+  onPeerMessagesReadThrough?: (createdAtMs: number) => void
 }
 
 export default function ProjectChatMessageList({
@@ -35,19 +38,65 @@ export default function ProjectChatMessageList({
   bubbleBg,
   foreground,
   borderColor,
+  scrollRootRef,
+  onPeerMessagesReadThrough,
 }: ProjectChatMessageListProps) {
   const badgeBorder = borderColor ?? 'rgba(255,255,255,0.5)'
   const messagesEndRef = useRef<HTMLLIElement>(null)
+  const onReadRef = useRef(onPeerMessagesReadThrough)
+  onReadRef.current = onPeerMessagesReadThrough
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [comments.length])
 
+  useLayoutEffect(() => {
+    const root = scrollRootRef?.current
+    const enabled = Boolean(root && onPeerMessagesReadThrough)
+    if (!enabled || !root) return
+
+    let raf = 0
+    let maxPending = 0
+    const flush = () => {
+      raf = 0
+      if (maxPending > 0) {
+        onReadRef.current?.(maxPending)
+        maxPending = 0
+      }
+    }
+    const markSeen = (createdAtMs: number) => {
+      maxPending = Math.max(maxPending, createdAtMs)
+      if (!raf) raf = requestAnimationFrame(flush)
+    }
+
+    const observers: IntersectionObserver[] = []
+    for (const c of comments) {
+      if (c.authorId === currentUserId) continue
+      const t = new Date(c.createdAt).getTime()
+      if (Number.isNaN(t)) continue
+      const el = root.querySelector(`[data-chat-peer-message="${CSS.escape(c.id)}"]`)
+      if (!(el instanceof HTMLElement)) continue
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting && e.intersectionRatio >= 0.2) markSeen(t)
+          }
+        },
+        { root, rootMargin: '0px 0px -12px 0px', threshold: [0, 0.2, 0.35, 0.55, 0.75, 1] }
+      )
+      io.observe(el)
+      observers.push(io)
+    }
+
+    return () => {
+      observers.forEach((o) => o.disconnect())
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [comments, currentUserId, scrollRootRef, onPeerMessagesReadThrough])
+
   if (comments.length === 0) {
     return (
-      <div className="py-6 text-center opacity-70" style={{ color: dark }}>
-        <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-40" />
-        <p>No messages yet.</p>
-      </div>
+      <EmptyState variant="inbox" compact title="No messages yet" description="Start the conversation below." className="py-6" />
     )
   }
 
@@ -58,7 +107,11 @@ export default function ProjectChatMessageList({
         const authorName = userMap[c.authorId] ?? (c.authorId === '__demo__' ? 'Demo User' : c.authorId)
         const displayName = isOwn ? 'You' : authorName
         return (
-          <li key={c.id} className="flex justify-start">
+          <li
+            key={c.id}
+            className="flex justify-start"
+            {...(!isOwn ? { 'data-chat-peer-message': c.id } : {})}
+          >
             <div className="flex gap-2 w-max max-w-[85%] items-start">
               <div className="relative shrink-0 mt-0.5 w-fit">
                 <Avatar

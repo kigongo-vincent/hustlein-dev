@@ -65,6 +65,8 @@ export interface ProjectApplication {
   proposedFixed?: number
   currency: string
   status: ApplicationStatus
+  /** Set when status is hired — internal project for board, milestones, chat */
+  linkedProjectId?: string
   createdAt: string
   updatedAt: string
   attachments?: ApplicationFile[]
@@ -402,7 +404,7 @@ export interface CalendarEvent {
   title: string
   start: string
   end: string
-  type: 'task_schedule' | 'planning_block' | 'milestone_deadline'
+  type: 'task_schedule' | 'planning_block' | 'milestone_deadline' | 'application_deadline'
 }
 
 // Invoice (company admin)

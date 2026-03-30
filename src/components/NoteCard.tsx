@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Text, { baseFontSize } from './base/Text'
 import { Themestore } from '../data/Themestore'
 import { NOTE_COLORS } from '../types'
+import { htmlToPlainPreview } from '../utils/richText'
 import { Check, Palette } from 'lucide-react'
 
 /** Dark-mode variants for note card/editor backgrounds (muted, tinted). Export for note form modal. */
@@ -55,7 +56,8 @@ export default function NoteCard({
   const isLightBg = !isDarkMode && (rawBg === '#fff' || rawBg === '#ffffff' || (rawBg.startsWith('#') && parseInt(rawBg.slice(1), 16) > 0xeeeeee))
   const textColor = isDarkMode ? (textOnDark ?? '#e0e0e0') : (isLightBg ? '#1f2937' : '#1f2937')
 
-  const contentPreview = content?.replace(/\n/g, ' ').slice(0, variant === 'compact' ? 40 : 120) + (content?.length > (variant === 'compact' ? 40 : 120) ? '…' : '')
+  const previewMax = variant === 'compact' ? 40 : 120
+  const contentPreview = htmlToPlainPreview(content, previewMax)
 
   return (
     <div

@@ -47,7 +47,7 @@ export interface ThemestoreI {
   getThemeByName: (theme: themeMode) => ThemeI;
 }
 
-/** Dark theme: white primary, muted white text, improved background hierarchy */
+/** Dark theme: warm brown brand, muted surfaces */
 const darkTheme: ThemeI = {
   system: {
     background: "#0a0a0a",
@@ -58,9 +58,9 @@ const darkTheme: ThemeI = {
     dark: "#e0e0e0",
   },
   brand: {
-    primary: "#ffffff",
-    secondary: "#FF9600",
-    onPrimary: "#0a0a0a",
+    primary: "#AE4D30",
+    secondary: "#723B00",
+    onPrimary: "#f8f4f1",
   },
   accent: {
     blue: "#4DABF7",
@@ -104,11 +104,17 @@ function mergeTheme(base: ThemeI, overrides: ThemeOverrides | null): ThemeI {
   };
 }
 
-function loadStored(): { mode: themeMode; customOverrides: ThemeOverrides | null } {
+function loadStored(): {
+  mode: themeMode;
+  customOverrides: ThemeOverrides | null;
+} {
   try {
     const raw = localStorage.getItem(THEME_STORAGE_KEY);
     if (!raw) return { mode: "light", customOverrides: null };
-    const parsed = JSON.parse(raw) as { mode?: themeMode; customOverrides?: ThemeOverrides | null };
+    const parsed = JSON.parse(raw) as {
+      mode?: themeMode;
+      customOverrides?: ThemeOverrides | null;
+    };
     return {
       mode: parsed.mode === "dark" ? "dark" : "light",
       customOverrides: parsed.customOverrides ?? null,
@@ -120,7 +126,10 @@ function loadStored(): { mode: themeMode; customOverrides: ThemeOverrides | null
 
 function saveStored(mode: themeMode, customOverrides: ThemeOverrides | null) {
   try {
-    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ mode, customOverrides }));
+    localStorage.setItem(
+      THEME_STORAGE_KEY,
+      JSON.stringify({ mode, customOverrides })
+    );
   } catch {
     // ignore
   }
@@ -129,6 +138,31 @@ function saveStored(mode: themeMode, customOverrides: ThemeOverrides | null) {
 const stored = loadStored();
 const baseTheme = stored.mode === "dark" ? darkTheme : lightTheme;
 const initialCurrent = mergeTheme(baseTheme, stored.customOverrides);
+
+/** Apply theme to <html> / body / CSS vars (auth routes never mount AppShell, so this must run globally). */
+export function applyThemeToDocument(current: ThemeI, mode: themeMode): void {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  root.setAttribute("data-theme", mode);
+  root.style.setProperty("--bg", current.system.background);
+  root.style.setProperty("--fg", current.system.foreground);
+  document.body.style.backgroundColor = current.system.background;
+  const rootEl = document.getElementById("root");
+  if (rootEl) rootEl.style.backgroundColor = current.system.background;
+  const isDark = mode === "dark";
+  const track = isDark
+    ? "rgba(255,255,255,0.06)"
+    : current.system.background ?? "rgba(0,0,0,0.04)";
+  const thumb = isDark
+    ? "rgba(255,255,255,0.22)"
+    : current.system.border ?? "rgba(0,0,0,0.18)";
+  const thumbHover = isDark
+    ? "rgba(255,255,255,0.35)"
+    : current.system.border ?? "rgba(0,0,0,0.28)";
+  root.style.setProperty("--scrollbar-track", track);
+  root.style.setProperty("--scrollbar-thumb", thumb);
+  root.style.setProperty("--scrollbar-thumb-hover", thumbHover);
+}
 
 export const Themestore = create<ThemestoreI>((set, get) => ({
   current: initialCurrent,

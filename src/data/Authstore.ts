@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import type { AuthUser } from "../types"
 import { setStoredToken } from "../api"
+import { clearAuthProvider } from "../utils/authProviderStorage"
 
 interface AuthstoreI {
   user: AuthUser | null
@@ -16,6 +17,7 @@ export const Authstore = create<AuthstoreI>((set) => ({
     set({ user })
   },
   logout: () => {
+    clearAuthProvider()
     setStoredToken(null)
     // Prevent dev-only autologin from immediately re-authing after a user-initiated logout.
     // (Protected route checks this key to decide whether to call `maybeDevAutologin()`.)

@@ -11,12 +11,9 @@ import { APP_ICON_SIZE, getMutedIconColor } from '../base/iconTokens'
 type HeaderProps = {
   sidebarOpen: boolean
   onToggleSidebar: () => void
-  isDesktop: boolean
 }
 
-
-
-const Header = ({ sidebarOpen, onToggleSidebar, isDesktop }: HeaderProps) => {
+const Header = ({ sidebarOpen, onToggleSidebar }: HeaderProps) => {
   const { user, logout } = Authstore()
   const { current, mode, setTheme } = Themestore()
   const navigate = useNavigate()
@@ -51,22 +48,17 @@ const Header = ({ sidebarOpen, onToggleSidebar, isDesktop }: HeaderProps) => {
     >
       {/* Left: sidebar toggle + user */}
       <div className="flex items-center gap-2">
-        {!isDesktop ? (
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            className="w-6 h-6 rounded-base opacity-55 hover:opacity-90 transition-opacity flex items-center justify-center"
-            style={{ color: muted }}
-            title={sidebarOpen ? 'Close menu' : 'Open menu'}
-            aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={sidebarOpen}
-          >
-            {sidebarOpen ? <X size={14} /> : <Menu size={14} />}
-          </button>
-        ) : (
-          // Keep header alignment consistent when the desktop sidebar is always shown.
-          <div className="w-6 h-6" />
-        )}
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="w-6 h-6 rounded-base opacity-55 hover:opacity-90 transition-opacity flex items-center justify-center"
+          style={{ color: muted }}
+          title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          aria-expanded={sidebarOpen}
+        >
+          {sidebarOpen ? <X size={14} /> : <Menu size={14} />}
+        </button>
         <Link
           to="/app/profile"
           className="flex items-center gap-2.5 px-1 py-1 rounded-base hover:opacity-85 transition-opacity"

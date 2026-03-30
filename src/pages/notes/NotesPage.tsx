@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Modal, AlertModal, Input, RichTextEditor, NoteCard, Skeleton, LogTimeModal } from '../../components/ui'
+import { Card, Button, Modal, AlertModal, Input, RichTextEditor, NoteCard, Skeleton, LogTimeModal, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { noteService } from '../../services'
 import type { Note, NoteColor } from '../../types'
@@ -247,7 +247,7 @@ export default function NotesPage() {
   const renderChartByWeek = () =>
     chartDataByWeek.length === 0 ? (
       <div className="h-[200px] flex items-center justify-center rounded-base" style={{ backgroundColor: chartPaleBg }}>
-        <Text variant="sm" className="opacity-70" style={{ color: dark }}>No data yet</Text>
+        <EmptyState variant="chart" compact description="No data yet" className="py-4" />
       </div>
     ) : (
       <div className="rounded-base p-2" style={{ backgroundColor: chartPaleBg }}>
@@ -266,7 +266,7 @@ export default function NotesPage() {
   const renderChartByColor = () =>
     notes.length === 0 ? (
       <div className="h-[200px] flex items-center justify-center rounded-base" style={{ backgroundColor: chartPaleBg }}>
-        <Text variant="sm" className="opacity-70" style={{ color: dark }}>No data yet</Text>
+        <EmptyState variant="chart" compact description="No data yet" className="py-4" />
       </div>
     ) : (
       <div className="rounded-base p-2" style={{ backgroundColor: chartPaleBg }}>
@@ -423,8 +423,8 @@ export default function NotesPage() {
                   ))
                 ) : notes.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center opacity-70" style={{ color: dark }}>
-                      No notes yet. Click “Add note” to create one.
+                    <td colSpan={3} className="p-0">
+                      <EmptyState variant="note" title="No notes yet" description="Click “Add note” to create one." className="py-10" />
                     </td>
                   </tr>
                 ) : (
@@ -566,7 +566,7 @@ export default function NotesPage() {
           </div>
           <div className="flex justify-end gap-2 pt-2 shrink-0">
             <Button variant="secondary" label="Cancel" onClick={() => !saving && setFormOpen(false)} disabled={saving} />
-            <Button label={saving ? 'Saving…' : editingId ? 'Save' : 'Create'} onClick={handleSave} disabled={saving || !formTitle.trim()} />
+            <Button label={editingId ? 'Save' : 'Create'} onClick={handleSave} disabled={saving || !formTitle.trim()} loading={saving} />
           </div>
         </div>
       </Modal>

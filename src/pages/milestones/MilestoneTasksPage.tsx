@@ -11,7 +11,7 @@ import {
   Cell,
 } from 'recharts'
 import Text, { baseFontSize } from '../../components/base/Text'
-import { Card, Badge, Table, Modal, Button, Input, CustomSelect, DateSelectInput } from '../../components/ui'
+import { Card, Badge, Table, Modal, Button, Input, CustomSelect, DateSelectInput, EmptyState, LogTimeModal } from '../../components/ui'
 import { AppPageLayout } from '../../components/layout'
 import { milestoneService, projectService, taskService, userService } from '../../services'
 import type { Milestone, Project, Task, WorkflowState } from '../../types'
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import View from '../../components/base/View'
 import Avatar from '../../components/base/Avatar'
+import { Authstore } from '../../data/Authstore'
 
 const chartTickStyle = { fontSize: 12 }
 
@@ -69,6 +70,9 @@ const MilestoneTasksPage = () => {
   const [editDueDate, setEditDueDate] = useState('')
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null)
   const [actionSaving, setActionSaving] = useState(false)
+  const [logtime, setlogtime] = useState(false)
+  const { user } = Authstore()
+  const canRporttask = user?.role == "consultant" || user?.role == "freelancer"
 
   const loadTasks = useCallback(() => {
     if (!milestoneId) return
@@ -223,29 +227,43 @@ const MilestoneTasksPage = () => {
     )
   }
 
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4">
       <View bg="bg" className="p-3 rounded-base">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Link
+        <div className="flex flex-wrap  items-center justify-between gap-3">
+          <div className="flex  items-center gap-3 min-w-0">
+            {/* <Link
               to={`/app/projects/${projectId}`}
               className="shrink-0 p-1.5 rounded-base opacity-80 hover:opacity-100 transition"
               style={{ color: dark }}
               aria-label="Back to project"
             >
               <ChevronLeft className="w-5 h-5" />
-            </Link>
-            <div className="min-w-0">
-              <Text className="font-medium truncate" style={{ color: dark }}>
-                {milestone.name}
-              </Text>
+            </Link> */}
+            <div className="min-w-0 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Text className="font-medium truncate" style={{ color: dark }}>
+                  {milestone.name}
+                </Text>
+                <Badge variant={milestone.priority}>{milestone.priority}</Badge>
+              </div>
               <Text variant="sm" className="opacity-80 truncate block">
                 {project.name} · Target {formatDate(milestone.targetDate)}
               </Text>
             </div>
-            <Badge variant={milestone.priority}>{milestone.priority}</Badge>
           </div>
+
+          {
+            canRporttask
+            &&
+            (<>
+              <Button label='report task' onClick={() => setlogtime(true)} />
+              <LogTimeModal initialMilestoneId={milestoneId} initialProjectId={projectId} open={logtime} onSaved={(t) => {
+                setTasks([t as Task, ...tasks])
+              }} onClose={() => setlogtime(false)} />
+            </>)
+          }
         </div>
       </View>
 
@@ -308,11 +326,13 @@ const MilestoneTasksPage = () => {
         >
           <div className="h-[280px] w-full">
             {contributionData.length === 0 ? (
-              <div className="h-full flex items-center justify-center">
-                <Text variant="sm" className="opacity-60">
-                  No tasks yet. Assignees will appear as they log work.
-                </Text>
-              </div>
+              <EmptyState
+                variant="chart"
+                compact
+                title="No tasks yet"
+                description="Assignees will appear as they log work."
+                className="h-full min-h-[200px]"
+              />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -351,11 +371,7 @@ const MilestoneTasksPage = () => {
         >
           <div className="h-[280px] w-full">
             {stateData.length === 0 ? (
-              <div className="h-full flex items-center justify-center">
-                <Text variant="sm" className="opacity-60">
-                  No tasks to show.
-                </Text>
-              </div>
+              <EmptyState variant="task" compact description="No tasks to show." className="h-full min-h-[200px]" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -390,9 +406,12 @@ const MilestoneTasksPage = () => {
 
       <Card title="Task list" subtitle={`${tasks.length} task(s)`}>
         {tasks.length === 0 ? (
-          <Text variant="sm" className="opacity-70">
-            No tasks under this milestone yet. Assigned employees log tasks here.
-          </Text>
+          <EmptyState
+            variant="task"
+            title="No tasks yet"
+            description="Assigned employees log tasks here."
+            className="py-6 px-2"
+          />
         ) : (
           <div className="overflow-x-auto">
             <Table headers={['Title', 'Assignee', 'Priority', 'Due date', 'State', 'Actions']}>
@@ -556,7 +575,7 @@ const MilestoneTasksPage = () => {
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t" style={{ borderColor }}>
             <Button variant="background" label="Cancel" onClick={() => !actionSaving && setEditTask(null)} disabled={actionSaving} />
-            <Button label="Save" onClick={handleSaveEdit} disabled={actionSaving || !editTitle.trim() || !editOwnerId} />
+            <Button label="Save" onClick={handleSaveEdit} disabled={actionSaving || !editTitle.trim() || !editOwnerId} loading={actionSaving} />
           </footer>
         </div>
       </Modal>
@@ -572,7 +591,7 @@ const MilestoneTasksPage = () => {
           </Text>
           <footer className="flex justify-end gap-2 pt-4 border-t" style={{ borderColor }}>
             <Button variant="background" label="Cancel" onClick={() => !actionSaving && setDeleteTaskId(null)} disabled={actionSaving} />
-            <Button variant="danger" label="Delete" onClick={handleDelete} disabled={actionSaving} />
+            <Button variant="danger" label="Delete" onClick={handleDelete} disabled={actionSaving} loading={actionSaving} />
           </footer>
         </div>
       </Modal>

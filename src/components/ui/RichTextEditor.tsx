@@ -1,4 +1,5 @@
-import { useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useCallback, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Placeholder } from '@tiptap/extensions/placeholder'
@@ -6,6 +7,8 @@ import { Mention } from '@tiptap/extension-mention'
 import { Themestore } from '../../data/Themestore'
 import { userService } from '../../services'
 import { baseFontSize } from '../base/Text'
+import Input from './Input'
+import Button from './Button'
 import {
   Bold,
   Italic,
@@ -44,6 +47,8 @@ function mixHex(hex: string, t: number, darken = false): string {
 
 export type RichTextEditorMode = 'fill' | 'outline'
 export type RichTextToolbarPreset = 'minimal' | 'full'
+/** `prompt` = browser prompt (default). `fields` = URL + link text in a small overlay (e.g. apply modals). */
+export type RichTextLinkInputMode = 'prompt' | 'fields'
 
 export interface RichTextEditorProps {
   value?: string
@@ -65,6 +70,8 @@ export interface RichTextEditorProps {
   contentFontSize?: number
   /** Enable @-mentions with a dropdown of users. */
   enableMentions?: boolean
+  /** How the link tool collects URL (and optional label when using `fields`). */
+  linkInputMode?: RichTextLinkInputMode
 }
 
 type MentionUser = { id: string; label: string; role?: UserRole; avatarUrl?: string; lastSeen?: string }
@@ -81,6 +88,23 @@ function formatLastSeenMention(value: string): string {
   if (diffHours < 24) return `Last seen ${diffHours}h ago`
   if (diffDays < 7) return `Last seen ${diffDays}d ago`
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+function normalizeLinkHref(raw: string): string | null {
+  const t = raw.trim()
+  if (!t) return null
+  if (/^https?:\/\//i.test(t)) return t
+  if (/^mailto:/i.test(t) || /^tel:/i.test(t)) return t
+  return `https://${t}`
+}
+
+function defaultLinkLabelFromUrl(href: string): string {
+  try {
+    const u = new URL(href)
+    return u.hostname.replace(/^www\./, '') || 'Link'
+  } catch {
+    return 'Link'
+  }
 }
 
 function createMentionSuggestion(
@@ -301,6 +325,7 @@ const RichTextEditor = ({
   contentFontFamily,
   contentFontSize,
   enableMentions = false,
+  linkInputMode = 'prompt',
 }: RichTextEditorProps) => {
   const { current, mode: themeMode } = Themestore()
   const dark = current?.system?.dark
@@ -317,7 +342,19 @@ const RichTextEditor = ({
   const contentStyle = `font-size: ${fontSize}px; line-height: 1.5; color: ${dark ?? '#333'};${contentFontFamily ? ` font-family: ${contentFontFamily};` : ''}`
   const extensions = useMemo(
     () => [
-      StarterKit,
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        link: {
+          openOnClick: false,
+          autolink: true,
+          linkOnPaste: true,
+          HTMLAttributes: {
+            class: 'rte-link',
+            rel: 'noopener noreferrer nofollow',
+            target: '_blank',
+          },
+        },
+      }),
       Placeholder.configure({ placeholder }),
       ...(enableMentions
         ? [
@@ -493,7 +530,15 @@ const RichTextEditor = ({
                 <Minus className="w-4 h-4" />
               </ToolbarButton>
               <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: toolbarInactiveColor }} />
-              <LinkToolbarButton editor={editor} dark={dark} toolbarIconColor={toolbarInactiveColor} activeColor={secondary} />
+              <LinkToolbarControl
+                editor={editor}
+                dark={dark}
+                borderColor={borderColor}
+                panelBg={mentionListFg}
+                toolbarIconColor={toolbarInactiveColor}
+                activeColor={secondary}
+                linkInputMode={linkInputMode}
+              />
               <span className="w-px h-5 mx-0.5 opacity-30" style={{ backgroundColor: toolbarInactiveColor }} />
             </>
           )}
@@ -556,11 +601,72 @@ const RichTextEditor = ({
         .ProseMirror {
           min-height: 80px;
         }
+        .ProseMirror p { margin: 0.35em 0; }
+        .ProseMirror p:first-child { margin-top: 0; }
+        .ProseMirror p:last-child { margin-bottom: 0; }
+        .ProseMirror h1 { font-size: 1.5em; font-weight: 700; margin: 0.6em 0 0.35em; line-height: 1.25; }
+        .ProseMirror h2 { font-size: 1.25em; font-weight: 700; margin: 0.55em 0 0.3em; line-height: 1.3; }
+        .ProseMirror h3 { font-size: 1.1em; font-weight: 600; margin: 0.5em 0 0.25em; line-height: 1.35; }
+        .ProseMirror ul {
+          list-style-type: disc;
+          padding-left: 1.35rem;
+          margin: 0.4em 0;
+        }
+        .ProseMirror ol {
+          list-style-type: decimal;
+          padding-left: 1.35rem;
+          margin: 0.4em 0;
+        }
+        .ProseMirror li { margin: 0.15em 0; }
+        .ProseMirror li p { margin: 0; }
+        .ProseMirror blockquote {
+          border-left: 3px solid currentColor;
+          opacity: 0.85;
+          margin: 0.5em 0;
+          padding-left: 0.85rem;
+        }
+        .ProseMirror pre {
+          font-family: ui-monospace, monospace;
+          font-size: 0.9em;
+          padding: 0.65rem 0.75rem;
+          border-radius: 4px;
+          margin: 0.5em 0;
+          overflow-x: auto;
+          background: rgba(0,0,0,0.06);
+        }
+        [data-theme="dark"] .ProseMirror pre {
+          background: rgba(255,255,255,0.08);
+        }
+        .ProseMirror code {
+          font-family: ui-monospace, monospace;
+          font-size: 0.9em;
+          padding: 0.1em 0.35em;
+          border-radius: 3px;
+          background: rgba(0,0,0,0.06);
+        }
+        [data-theme="dark"] .ProseMirror code {
+          background: rgba(255,255,255,0.1);
+        }
+        .ProseMirror hr {
+          border: none;
+          border-top: 1px solid currentColor;
+          opacity: 0.25;
+          margin: 0.85em 0;
+        }
+        .ProseMirror a.rte-link {
+          text-decoration: underline;
+          cursor: pointer;
+          color: inherit;
+          opacity: 0.95;
+        }
         .ProseMirror [data-type="mention"] {
           border-radius: 4px;
           padding: 0 4px;
           background: rgba(0,0,0,0.08);
           font-weight: 500;
+        }
+        [data-theme="dark"] .ProseMirror [data-type="mention"] {
+          background: rgba(255,255,255,0.12);
         }
       `}</style>
     </div>
@@ -606,39 +712,157 @@ function ToolbarButton({
   )
 }
 
-function LinkToolbarButton({
+function linkMarkAttrs(href: string) {
+  return { href, target: '_blank', rel: 'noopener noreferrer nofollow' }
+}
+
+function LinkToolbarControl({
   editor,
   dark,
+  borderColor,
+  panelBg,
   toolbarIconColor,
   activeColor,
+  linkInputMode,
 }: {
   editor: Editor
   dark: string | undefined
+  borderColor: string
+  panelBg: string
   toolbarIconColor?: string
   activeColor?: string
+  linkInputMode: RichTextLinkInputMode
 }) {
-  const handleClick = useCallback(() => {
+  const [open, setOpen] = useState(false)
+  const [urlDraft, setUrlDraft] = useState('https://')
+  const [labelDraft, setLabelDraft] = useState('')
+
+  const openFieldsDialog = useCallback(() => {
+    const attrs = editor.getAttributes('link') as { href?: string }
+    const { from, to } = editor.state.selection
+    const selected = editor.state.doc.textBetween(from, to, ' ')
+    setUrlDraft(attrs.href?.trim() || 'https://')
+    setLabelDraft(selected)
+    setOpen(true)
+  }, [editor])
+
+  const applyFieldsLink = useCallback(() => {
+    const href = normalizeLinkHref(urlDraft)
+    if (!href) return
+    const text =
+      labelDraft.trim() ||
+      (editor.isActive('link') ? editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to, ' ') : '') ||
+      defaultLinkLabelFromUrl(href)
+    const mark = { type: 'link', attrs: linkMarkAttrs(href) }
+
     if (editor.isActive('link')) {
-      editor.chain().focus().unsetLink().run()
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange('link')
+        .deleteSelection()
+        .insertContent({ type: 'text', text, marks: [mark] })
+        .run()
+    } else {
+      const { from, to } = editor.state.selection
+      if (from < to) {
+        editor.chain().focus().deleteSelection().insertContent({ type: 'text', text, marks: [mark] }).run()
+      } else {
+        editor.chain().focus().insertContent({ type: 'text', text, marks: [mark] }).run()
+      }
+    }
+    setOpen(false)
+  }, [editor, labelDraft, urlDraft])
+
+  const removeLinkFromFields = useCallback(() => {
+    editor.chain().focus().extendMarkRange('link').unsetLink().run()
+    setOpen(false)
+  }, [editor])
+
+  const handleToolbarClick = useCallback(() => {
+    if (linkInputMode === 'fields') {
+      openFieldsDialog()
       return
     }
-    const href = editor.getAttributes('link').href as string | undefined
-    const url = window.prompt('Link URL', href || 'https://')
-    if (url != null && url.trim()) {
-      const toUse = /^https?:\/\//i.test(url) ? url : `https://${url}`
-      editor.chain().focus().setLink({ href: toUse }).run()
+    if (editor.isActive('link')) {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run()
+      return
     }
-  }, [editor])
+    const prev = editor.getAttributes('link').href as string | undefined
+    const raw = window.prompt('Link URL', prev || 'https://')
+    if (raw == null || !raw.trim()) return
+    const href = normalizeLinkHref(raw)
+    if (!href) return
+    const { from, to } = editor.state.selection
+    if (from < to) {
+      editor.chain().focus().setLink(linkMarkAttrs(href)).run()
+    } else {
+      const text = defaultLinkLabelFromUrl(href)
+      editor
+        .chain()
+        .focus()
+        .insertContent({ type: 'text', text, marks: [{ type: 'link', attrs: linkMarkAttrs(href) }] })
+        .run()
+    }
+  }, [editor, linkInputMode, openFieldsDialog])
+
+  const dialog =
+    open &&
+    linkInputMode === 'fields' &&
+    createPortal(
+      <div
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+        role="presentation"
+        onClick={() => setOpen(false)}
+        onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
+      >
+        <div
+          className="w-full max-w-md rounded-base border p-5 shadow-lg space-y-4"
+          style={{
+            backgroundColor: panelBg,
+            borderColor,
+            color: dark ?? '#111',
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Insert link"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="text-[15px] font-semibold">Link</div>
+          <Input label="URL" value={urlDraft} onChange={(e) => setUrlDraft(e.target.value)} placeholder="https://…" mode="fill" />
+          <Input
+            label="Link text"
+            value={labelDraft}
+            onChange={(e) => setLabelDraft(e.target.value)}
+            placeholder="Text shown in the letter"
+            mode="fill"
+          />
+          <div className="flex flex-wrap justify-end gap-2 pt-1">
+            {editor.isActive('link') && (
+              <Button label="Remove link" variant="background" onClick={removeLinkFromFields} />
+            )}
+            <Button label="Cancel" variant="background" onClick={() => setOpen(false)} />
+            <Button label="Apply" onClick={applyFieldsLink} />
+          </div>
+        </div>
+      </div>,
+      document.body,
+    )
+
   return (
-    <ToolbarButton
-      onClick={handleClick}
-      active={editor.isActive('link')}
-      title="Insert link"
-      style={{ color: toolbarIconColor ?? dark }}
-      activeColor={activeColor}
-    >
-      <Link2 className="w-4 h-4" />
-    </ToolbarButton>
+    <>
+      <ToolbarButton
+        onClick={handleToolbarClick}
+        active={editor.isActive('link')}
+        title={linkInputMode === 'fields' ? 'Insert or edit link' : 'Insert link'}
+        style={{ color: toolbarIconColor ?? dark }}
+        activeColor={activeColor}
+      >
+        <Link2 className="w-4 h-4" />
+      </ToolbarButton>
+      {dialog}
+    </>
   )
 }
 

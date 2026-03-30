@@ -16,7 +16,7 @@ import {
 import Text, { baseFontSize } from '../../components/base/Text'
 import Avatar from '../../components/base/Avatar'
 import View from '../../components/base/View'
-import { Card, Button, Skeleton, AddConsultantModal, Modal, CustomSelect, Badge } from '../../components/ui'
+import { Card, Button, Skeleton, AddConsultantModal, Modal, CustomSelect, Badge, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { userService } from '../../services'
@@ -486,11 +486,7 @@ const ConsultantsPage = () => {
                 ))}
               </div>
             ) : byRoleData.length === 0 ? (
-              <div className="h-full flex items-center justify-center">
-                <Text variant="sm" className="opacity-70">
-                  No consultants yet
-                </Text>
-              </div>
+              <EmptyState variant="users" compact description="No consultants yet" className="h-full min-h-[200px]" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={byRoleData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -616,13 +612,16 @@ const ConsultantsPage = () => {
             ))}
           </div>
         ) : filteredConsultants.length === 0 ? (
-          <div className="p-8 text-center">
-            <Text variant="sm" className="opacity-80">
-              {consultants.length === 0
-                ? 'No consultants yet. Add team members to get started.'
-                : 'No consultants match your search or filters.'}
-            </Text>
-          </div>
+          <EmptyState
+            variant={consultants.length === 0 ? 'users' : 'search'}
+            title={consultants.length === 0 ? 'No consultants yet' : 'Nothing matches'}
+            description={
+              consultants.length === 0
+                ? 'Add team members to get started.'
+                : 'No consultants match your search or filters.'
+            }
+            className="p-6"
+          />
         ) : (
           <div className="overflow-x-auto scroll-slim">
             <table className="w-full">
@@ -1086,7 +1085,7 @@ const ConsultantsPage = () => {
           </Text>
           <div className="flex justify-end gap-2">
             <Button label="Cancel" variant="background" onClick={() => setDeleteUser(null)} />
-            <Button variant="danger" label="Delete" onClick={handleDeleteConfirm} disabled={saving} />
+            <Button variant="danger" label="Delete" onClick={handleDeleteConfirm} disabled={saving} loading={saving} />
           </div>
         </div>
       </Modal>
@@ -1106,7 +1105,7 @@ const ConsultantsPage = () => {
           </Text>
           <div className="flex justify-end gap-2">
             <Button label="Cancel" variant="background" onClick={() => setLeaveUser(null)} />
-            <Button label={leaveUser?.status === 'on_leave' ? 'Reactivate' : 'Put on leave'} onClick={handleLeaveConfirm} disabled={saving} />
+            <Button label={leaveUser?.status === 'on_leave' ? 'Reactivate' : 'Put on leave'} onClick={handleLeaveConfirm} disabled={saving} loading={saving} />
           </div>
         </div>
       </Modal>
@@ -1132,11 +1131,7 @@ const ConsultantsPage = () => {
                     ))}
                   </div>
                 ) : byRoleData.length === 0 ? (
-                  <div className="h-full flex items-center justify-center">
-                    <Text variant="sm" className="opacity-70">
-                      No consultants yet
-                    </Text>
-                  </div>
+                  <EmptyState variant="users" compact description="No consultants yet" className="h-full min-h-[200px]" />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={byRoleData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>

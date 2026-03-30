@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Badge, LogTimeModal, CustomSelect } from '../../components/ui'
+import { Card, Button, Badge, LogTimeModal, CustomSelect, EmptyState } from '../../components/ui'
 import { AppPageLayout } from '../../components/layout'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
@@ -179,8 +179,8 @@ export default function ConsultantTasksPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card title="Tasks by project" subtitle="Your tasks per project" className="p-4">
             {chartByProject.length === 0 ? (
-              <div className="h-[220px] flex items-center justify-center opacity-70" style={{ color: dark }}>
-                <Text variant="sm">No tasks yet</Text>
+              <div className="h-[220px] flex items-center justify-center" style={{ color: dark }}>
+                <EmptyState variant="task" compact description="No tasks yet" className="py-4" />
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
@@ -196,8 +196,8 @@ export default function ConsultantTasksPage() {
           </Card>
           <Card title="Tasks over time" subtitle="Created per week" className="p-4">
             {chartByWeek.length === 0 ? (
-              <div className="h-[220px] flex items-center justify-center opacity-70" style={{ color: dark }}>
-                <Text variant="sm">No tasks yet</Text>
+              <div className="h-[220px] flex items-center justify-center" style={{ color: dark }}>
+                <EmptyState variant="chart" compact description="No tasks yet" className="py-4" />
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
@@ -300,8 +300,13 @@ export default function ConsultantTasksPage() {
                   ))
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center opacity-70" style={{ color: dark }}>
-                      No tasks match your search or filters. Log time to create tasks.
+                    <td colSpan={5} className="p-0">
+                      <EmptyState
+                        variant="search"
+                        title="Nothing matches"
+                        description="No tasks match your search or filters. Log time to create tasks."
+                        className="py-10"
+                      />
                     </td>
                   </tr>
                 ) : (

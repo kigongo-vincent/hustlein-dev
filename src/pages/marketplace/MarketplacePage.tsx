@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import marketplaceHeroGallery from '../../assets/gallery.png'
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Button, Input, Modal, Textarea, CustomSelect, RichTextEditor, CurrencyInput } from '../../components/ui'
+import { Button, Input, Modal, Textarea, CustomSelect, RichTextEditor, CurrencyInput, FileAttachmentDropzone, EmptyState } from '../../components/ui'
 import { Themestore, type ThemeI } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { companyService } from '../../services/companyService'
@@ -10,13 +11,13 @@ import { userService } from '../../services/userService'
 import type { ProjectPosting, ProjectApplication, User, Company } from '../../types'
 import { AnimatePresence, motion } from 'framer-motion'
 import { notifyError, notifySuccess } from '../../data/NotificationStore'
+import MarketplaceProjectCard from '../../components/marketplace/MarketplaceProjectCard'
+import { postingBudgetMax } from '../../utils/marketplaceBudget'
 import {
-  Plus, Send, Users, CheckCircle2, XCircle, X, Search,
-  DollarSign, Sparkles, SlidersHorizontal, Wallet, FileText,
+  Plus, Send, CheckCircle2, XCircle, X, Search,
+  DollarSign, SlidersHorizontal, FileText,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react'
-
-const MARKETPLACE_HERO_BG_URL =
-  'https://images.pexels.com/photos/9488838/pexels-photo-9488838.jpeg'
 
 const BUDGET_OPTIONS = [
   { value: 'hybrid', label: 'Hybrid' },
@@ -78,267 +79,140 @@ function formatMoney(value?: number, currency = 'UGX') {
 }
 
 function maxBudget(p: ProjectPosting): number {
-  return Math.max(p.hourlyMax ?? 0, p.fixedMax ?? 0)
-}
-
-function budgetLines(p: ProjectPosting): string[] {
-  const cur = p.currency || 'UGX'
-  if (p.budgetType === 'hourly') return [`${formatMoney(p.hourlyMin, cur)} – ${formatMoney(p.hourlyMax, cur)} / hr`]
-  if (p.budgetType === 'fixed') return [`${formatMoney(p.fixedMin, cur)} – ${formatMoney(p.fixedMax, cur)}`]
-  return [
-    `${formatMoney(p.hourlyMin, cur)} – ${formatMoney(p.hourlyMax, cur)} / hr`,
-    `${formatMoney(p.fixedMin, cur)} – ${formatMoney(p.fixedMax, cur)} fixed`,
-  ]
-}
-
-function formatPostingDate(dateStr: string) {
-  const d = new Date(dateStr)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-}
-
-function domainFromEmail(email?: string) {
-  if (!email) return '—'
-  const parts = email.split('@')
-  if (parts.length < 2) return '—'
-  return parts[1]
-}
-
-/** Soft spotlight window for “days left” on open listings (UI-only; not enforced by API). */
-const MARKETPLACE_LISTING_WINDOW_DAYS = 30
-
-function listingSpotlightDaysLeft(createdAt: string): number {
-  const created = new Date(createdAt).getTime()
-  if (Number.isNaN(created)) return MARKETPLACE_LISTING_WINDOW_DAYS
-  const elapsedDays = Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24))
-  return Math.max(0, MARKETPLACE_LISTING_WINDOW_DAYS - elapsedDays)
-}
-
-/** Resolve relative upload paths (e.g. /uploads/...) when VITE_API_URL is an absolute API base. */
-function resolvePublicAssetUrl(url?: string | null): string | undefined {
-  const s = url?.trim()
-  if (!s) return undefined
-  if (/^https?:\/\//i.test(s)) return s
-  const base = import.meta.env.VITE_API_URL as string | undefined
-  if (s.startsWith('/') && base?.startsWith('http')) {
-    const origin = base.replace(/\/api\/?$/i, '')
-    return `${origin}${s}`
-  }
-  return s
-}
-
-type MarketplaceProjectCardProps = {
-  posting: ProjectPosting
-  company: Company | null
-  isFreelancer: boolean
-  theme: ThemeI
-  skillColors: string[]
-  variant?: 'featured' | 'default'
-  viewerUser: User | null
-  viewerIsCompanyAdmin: boolean
-  onApply: () => void
-  onManageApplications: () => void
-}
-
-const MarketplaceProjectCard = ({
-  posting: p,
-  company,
-  isFreelancer,
-  theme,
-  skillColors,
-  variant = 'default',
-  viewerUser: _viewerUser,
-  viewerIsCompanyAdmin: _viewerIsCompanyAdmin,
-  onApply,
-  onManageApplications,
-}: MarketplaceProjectCardProps) => {
-  const [actionHover, setActionHover] = useState(false)
-  const borderColor = theme.system.border ?? 'rgba(0,0,0,0.06)'
-  const pad = variant === 'featured' ? 'p-7' : 'p-6'
-  const displayName = (company?.name ?? p.companyName ?? '').trim() || 'Company'
-  const logoSrc = resolvePublicAssetUrl(company?.logoUrl ?? p.companyLogoUrl ?? undefined)
-  const accent = theme.brand.secondary ?? '#FF9600'
-  const initial = displayName.trim().slice(0, 1).toUpperCase() || 'C'
-  const domain = domainFromEmail(company?.email)
-  const postedDate = formatPostingDate(p.createdAt)
-  const primary = theme.brand.primary ?? '#682308'
-  const onPrimary = theme.brand.onPrimary ?? '#ffffff'
-  const actionDisabled = isFreelancer ? p.status !== 'open' : false
-  const actionPrimary = actionHover && !actionDisabled
-
-  const logoBoxH = variant === 'featured' ? 56 : 48
-  const logoMaxW = variant === 'featured' ? 200 : 168
-
-  const green = theme.accent?.green ?? '#12B886'
-  const spotlightLeft = listingSpotlightDaysLeft(p.createdAt)
-  const remainingDays = spotlightLeft === 0 ? 1 : spotlightLeft
-  const badgeLabel = `${remainingDays} day${remainingDays === 1 ? '' : 's'} remaining`
-  const badgeSuccess = spotlightLeft >= 3
-  const currencyCode = (p.currency || 'UGX').trim().toUpperCase() || 'UGX'
-
-  const created = p.createdAt ? new Date(p.createdAt) : null
-  const updated = p.updatedAt ? new Date(p.updatedAt) : null
-
-  return (
-    <div
-      className={`rounded-base shadow-custom ${pad}`}
-      style={{ background: theme.system.foreground, color: theme.system.dark }}
-    >
-      <div className="flex flex-col gap-4 min-w-0">
-        <div className="flex items-start gap-4">
-          <div className="min-w-0 flex flex-col gap-0">
-            <div className="flex justify-start">
-              {logoSrc ? (
-                <div
-                  className="shrink-0 rounded-base overflow-hidden flex items-center justify-center"
-                  style={{
-                    background: 'transparent',
-                    height: logoBoxH,
-                    maxWidth: logoMaxW,
-                  }}
-                >
-                  <img
-                    src={logoSrc}
-                    alt={`${displayName} logo`}
-                    className="block object-contain object-center"
-                    style={{
-                      maxHeight: logoBoxH,
-                      maxWidth: logoMaxW,
-                      width: 'auto',
-                      height: 'auto',
-                    }}
-                  />
-                </div>
-              ) : (
-                <div
-                  className="w-12 h-12 rounded-base overflow-hidden shrink-0 flex items-center justify-center"
-                  style={{ background: `${accent}18` }}
-                >
-                  <span className="text-[17px] font-semibold leading-none" style={{ color: accent }}>
-                    {initial}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 mt-3">
-              <div className="font-semibold leading-tight" style={{ fontSize: baseFontSize }}>
-                {displayName}
-              </div>
-              <div
-                className="font-normal leading-snug"
-                style={{
-                  fontSize: Math.max(11, baseFontSize * 0.78),
-                  opacity: 0.5,
-                  marginTop: 2,
-                }}
-              >
-                {domain !== '—' ? `${domain} • ${postedDate}` : postedDate}
-              </div>
-            </div>
-          </div>
-          <Text
-            variant="sm"
-            className="shrink-0 rounded-full font-normal tracking-wide px-6 py-2 ml-auto inline-flex"
-            style={{
-              background: badgeSuccess ? `${green}22` : `${green}14`,
-              color: green,
-            }}
-          >
-            {badgeLabel}
-          </Text>
-        </div>
-
-        <span className="text-[11px] font-medium" style={{ opacity: 0.4 }}>
-          Posted {postedDate}
-          {updated && created && updated.getTime() !== created.getTime()
-            ? ` · Updated ${formatPostingDate(p.updatedAt)}`
-            : ''}
-        </span>
-
-        <Text className="font-semibold leading-snug" style={{ fontSize: baseFontSize * 1.15 }}>
-          {p.title}
-        </Text>
-
-        <Text className="leading-[1.75] whitespace-pre-wrap" style={{ fontSize: baseFontSize, opacity: 0.88 }}>
-          {p.description?.trim() || '—'}
-        </Text>
-
-        <div>
-          <div
-            className="flex items-center gap-4 p-4 rounded-base"
-            style={{ background: theme.system.background ?? 'rgba(0,0,0,0.06)' }}
-          >
-            <div
-              className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
-              style={{ background: theme.system.foreground }}
-            >
-              <Wallet className="w-5 h-5" style={{ color: theme.system.dark, opacity: 0.7 }} />
-            </div>
-            <div className="min-w-0">
-              <Text
-                variant="sm"
-                className="tracking-widest uppercase font-medium block mb-1"
-                style={{ color: theme.system.dark, opacity: 0.5 }}
-              >
-                {currencyCode} · {p.budgetType} rate
-              </Text>
-              {budgetLines(p).map((line, li) => (
-                <Text key={li} variant="sm" className="font-medium" style={{ opacity: 0.9 }}>
-                  {line}
-                </Text>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ height: 1, background: borderColor }} />
-
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          {p.requiredSkills && p.requiredSkills.length > 0 ? (
-            <div className="min-w-0 flex flex-wrap gap-2">
-              {p.requiredSkills.map((s) => {
-                const idx = Math.abs(s.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % Math.max(1, skillColors.length)
-                const c = skillColors[idx] ?? theme.brand.secondary ?? '#FF9600'
-                return (
-                  <span
-                    key={s}
-                    className="px-3 py-1 rounded-full text-[11px] font-medium"
-                    style={{ background: `${c}18`, color: c }}
-                  >
-                    {s}
-                  </span>
-                )
-              })}
-            </div>
-          ) : <div />}
-          <button
-            type="button"
-            onClick={() => {
-              if (isFreelancer) onApply()
-              else onManageApplications()
-            }}
-            disabled={actionDisabled}
-            onMouseEnter={() => setActionHover(true)}
-            onMouseLeave={() => setActionHover(false)}
-            className="px-5 py-2 rounded-full text-[13px] font-medium border-0 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed min-w-[160px]"
-            style={{
-              backgroundColor: actionPrimary ? primary : (theme.system.background ?? 'rgba(0,0,0,0.06)'),
-              color: actionPrimary ? onPrimary : theme.system.dark,
-            }}
-            aria-label={isFreelancer ? 'Apply now' : 'Manage applications'}
-          >
-            {isFreelancer ? 'Apply now' : 'Manage applications'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  return postingBudgetMax(p)
 }
 
 const TRENDING_SKILLS = [
   'React', 'TypeScript', 'Go', 'Figma', 'Node.js', 'Python',
   'AWS', 'Flutter', 'Docker', 'PostgreSQL', 'UX', 'SEO',
 ]
+
+const MARKETPLACE_PAGE_SIZE = 8
+
+const SEARCH_DEBOUNCE_MS = 280
+
+type SkeletonColors = {
+  fg: string
+  bg: string
+  border: string
+  muted: string
+}
+
+function skeletonColors(current: ThemeI | null | undefined): SkeletonColors {
+  return {
+    fg: current?.system?.foreground ?? 'rgba(255,255,255,0.06)',
+    bg: current?.system?.background ?? 'rgba(0,0,0,0.04)',
+    border: current?.system?.border ?? 'rgba(0,0,0,0.08)',
+    muted: current?.system?.border ?? 'rgba(0,0,0,0.12)',
+  }
+}
+
+/** Matches `MarketplaceProjectCard` default layout: logo row, badge, title, body, divider, skills, footer. */
+function MarketplaceProjectCardSkeleton({ colors }: { colors: SkeletonColors }) {
+  return (
+    <View
+      bg="fg"
+      className="rounded-base p-6 shadow-custom animate-pulse min-w-0"
+      style={{ backgroundColor: colors.fg }}
+    >
+      <div className="flex flex-col gap-4 min-w-0">
+        <div className="flex items-start gap-4">
+          <div className="flex flex-col gap-0 min-w-0">
+            <div className="w-12 h-12 rounded-base shrink-0" style={{ backgroundColor: colors.muted, opacity: 0.45 }} />
+            <div className="mt-3 space-y-2">
+              <div className="h-4 rounded-md w-28" style={{ backgroundColor: colors.muted, opacity: 0.55 }} />
+              <div className="h-3 rounded-md w-36" style={{ backgroundColor: colors.muted, opacity: 0.35 }} />
+            </div>
+          </div>
+          <div
+            className="h-9 rounded-full ml-auto shrink-0 w-[7.5rem]"
+            style={{ backgroundColor: colors.muted, opacity: 0.3 }}
+          />
+        </div>
+        <div className="h-5 rounded-md w-[72%] max-w-xl" style={{ backgroundColor: colors.muted, opacity: 0.5 }} />
+        <div className="space-y-2">
+          <div className="h-3.5 rounded-md w-full" style={{ backgroundColor: colors.muted, opacity: 0.28 }} />
+          <div className="h-3.5 rounded-md w-[92%]" style={{ backgroundColor: colors.muted, opacity: 0.22 }} />
+          <div className="h-3.5 rounded-md w-[58%]" style={{ backgroundColor: colors.muted, opacity: 0.18 }} />
+        </div>
+        <div className="h-px w-full" style={{ backgroundColor: colors.border, opacity: 0.85 }} />
+        <div className="flex flex-wrap gap-2">
+          {[1, 2, 3].map((k) => (
+            <div key={k} className="h-7 w-20 rounded-full" style={{ backgroundColor: colors.muted, opacity: 0.25 }} />
+          ))}
+        </div>
+        <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
+          <div className="h-4 rounded-md w-44" style={{ backgroundColor: colors.muted, opacity: 0.35 }} />
+          <div className="h-10 w-[7.25rem] rounded-base" style={{ backgroundColor: colors.muted, opacity: 0.4 }} />
+        </div>
+      </div>
+    </View>
+  )
+}
+
+function MarketplaceProjectsGridSkeleton({
+  colors,
+  count = MARKETPLACE_PAGE_SIZE,
+}: {
+  colors: SkeletonColors
+  count?: number
+}) {
+  return (
+    <div className="space-y-4 w-full">
+      {Array.from({ length: count }, (_, i) => (
+        <MarketplaceProjectCardSkeleton key={i} colors={colors} />
+      ))}
+      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+        <div
+          className="h-10 w-10 rounded-full animate-pulse"
+          style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
+        />
+        <div className="h-10 w-40 rounded-md animate-pulse" style={{ backgroundColor: colors.muted, opacity: 0.35 }} />
+        <div
+          className="h-10 w-10 rounded-full animate-pulse"
+          style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+/** Hero (40vh) + search row + project cards — mirrors loaded marketplace layout. */
+function MarketplaceFullPageSkeleton({ colors }: { colors: SkeletonColors }) {
+  return (
+    <div className="space-y-8 w-full">
+      <div className="relative overflow-hidden rounded-[4px] h-[40vh] max-h-[40vh] pl-[1rem] animate-pulse">
+        <div className="absolute inset-0 bg-neutral-900" />
+        <div
+          className="absolute inset-0 pointer-events-none opacity-90"
+          style={{
+            background:
+              'linear-gradient(77deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.25) 100%)',
+          }}
+        />
+        <div className="relative z-10 flex h-full min-h-0 flex-col justify-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 sm:py-3 lg:px-10">
+          <div className="flex min-h-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="min-w-0 max-w-2xl space-y-2 sm:space-y-2.5">
+              <div className="h-8 sm:h-9 rounded-md w-[min(100%,22rem)] bg-white/10" />
+              <div className="h-3.5 rounded-md w-full max-w-[540px] bg-white/8" />
+              <div className="h-3.5 rounded-md w-[88%] max-w-[480px] bg-white/6" />
+            </div>
+            <div className="h-10 w-36 rounded-base shrink-0 bg-white/10 self-start sm:self-auto" />
+          </div>
+          <div
+            className="flex w-full max-w-xl shrink-0 items-center gap-2 rounded-lg border border-white/10 px-2.5 py-1.5 sm:gap-3 sm:px-3 sm:py-2 mt-1"
+            style={{ background: 'rgba(0,0,0,0.35)' }}
+          >
+            <div className="h-4 w-4 rounded bg-white/15 shrink-0" />
+            <div className="min-w-0 flex-1 h-4 rounded-md bg-white/10" />
+            <div className="h-9 w-9 rounded-full bg-white/10 shrink-0" />
+          </div>
+        </div>
+      </div>
+      <MarketplaceProjectsGridSkeleton colors={colors} />
+    </div>
+  )
+}
 
 const MarketplacePage = () => {
   const { current, mode } = Themestore()
@@ -353,31 +227,29 @@ const MarketplacePage = () => {
   const [companies, setCompanies] = useState<Company[]>([])
   const [budgetFilter, setBudgetFilter] = useState<'all' | 'hourly' | 'fixed' | 'hybrid'>('all')
   const [postings, setPostings] = useState<ProjectPosting[]>([])
+  /** Freelancer's applications — used to hide postings they've already applied to. */
+  const [myApplications, setMyApplications] = useState<ProjectApplication[]>([])
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selected, setSelected] = useState<ProjectPosting | null>(null)
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [skillFilter, setSkillFilter] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createTitle, setCreateTitle] = useState('')
   const [createDesc, setCreateDesc] = useState('')
   const [createBudgetType, setCreateBudgetType] = useState<'hybrid' | 'hourly' | 'fixed'>('hybrid')
-  const [createHourlyMin, setCreateHourlyMin] = useState('')
-  const [createHourlyMax, setCreateHourlyMax] = useState('')
-  const [createFixedMin, setCreateFixedMin] = useState('')
-  const [createFixedMax, setCreateFixedMax] = useState('')
+  const [createHourlyRate, setCreateHourlyRate] = useState('')
+  const [createFixedBudget, setCreateFixedBudget] = useState('')
   const [createCurrency, setCreateCurrency] = useState('UGX')
   const [createSkills, setCreateSkills] = useState('')
   const [saving, setSaving] = useState(false)
 
   const [applyOpen, setApplyOpen] = useState(false)
   const [coverLetter, setCoverLetter] = useState('')
-  const [proposedHourly, setProposedHourly] = useState('')
-  const [proposedFixed, setProposedFixed] = useState('')
   const [applyAttachments, setApplyAttachments] = useState<File[]>([])
-  const applyAttachmentInputRef = useRef<HTMLInputElement>(null)
-
   const [appsOpen, setAppsOpen] = useState(false)
   const [applications, setApplications] = useState<ProjectApplication[]>([])
   const [appsLoading, setAppsLoading] = useState(false)
@@ -388,51 +260,54 @@ const MarketplacePage = () => {
   const [hireHourlyRate, setHireHourlyRate] = useState('')
   const [hireFixedBudget, setHireFixedBudget] = useState('')
 
-  const heroLeftRef = useRef<HTMLDivElement>(null)
-  const [heroLeftHeight, setHeroLeftHeight] = useState(0)
-
-  useLayoutEffect(() => {
-    const measure = () => {
-      const node = heroLeftRef.current
-      if (!node) return
-      const h = Math.round(node.getBoundingClientRect().height)
-      setHeroLeftHeight((prev) => (prev !== h ? h : prev))
-    }
-    measure()
-    if (typeof ResizeObserver === 'undefined') return undefined
-    const ro = new ResizeObserver(() => {
-      measure()
-    })
-    const node = heroLeftRef.current
-    if (node) ro.observe(node)
-    return () => ro.disconnect()
-  }, [isCompanyUser])
-
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true)
     try {
+      const isFL = user?.role === 'freelancer'
       const listPromise = marketplaceService.listPostings()
-      const companyPromise = isFreelancer
+      const myAppsPromise = isFL
+        ? marketplaceService.listMyApplications().catch(() => [] as ProjectApplication[])
+        : Promise.resolve<ProjectApplication[]>([])
+      const companyPromise = isFL
         ? Promise.resolve<Company[]>([])
         : companyService.list().catch(() => [] as Company[])
 
-      const [list, companyList] = await Promise.all([listPromise, companyPromise])
+      const [list, myApps, companyList] = await Promise.all([listPromise, myAppsPromise, companyPromise])
       setPostings(list)
+      setMyApplications(myApps)
       setCompanies(companyList)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user?.id, user?.role])
 
   useEffect(() => {
-    refresh()
-  }, [])
+    void refresh()
+  }, [refresh])
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [search])
+
+  const isSearchPending = search.trim() !== debouncedSearch.trim()
+  const showProjectsSearchSkeleton = !loading && isSearchPending && search.trim().length > 0
+
+  const skeletonPalette = useMemo(() => skeletonColors(current), [current])
 
   const openPostings = useMemo(() => {
-    return isCompanyUser && user?.companyId
-      ? postings.filter((p) => p.companyId === user.companyId && p.status === 'open')
-      : postings.filter((p) => p.status === 'open')
-  }, [isCompanyUser, postings, user?.companyId])
+    let base =
+      isCompanyUser && user?.companyId
+        ? postings.filter((p) => p.companyId === user.companyId && p.status === 'open')
+        : postings.filter((p) => p.status === 'open')
+    if (isFreelancer) {
+      const appliedPostingIds = new Set(
+        myApplications.filter((a) => a.status !== 'withdrawn').map((a) => a.postingId),
+      )
+      base = base.filter((p) => !appliedPostingIds.has(p.id))
+    }
+    return base
+  }, [isCompanyUser, isFreelancer, myApplications, postings, user?.companyId])
 
   const filtered = useMemo(() => {
     let base = [...openPostings]
@@ -462,6 +337,21 @@ const MarketplacePage = () => {
     return base
   }, [openPostings, search, budgetFilter, skillFilter, sortBy])
 
+  useEffect(() => {
+    setPage(1)
+  }, [search, budgetFilter, skillFilter, sortBy])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / MARKETPLACE_PAGE_SIZE))
+
+  useEffect(() => {
+    setPage((p) => Math.min(p, totalPages))
+  }, [totalPages])
+
+  const paginated = useMemo(() => {
+    const start = (page - 1) * MARKETPLACE_PAGE_SIZE
+    return filtered.slice(start, start + MARKETPLACE_PAGE_SIZE)
+  }, [filtered, page])
+
   const skillColors = useMemo(() => {
     const a = current?.accent
     return [a?.blue, a?.purple, a?.pink, a?.green, a?.yellow, a?.teal].filter(Boolean) as string[]
@@ -478,8 +368,6 @@ const MarketplacePage = () => {
   const openApply = (p: ProjectPosting) => {
     setSelected(p)
     setCoverLetter('')
-    setProposedHourly('')
-    setProposedFixed('')
     setApplyAttachments([])
     setApplyOpen(true)
   }
@@ -500,19 +388,36 @@ const MarketplacePage = () => {
     }
   }
 
+  const createBudgetValid = useMemo(() => {
+    const h = createHourlyRate.trim()
+    const f = createFixedBudget.trim()
+    const hn = h ? Number(h) : NaN
+    const fn = f ? Number(f) : NaN
+    if (createBudgetType === 'hourly') return !!h && !Number.isNaN(hn)
+    if (createBudgetType === 'fixed') return !!f && !Number.isNaN(fn)
+    return !!h && !!f && !Number.isNaN(hn) && !Number.isNaN(fn)
+  }, [createBudgetType, createHourlyRate, createFixedBudget])
+
   const handleCreate = async () => {
-    if (!createTitle.trim()) return
+    if (!createTitle.trim() || !createBudgetValid) return
     setSaving(true)
     try {
       const skills = createSkills.split(',').map((s) => s.trim()).filter(Boolean)
+      const hourlyN = createHourlyRate.trim() ? Number(createHourlyRate) : undefined
+      const fixedN = createFixedBudget.trim() ? Number(createFixedBudget) : undefined
+      const hourlyMin =
+        createBudgetType === 'hourly' || createBudgetType === 'hybrid' ? hourlyN : undefined
+      const hourlyMax = hourlyMin
+      const fixedMin = createBudgetType === 'fixed' || createBudgetType === 'hybrid' ? fixedN : undefined
+      const fixedMax = fixedMin
       const posting = await marketplaceService.createPosting({
         title: createTitle.trim(),
         description: createDesc.trim(),
         budgetType: createBudgetType,
-        hourlyMin: createHourlyMin ? Number(createHourlyMin) : undefined,
-        hourlyMax: createHourlyMax ? Number(createHourlyMax) : undefined,
-        fixedMin: createFixedMin ? Number(createFixedMin) : undefined,
-        fixedMax: createFixedMax ? Number(createFixedMax) : undefined,
+        hourlyMin,
+        hourlyMax,
+        fixedMin,
+        fixedMax,
         currency: createCurrency || 'UGX',
         requiredSkills: skills,
       })
@@ -521,6 +426,9 @@ const MarketplacePage = () => {
       setCreateTitle('')
       setCreateDesc('')
       setCreateSkills('')
+      notifySuccess('Project posted to the marketplace.')
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not create posting.')
     } finally {
       setSaving(false)
     }
@@ -532,8 +440,6 @@ const MarketplacePage = () => {
     try {
       const created = await marketplaceService.apply(selected.id, {
         coverLetter,
-        proposedHourlyRate: proposedHourly ? Number(proposedHourly) : undefined,
-        proposedFixed: proposedFixed ? Number(proposedFixed) : undefined,
       })
 
       if (applyAttachments.length > 0) {
@@ -544,9 +450,8 @@ const MarketplacePage = () => {
 
       setApplyOpen(false)
       setCoverLetter('')
-      setProposedHourly('')
-      setProposedFixed('')
       setApplyAttachments([])
+      setMyApplications((prev) => [...prev, created])
       notifySuccess('Application submitted.')
     } catch (err) {
       notifyError(err instanceof Error ? err.message : 'Failed to apply.')
@@ -560,6 +465,15 @@ const MarketplacePage = () => {
     try {
       const updated = await marketplaceService.updateApplicationStatus(app.id, status)
       setApplications((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
+      notifySuccess(
+        status === 'shortlisted'
+          ? 'Applicant shortlisted.'
+          : status === 'rejected'
+            ? 'Application rejected.'
+            : 'Application updated.',
+      )
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not update application.')
     } finally {
       setSaving(false)
     }
@@ -574,7 +488,7 @@ const MarketplacePage = () => {
         billingType: hireBillingType,
         hourlyRate: hireHourlyRate ? Number(hireHourlyRate) : undefined,
         fixedBudget: hireFixedBudget ? Number(hireFixedBudget) : undefined,
-        currency: selected?.currency,
+        currency: selected?.currency ?? hireApp.currency,
       })
       setApplications((prev) => prev.map((a) => (a.id === hireApp.id ? { ...a, status: 'hired' } : a)))
       setPostings((prev) =>
@@ -582,6 +496,9 @@ const MarketplacePage = () => {
       )
       setHireApp(null)
       setAppsOpen(false)
+      notifySuccess('Freelancer hired. A project workspace was created.')
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not complete hire.')
     } finally {
       setSaving(false)
     }
@@ -604,306 +521,313 @@ const MarketplacePage = () => {
 
   return (
     <div className="w-full mx-auto space-y-8">
-      {/* Hero + search */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-        <div className="min-w-0 min-h-0 flex flex-col gap-7">
-          <div ref={heroLeftRef} className="space-y-7 min-w-0 min-h-0">
-            <div className="flex items-start justify-between gap-6">
-              <div className="min-w-0 space-y-2">
-                <Text
-                  className="font-semibold leading-tight"
-                  style={{ fontSize: baseFontSize * 2.2, color: current?.brand?.primary ?? '#682308' }}
-                >
-                  Discover Kenya&apos;s
-                  <br />
-                  open projects
-                </Text>
-                <Text variant="sm" style={{ opacity: 0.55 }} className="leading-relaxed max-w-[480px]">
-                  A Kenyan-first workforce and operations platform designed for freelancers, consultants, and growing
-                  businesses. HustleIN is a wordplay that reflects Kenya&apos;s hustle culture.
-                </Text>
-              </div>
-              {isCompanyUser && (
-                <Button
-                  label="Post project"
-                  startIcon={<Plus className="w-4 h-4 shrink-0" />}
-                  onClick={() => setCreateOpen(true)}
-                  className="shrink-0"
-                />
-              )}
-            </div>
-
-            <div
-              className="flex items-center gap-3 px-3 py-2.5 rounded-base"
-              style={{
-                background: current?.system?.foreground,
-              }}
-            >
-              <Search className="w-4 h-4 shrink-0 opacity-35" style={{ color: current?.system?.dark }} />
-              <input
-                type="text"
-                className="flex-1 bg-transparent outline-none text-[13px] min-w-0"
-                placeholder="search for projects..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{ color: current?.system?.dark }}
-              />
-              {search && (
-                <button type="button" onClick={() => setSearch('')} className="shrink-0 opacity-35 hover:opacity-80 transition-opacity">
-                  <X className="w-3.5 h-3.5" style={{ color: current?.system?.dark }} />
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(true)}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-90"
-                style={{ background: 'transparent', color: current?.system?.dark, opacity: 0.55 }}
-                aria-label="Open filters"
+      {loading ? (
+        <MarketplaceFullPageSkeleton colors={skeletonPalette} />
+      ) : (
+        <>
+      {/* Hero — Netflix-style billboard + gallery backdrop (full main width, max 30vh) */}
+      <div className="relative   overflow-hidden rounded-[4px] h-[40vh] max-h-[40vh] pl-[1rem] ">
+        <img
+          src={marketplaceHeroGallery}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
+          decoding="async"
+          fetchPriority="high"
+        />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden
+          style={{
+            background:
+              'linear-gradient(77deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.62) 36%, rgba(0,0,0,0.22) 62%, rgba(0,0,0,0.05) 100%)',
+          }}
+        />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden
+          style={{
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 42%, rgba(0,0,0,0.88) 100%)',
+          }}
+        />
+        <div className="relative z-10 flex h-full min-h-0 flex-col justify-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 sm:py-3 lg:px-10">
+          <div className="flex min-h-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="min-w-0 max-w-2xl space-y-1 sm:space-y-1.5">
+              <Text
+                className="font-bold leading-tight tracking-tight line-clamp-2"
+                style={{
+                  fontSize: baseFontSize * 1.85,
+                  color: '#f5f5f5',
+                  textShadow: '0 2px 28px rgba(0,0,0,0.55)',
+                }}
               >
-                <SlidersHorizontal className="w-4 h-4" />
-              </button>
+                Discover Kenya&apos;s
+                {/* <br /> */}
+                {/* <span style={{ color: current?.brand?.primary ?? '#E50914' }}>open projects</span> */}
+                <span > open projects</span>
+              </Text>
+              <Text
+                variant="sm"
+                className="leading-snug max-w-[540px] line-clamp-2 sm:line-clamp-2"
+                style={{
+                  color: 'rgba(255,255,255,0.82)',
+                  textShadow: '0 1px 14px rgba(0,0,0,0.45)',
+                }}
+              >
+                A Kenyan-first workforce and operations platform designed for freelancers, consultants, and growing
+                businesses. HustleIN is a wordplay that reflects Kenya&apos;s hustle culture.
+              </Text>
             </div>
+            {isCompanyUser && (
+              <Button
+                label="Post project"
+                startIcon={<Plus className="w-4 h-4 shrink-0" />}
+                onClick={() => setCreateOpen(true)}
+                className="shrink-0 self-start sm:self-auto"
+              />
+            )}
           </div>
 
-          {/* Filter drawer */}
-          <AnimatePresence>
-            {filtersOpen && (
-              <motion.div
-                className="fixed inset-0 z-[9999]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.25)',
-                    backdropFilter: 'saturate(1.3)',
-                  }}
-                  onClick={() => setFiltersOpen(false)}
-                />
-                <motion.div
-                  className="absolute right-0 top-0 h-full w-full max-w-[420px] overflow-hidden"
-                  initial={{ x: 24 }}
-                  animate={{ x: 0 }}
-                  exit={{ x: 24 }}
-                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  style={{
-                    backgroundColor: current?.system?.foreground ?? undefined,
-                    borderLeft: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
-                  }}
-                >
-                  <div className="h-full overflow-auto p-5 space-y-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <Text className="font-semibold" style={{ fontSize: baseFontSize * 1.05 }}>
-                        Filters
-                      </Text>
-                      {activeFilterCount > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBudgetFilter('all')
-                            setSkillFilter(null)
-                            setSearch('')
-                            setSortBy('newest')
-                            setFiltersOpen(false)
-                          }}
-                          className="text-[12px] font-medium transition-opacity hover:opacity-80"
-                          style={{ color: current?.system?.dark, opacity: 0.55 }}
-                        >
-                          Clear all
-                        </button>
-                      ) : (
-                        <Text variant="sm" style={{ opacity: 0.45 }}>
-                          No active filters
-                        </Text>
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      <Text variant="sm" style={{ opacity: 0.55 }}>
-                        Budget
-                      </Text>
-                      <div className="flex flex-wrap gap-2">
-                        {(['all', 'hourly', 'fixed', 'hybrid'] as const).map((f) => {
-                          const active = budgetFilter === f
-                          const count = filterCounts[f]
-                          const bg = current?.system?.background ?? 'rgba(0,0,0,0.04)'
-                          return (
-                            <button
-                              key={f}
-                              type="button"
-                              onClick={() => {
-                                setBudgetFilter(f)
-                                setFiltersOpen(false)
-                              }}
-                              className="px-4 py-2 rounded-full text-[12px] font-medium transition-opacity whitespace-nowrap"
-                              style={{
-                                backgroundColor: bg,
-                                color: current?.system?.dark,
-                                opacity: active ? 1 : 0.55,
-                              }}
-                            >
-                              {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
-                              <span
-                                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
-                                style={{ marginLeft: 8, backgroundColor: bg, opacity: active ? 1 : 0.75 }}
-                              >
-                                {count}
-                              </span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Text variant="sm" style={{ opacity: 0.55 }}>
-                        Skill
-                      </Text>
-                      <div className="flex flex-wrap gap-2">
-                        {TRENDING_SKILLS.map((skill) => {
-                          const active = skillFilter === skill
-                          const bg = current?.system?.background ?? 'rgba(0,0,0,0.04)'
-                          return (
-                            <button
-                              key={skill}
-                              type="button"
-                              onClick={() => {
-                                setSkillFilter(active ? null : skill)
-                                setFiltersOpen(false)
-                              }}
-                              className="px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-opacity"
-                              style={{
-                                backgroundColor: bg,
-                                color: current?.system?.dark,
-                                opacity: active ? 1 : 0.55,
-                              }}
-                            >
-                              {skill}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Text variant="sm" style={{ opacity: 0.55 }}>
-                        Sort
-                      </Text>
-                      <div className="flex flex-wrap gap-2">
-                        {SORT_OPTIONS.map((opt) => {
-                          const active = sortBy === opt.value
-                          const bg = current?.system?.background ?? 'rgba(0,0,0,0.04)'
-                          return (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={() => {
-                                setSortBy(opt.value)
-                                setFiltersOpen(false)
-                              }}
-                              className="px-4 py-2 rounded-full text-[12px] font-medium transition-opacity"
-                              style={{
-                                backgroundColor: bg,
-                                color: current?.system?.dark,
-                                opacity: active ? 1 : 0.55,
-                              }}
-                            >
-                              {opt.label}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <div
-          className="hidden lg:flex flex-col w-full min-h-0 shrink-0"
-          style={{
-            height: heroLeftHeight > 0 ? heroLeftHeight : undefined,
-            minHeight: heroLeftHeight > 0 ? undefined : 180,
-          }}
-        >
           <div
-            className="h-full min-h-0 w-full overflow-hidden rounded-[16px]"
-            role="img"
-            aria-label="Marketplace hero"
-            style={{
-              backgroundColor: current?.system?.foreground,
-              backgroundImage: `url(${MARKETPLACE_HERO_BG_URL})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-            }}
-          />
+            className="flex w-full max-w-xl shrink-0 items-center gap-2 rounded-lg border border-white/15 px-2.5 py-1.5 backdrop-blur-md sm:gap-3 sm:px-3 sm:py-2"
+            style={{ background: 'rgba(0,0,0,0.42)' }}
+          >
+            <Search className="h-4 w-4 shrink-0 text-white/45" />
+            <input
+              type="text"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-white/40"
+              placeholder="Search projects..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="shrink-0 text-white/45 transition-opacity hover:text-white/90"
+                aria-label="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/55 transition-colors hover:bg-white/10 hover:text-white/95"
+              aria-label="Open filters"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
+        </>
+      )}
 
-      {/* Featured + results */}
-      <div className="space-y-6">
-        {loading ? (
-          <div className="space-y-4 max-w-6xl">
-            {[1, 2, 3].map((i) => (
-              <View key={i} bg="fg" className="rounded-base p-6 animate-pulse shadow-custom" style={{ height: 240 }}>
-                <div className="space-y-4">
-                  <div className="h-4 rounded-full w-3/4" style={{ background: current?.system?.border }} />
-                  <div className="h-3 rounded-full w-full" style={{ background: current?.system?.border, opacity: 0.5 }} />
-                  <div className="flex gap-2 mt-4">
-                    <div className="h-6 w-16 rounded-full" style={{ background: current?.system?.border, opacity: 0.3 }} />
-                    <div className="h-6 w-20 rounded-full" style={{ background: current?.system?.border, opacity: 0.3 }} />
+      <AnimatePresence>
+        {filtersOpen && (
+          <motion.div
+            className="fixed inset-0 z-[9999] min-h-[100dvh]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div
+              className="absolute inset-0 min-h-[100dvh]"
+              style={{
+                backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.25)',
+                backdropFilter: 'saturate(1.3)',
+              }}
+              onClick={() => setFiltersOpen(false)}
+            />
+            <motion.div
+              className="absolute inset-y-0 right-0 flex w-full max-w-[420px] min-h-0 flex-col overflow-hidden"
+              initial={{ x: 24 }}
+              animate={{ x: 0 }}
+              exit={{ x: 24 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                backgroundColor: current?.system?.foreground ?? undefined,
+                borderLeft: `1px solid ${current?.system?.border ?? 'rgba(0,0,0,0.1)'}`,
+              }}
+            >
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 space-y-5 scroll-slim">
+                <div className="flex items-center justify-between gap-3">
+                  <Text className="font-semibold" style={{ fontSize: baseFontSize * 1.05 }}>
+                    Filters
+                  </Text>
+                  {activeFilterCount > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBudgetFilter('all')
+                        setSkillFilter(null)
+                        setSearch('')
+                        setSortBy('newest')
+                        setFiltersOpen(false)
+                      }}
+                      className="text-[12px] font-medium transition-opacity hover:opacity-80"
+                      style={{ color: current?.system?.dark, opacity: 0.55 }}
+                    >
+                      Clear all
+                    </button>
+                  ) : (
+                    <Text variant="sm" style={{ opacity: 0.45 }}>
+                      No active filters
+                    </Text>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Text variant="sm" style={{ opacity: 0.55 }}>
+                    Budget
+                  </Text>
+                  <div className="flex flex-wrap gap-2">
+                    {(['all', 'hourly', 'fixed', 'hybrid'] as const).map((f) => {
+                      const active = budgetFilter === f
+                      const count = filterCounts[f]
+                      const bg = current?.system?.background ?? 'rgba(0,0,0,0.04)'
+                      return (
+                        <button
+                          key={f}
+                          type="button"
+                          onClick={() => {
+                            setBudgetFilter(f)
+                            setFiltersOpen(false)
+                          }}
+                          className="px-4 py-2 rounded-full text-[12px] font-medium transition-opacity whitespace-nowrap"
+                          style={{
+                            backgroundColor: bg,
+                            color: current?.system?.dark,
+                            opacity: active ? 1 : 0.55,
+                          }}
+                        >
+                          {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
+                            style={{ marginLeft: 8, backgroundColor: bg, opacity: active ? 1 : 0.75 }}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
-              </View>
-            ))}
+
+                <div className="space-y-3">
+                  <Text variant="sm" style={{ opacity: 0.55 }}>
+                    Skill
+                  </Text>
+                  <div className="flex flex-wrap gap-2">
+                    {TRENDING_SKILLS.map((skill) => {
+                      const active = skillFilter === skill
+                      const bg = current?.system?.background ?? 'rgba(0,0,0,0.04)'
+                      return (
+                        <button
+                          key={skill}
+                          type="button"
+                          onClick={() => {
+                            setSkillFilter(active ? null : skill)
+                            setFiltersOpen(false)
+                          }}
+                          className="px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-opacity"
+                          style={{
+                            backgroundColor: bg,
+                            color: current?.system?.dark,
+                            opacity: active ? 1 : 0.55,
+                          }}
+                        >
+                          {skill}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Text variant="sm" style={{ opacity: 0.55 }}>
+                    Sort
+                  </Text>
+                  <div className="flex flex-wrap gap-2">
+                    {SORT_OPTIONS.map((opt) => {
+                      const active = sortBy === opt.value
+                      const bg = current?.system?.background ?? 'rgba(0,0,0,0.04)'
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            setSortBy(opt.value)
+                            setFiltersOpen(false)
+                          }}
+                          className="px-4 py-2 rounded-full text-[12px] font-medium transition-opacity"
+                          style={{
+                            backgroundColor: bg,
+                            color: current?.system?.dark,
+                            opacity: active ? 1 : 0.55,
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Featured + results */}
+      {!loading && (
+      <div className="space-y-6">
+        {showProjectsSearchSkeleton ? (
+          <div
+            className="w-full"
+            role="status"
+            aria-busy="true"
+            aria-label="Updating search results"
+          >
+            <MarketplaceProjectsGridSkeleton colors={skeletonPalette} />
           </div>
         ) : filtered.length === 0 ? (
-          <View bg="fg" className="rounded-base p-12 text-center shadow-custom">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
-              style={{ background: `${current?.brand?.secondary ?? '#FF9600'}14` }}
+          <View bg="fg" className="rounded-base p-4 shadow-custom">
+            <EmptyState
+              variant={search || skillFilter || budgetFilter !== 'all' ? 'search' : 'folder'}
+              title="No projects found"
+              description={
+                search || skillFilter
+                  ? 'Try adjusting your search or filters to find more projects.'
+                  : 'There are no open projects at the moment. Check back soon!'
+              }
             >
-              <Sparkles className="w-6 h-6" style={{ color: current?.brand?.secondary ?? '#FF9600' }} />
-            </div>
-            <Text className="font-semibold mb-2" style={{ fontSize: baseFontSize * 1.1 }}>
-              No projects found
-            </Text>
-            <Text variant="sm" style={{ opacity: 0.5, maxWidth: 320 }} className="mx-auto leading-relaxed">
-              {search || skillFilter
-                ? 'Try adjusting your search or filters to find more projects.'
-                : 'There are no open projects at the moment. Check back soon!'}
-            </Text>
-            {(search || skillFilter || budgetFilter !== 'all') && (
-              <button
-                type="button"
-                onClick={() => {
-                  setBudgetFilter('all')
-                  setSkillFilter(null)
-                  setSearch('')
-                  setSortBy('newest')
-                }}
-                className="mt-4 text-[12px] font-medium px-4 py-2 rounded-full transition-opacity hover:opacity-80"
-                style={{ background: `${current?.brand?.primary ?? '#682308'}12`, color: current?.brand?.primary ?? '#682308' }}
-              >
-                Clear all filters
-              </button>
-            )}
+              {(search || skillFilter || budgetFilter !== 'all') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBudgetFilter('all')
+                    setSkillFilter(null)
+                    setSearch('')
+                    setSortBy('newest')
+                  }}
+                  className="mt-2 text-[12px] font-medium px-4 py-2 rounded-full transition-opacity hover:opacity-80"
+                  style={{ background: `${current?.brand?.primary ?? '#682308'}12`, color: current?.brand?.primary ?? '#682308' }}
+                >
+                  Clear all filters
+                </button>
+              )}
+            </EmptyState>
           </View>
         ) : (
-          <div className="space-y-4 max-w-6xl">
-            {filtered.map((p) => (
+          <div className="space-y-4 w-full">
+            {paginated.map((p) => (
               <MarketplaceProjectCard
                 key={p.id}
                 posting={p}
                 company={companiesById[p.companyId] ?? null}
                 isFreelancer={isFreelancer}
-                theme={current}
+                theme={current!}
                 skillColors={skillColors}
                 variant="default"
                 viewerUser={user ?? null}
@@ -912,16 +836,56 @@ const MarketplacePage = () => {
                 onManageApplications={() => openApplications(p)}
               />
             ))}
+            <div
+              className="flex flex-wrap items-center justify-center gap-3 pt-2"
+              style={{ color: current?.system?.dark }}
+            >
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
+                style={{
+                  borderColor: current?.system?.border ?? 'rgba(0,0,0,0.12)',
+                  background: current?.system?.background ?? 'rgba(0,0,0,0.04)',
+                }}
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <Text variant="sm" className="min-w-[10rem] text-center font-medium" style={{ opacity: 0.85 }}>
+                Page {page} of {totalPages}
+                <span className="block text-[11px] font-normal mt-0.5" style={{ opacity: 0.65 }}>
+                  {filtered.length} project{filtered.length === 1 ? '' : 's'}
+                </span>
+              </Text>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
+                style={{
+                  borderColor: current?.system?.border ?? 'rgba(0,0,0,0.12)',
+                  background: current?.system?.background ?? 'rgba(0,0,0,0.04)',
+                }}
+                aria-label="Next page"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         )}
       </div>
+      )}
 
       {/* Create posting modal */}
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} variant="wide">
         <div className="p-7 space-y-5">
           <div>
             <Text className="font-semibold" style={{ fontSize: baseFontSize * 1.2 }}>Post a new project</Text>
-            <Text variant="sm" className="mt-1" style={{ opacity: 0.45 }}>Describe the role and budget to attract the right freelancers.</Text>
+            <Text variant="sm" className="mt-1" style={{ opacity: 0.45 }}>
+              Describe the role and set a fixed budget and/or hourly rate (single amounts, not ranges).
+            </Text>
           </div>
           <Input label="Title" value={createTitle} onChange={(e) => setCreateTitle(e.target.value)} />
           <Textarea label="Description" value={createDesc} onChange={(e) => setCreateDesc(e.target.value)} />
@@ -941,40 +905,33 @@ const MarketplacePage = () => {
               placement="below"
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {(createBudgetType === 'hourly' || createBudgetType === 'hybrid') && (
             <CurrencyInput
-              label="Hourly min"
-              value={createHourlyMin}
-              onChange={setCreateHourlyMin}
+              label={createBudgetType === 'hybrid' ? 'Hourly rate' : 'Hourly rate (per hour)'}
+              value={createHourlyRate}
+              onChange={setCreateHourlyRate}
               currency={createCurrency}
               showCurrencySymbol={false}
             />
+          )}
+          {(createBudgetType === 'fixed' || createBudgetType === 'hybrid') && (
             <CurrencyInput
-              label="Hourly max"
-              value={createHourlyMax}
-              onChange={setCreateHourlyMax}
+              label={createBudgetType === 'hybrid' ? 'Fixed budget (total)' : 'Fixed budget'}
+              value={createFixedBudget}
+              onChange={setCreateFixedBudget}
               currency={createCurrency}
               showCurrencySymbol={false}
             />
-            <CurrencyInput
-              label="Fixed min"
-              value={createFixedMin}
-              onChange={setCreateFixedMin}
-              currency={createCurrency}
-              showCurrencySymbol={false}
-            />
-            <CurrencyInput
-              label="Fixed max"
-              value={createFixedMax}
-              onChange={setCreateFixedMax}
-              currency={createCurrency}
-              showCurrencySymbol={false}
-            />
-          </div>
+          )}
           <Input label="Required skills" placeholder="Comma-separated (e.g. React, Go, Figma)" value={createSkills} onChange={(e) => setCreateSkills(e.target.value)} />
           <div className="flex justify-end gap-3 pt-2">
             <Button label="Cancel" variant="background" onClick={() => setCreateOpen(false)} />
-            <Button label="Post project" onClick={handleCreate} disabled={saving || !createTitle.trim()} />
+            <Button
+              label="Post project"
+              onClick={handleCreate}
+              disabled={saving || !createTitle.trim() || !createBudgetValid}
+              loading={saving}
+            />
           </div>
         </div>
       </Modal>
@@ -996,39 +953,10 @@ const MarketplacePage = () => {
             mode="fill"
             borderless
             enableMentions
+            linkInputMode="fields"
           />
           <div className="space-y-2">
-            <Text variant="sm" style={{ opacity: 0.55 }}>
-              Attach documents (CV / Resume)
-            </Text>
-            <input
-              ref={applyAttachmentInputRef}
-              type="file"
-              className="hidden"
-              multiple
-              accept="application/pdf,.pdf,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx,text/plain,.txt"
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? [])
-                setApplyAttachments(files)
-                e.target.value = ''
-              }}
-              aria-hidden
-            />
-            <div className="flex items-center gap-3 flex-wrap">
-              <Button
-                label={applyAttachments.length ? 'Replace files' : 'Add files'}
-                size="sm"
-                variant="background"
-                startIcon={<FileText className="w-4 h-4 shrink-0" />}
-                onClick={() => applyAttachmentInputRef.current?.click()}
-                disabled={saving}
-              />
-              {applyAttachments.length > 0 && (
-                <Text variant="sm" style={{ opacity: 0.45 }}>
-                  {applyAttachments.length} selected
-                </Text>
-              )}
-            </div>
+            <FileAttachmentDropzone files={applyAttachments} onFilesChange={setApplyAttachments} disabled={saving} />
 
             {applyAttachments.length > 0 && (
               <div className="space-y-2">
@@ -1057,13 +985,9 @@ const MarketplacePage = () => {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Proposed hourly rate" value={proposedHourly} onChange={(e) => setProposedHourly(e.target.value)} />
-            <Input label="Proposed fixed budget" value={proposedFixed} onChange={(e) => setProposedFixed(e.target.value)} />
-          </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button label="Cancel" variant="background" onClick={() => setApplyOpen(false)} />
-            <Button label="Submit application" startIcon={<Send className="w-4 h-4 shrink-0" />} onClick={handleApply} disabled={saving} />
+            <Button label="Submit application" startIcon={<Send className="w-4 h-4 shrink-0" />} onClick={handleApply} disabled={saving} loading={saving} />
           </div>
         </div>
       </Modal>
@@ -1078,12 +1002,7 @@ const MarketplacePage = () => {
           {appsLoading ? (
             <Text variant="sm" className="opacity-70">Loading...</Text>
           ) : applications.length === 0 ? (
-            <div className="py-8 text-center">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: `${current?.brand?.secondary ?? '#FF9600'}14` }}>
-                <Users className="w-5 h-5" style={{ color: current?.brand?.secondary ?? '#FF9600' }} />
-              </div>
-              <Text variant="sm" style={{ opacity: 0.5 }}>No applications yet.</Text>
-            </div>
+            <EmptyState variant="inbox" compact title="No applications yet" description="When freelancers apply, they’ll appear here." className="py-6" />
           ) : (
             <div className="space-y-4">
               {applications.map((a) => (
@@ -1133,20 +1052,21 @@ const MarketplacePage = () => {
                           ))}
                         </div>
                       )}
-                      <div className="flex items-center gap-3">
-                        <DollarSign className="w-3.5 h-3.5" style={{ opacity: 0.4 }} />
-                        <Text variant="sm" style={{ opacity: 0.6 }}>
-                          {a.proposedHourlyRate ? `${formatMoney(a.proposedHourlyRate, a.currency)} / hr` : ''}
-                          {a.proposedHourlyRate && a.proposedFixed ? ' + ' : ''}
-                          {a.proposedFixed ? `${formatMoney(a.proposedFixed, a.currency)}` : ''}
-                          {(!a.proposedHourlyRate && !a.proposedFixed) ? 'No rate proposed' : ''}
-                        </Text>
-                      </div>
+                      {(a.proposedHourlyRate != null || a.proposedFixed != null) && (
+                        <div className="flex items-center gap-3">
+                          <DollarSign className="w-3.5 h-3.5" style={{ opacity: 0.4 }} />
+                          <Text variant="sm" style={{ opacity: 0.6 }}>
+                            {a.proposedHourlyRate != null ? `${formatMoney(a.proposedHourlyRate, a.currency)} / hr` : ''}
+                            {a.proposedHourlyRate != null && a.proposedFixed != null ? ' + ' : ''}
+                            {a.proposedFixed != null ? `${formatMoney(a.proposedFixed, a.currency)}` : ''}
+                          </Text>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <Button size="sm" label="Shortlist" variant="background" startIcon={<CheckCircle2 className="w-4 h-4 shrink-0" />} onClick={() => updateStatus(a, 'shortlisted')} disabled={saving || a.status === 'shortlisted' || a.status === 'hired'} />
-                      <Button size="sm" label="Reject" variant="background" startIcon={<XCircle className="w-4 h-4 shrink-0" />} onClick={() => updateStatus(a, 'rejected')} disabled={saving || a.status === 'rejected' || a.status === 'hired'} />
-                      <Button size="sm" label="Hire" onClick={() => { setHireApp(a); setLeadId(''); setHireHourlyRate(''); setHireFixedBudget('') }} disabled={saving || a.status === 'hired'} />
+                      <Button size="sm" label="Shortlist" variant="background" startIcon={<CheckCircle2 className="w-4 h-4 shrink-0" />} onClick={() => updateStatus(a, 'shortlisted')} disabled={saving || a.status === 'shortlisted' || a.status === 'hired'} loading={saving} />
+                      <Button size="sm" label="Reject" variant="background" startIcon={<XCircle className="w-4 h-4 shrink-0" />} onClick={() => updateStatus(a, 'rejected')} disabled={saving || a.status === 'rejected' || a.status === 'hired'} loading={saving} />
+                      <Button size="sm" label="Hire" onClick={() => { setHireApp(a); setLeadId(''); setHireHourlyRate(''); setHireFixedBudget('') }} disabled={saving || a.status === 'hired'} loading={saving} />
                     </div>
                   </div>
                 </View>
@@ -1172,12 +1092,24 @@ const MarketplacePage = () => {
             placement="below"
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Hourly rate" value={hireHourlyRate} onChange={(e) => setHireHourlyRate(e.target.value)} />
-            <Input label="Fixed budget" value={hireFixedBudget} onChange={(e) => setHireFixedBudget(e.target.value)} />
+            <CurrencyInput
+              label="Hourly rate"
+              value={hireHourlyRate}
+              onChange={setHireHourlyRate}
+              currency={(selected?.currency ?? hireApp?.currency ?? 'UGX').trim().toUpperCase() || 'UGX'}
+              showCurrencySymbol={false}
+            />
+            <CurrencyInput
+              label="Fixed budget"
+              value={hireFixedBudget}
+              onChange={setHireFixedBudget}
+              currency={(selected?.currency ?? hireApp?.currency ?? 'UGX').trim().toUpperCase() || 'UGX'}
+              showCurrencySymbol={false}
+            />
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button label="Cancel" variant="background" onClick={() => setHireApp(null)} />
-            <Button label="Hire" onClick={handleHire} disabled={saving || !leadId} />
+            <Button label="Hire" onClick={handleHire} disabled={saving || !leadId} loading={saving} />
           </div>
         </div>
       </Modal>

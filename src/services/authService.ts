@@ -1,6 +1,7 @@
 import { api, endpoints, assertOk, getStoredToken, setStoredToken } from '../api'
 import { Authstore } from '../data/Authstore'
 import type { AuthUser } from '../types'
+import { setAuthProvider, syncAuthProviderFromToken } from '../utils/authProviderStorage'
 
 export interface LoginPayload {
   email: string
@@ -14,12 +15,6 @@ export interface SignupPayload {
   role?: string
   companyId?: string
   companyName?: string
-}
-
-export type GoogleAccountType = 'freelancer' | 'company'
-
-export interface GoogleAuthOptions {
-  accountType?: GoogleAccountType
 }
 
 interface AuthResponse {
@@ -75,6 +70,7 @@ export const authService = {
     const body = assertOk(res)
     const authUser: AuthUser = { ...body.user, token: body.token }
     setStoredToken(body.token)
+    setAuthProvider('password')
     Authstore.getState().setUser(authUser)
     return authUser
   },
@@ -84,18 +80,19 @@ export const authService = {
     const body = assertOk(res)
     const authUser: AuthUser = { ...body.user, token: body.token }
     setStoredToken(body.token)
+    setAuthProvider('password')
     Authstore.getState().setUser(authUser)
     return authUser
   },
 
-  async googleAuth(accessToken: string, options?: GoogleAuthOptions): Promise<AuthUser> {
+  async googleAuth(accessToken: string): Promise<AuthUser> {
     const res = await api.post<AuthResponse>(endpoints.auth.google(), {
       access_token: accessToken,
-      accountType: options?.accountType ?? 'freelancer',
     })
     const body = assertOk(res)
     const authUser: AuthUser = { ...body.user, token: body.token }
     setStoredToken(body.token)
+    setAuthProvider('google')
     Authstore.getState().setUser(authUser)
     return authUser
   },
@@ -121,6 +118,7 @@ export const authService = {
       // Keep users signed in across refresh when /me is unavailable by hydrating from token claims.
       const fromToken = await hydrateUserFromTokenClaims(token)
       if (fromToken) {
+        syncAuthProviderFromToken(token)
         Authstore.getState().setUser(fromToken)
         return fromToken
       }
@@ -131,6 +129,7 @@ export const authService = {
     const raw = res.data as Omit<AuthUser, 'token'> | { user: Omit<AuthUser, 'token'> }
     const profile = ('user' in raw ? raw.user : raw) as Omit<AuthUser, 'token'>
     const user: AuthUser = { ...profile, token }
+    syncAuthProviderFromToken(token)
     Authstore.getState().setUser(user)
     return user
   },

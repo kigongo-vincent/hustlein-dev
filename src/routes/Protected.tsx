@@ -31,7 +31,7 @@ const Protected = () => {
 
   if (restoring) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] text-[var(--primary-dark)]">
         <Spinner size="md" />
       </div>
     )

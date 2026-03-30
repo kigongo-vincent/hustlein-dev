@@ -597,9 +597,9 @@ const AddConsultantModal = ({ open, onClose, onSuccess, editUser }: AddConsultan
             <div className="flex gap-2 ml-auto">
               <Button type="button" variant="background" label="Cancel" onClick={handleClose} disabled={submitting} />
               {canGoNext ? (
-                <Button type="button" label="Next" onClick={(e) => { e.preventDefault(); goNext(e) }} disabled={submitting} />
+                <Button type="button" label="Next" onClick={(e) => { e.preventDefault(); goNext(e) }} disabled={submitting} loading={submitting} />
               ) : (
-                <Button type="submit" label={submitting ? (isEdit ? 'Saving…' : 'Adding…') : (isEdit ? 'Save changes' : 'Add consultant')} disabled={submitting} />
+                <Button type="submit" label={isEdit ? 'Save changes' : 'Add consultant'} disabled={submitting} loading={submitting} />
               )}
             </div>
           </div>

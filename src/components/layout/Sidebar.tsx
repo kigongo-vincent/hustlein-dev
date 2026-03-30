@@ -94,9 +94,11 @@ const SIDEBAR_WIDTH = 240
 
 type SidebarProps = {
   open: boolean
+  /** When true, collapse by animating width (layout reflows). When false, slide off-canvas (fixed drawer). */
+  isDesktop: boolean
 }
 
-const Sidebar = ({ open }: SidebarProps) => {
+const Sidebar = ({ open, isDesktop }: SidebarProps) => {
   const { current } = Themestore()
   const user = Authstore((s) => s.user)
 
@@ -121,7 +123,7 @@ const Sidebar = ({ open }: SidebarProps) => {
     if (user?.role === 'company_admin' || user?.role === 'super_admin') {
       return ALL_NAV
         .map((item) =>
-          item.to === '/app/projects' ? { ...item, label: 'Marketplace Projects' } : item
+          item.to === '/app/projects' ? { ...item, label: 'Projects' } : item
         )
         .filter((item) => !HIDDEN_FOR_COMPANY_ADMIN.has(item.to))
     }
@@ -134,17 +136,20 @@ const Sidebar = ({ open }: SidebarProps) => {
   // const activeBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.035)'
   const activeBg = current?.system?.background
 
+  const desktopAnimate = { width: open ? SIDEBAR_WIDTH : 0, opacity: open ? 1 : 0, x: 0 }
+  const mobileAnimate = { x: open ? 0 : -SIDEBAR_WIDTH, opacity: open ? 1 : 0 }
+
   return (
     <motion.div
       initial={false}
-      animate={{ x: open ? 0 : -SIDEBAR_WIDTH, opacity: open ? 1 : 0 }}
+      animate={isDesktop ? desktopAnimate : mobileAnimate}
       transition={{ type: 'tween', duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex flex-col shrink-0 overflow-hidden fixed inset-y-0 left-0 z-30 md:relative md:inset-auto"
       style={{
         height: 'var(--app-viewport-height)',
-        width: SIDEBAR_WIDTH,
+        width: isDesktop ? undefined : SIDEBAR_WIDTH,
+        minWidth: isDesktop && !open ? 0 : undefined,
         pointerEvents: open ? 'auto' : 'none',
-        visibility: open ? 'visible' : 'hidden',
       }}
     >
       <View

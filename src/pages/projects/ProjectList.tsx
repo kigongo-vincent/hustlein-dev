@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import Text, { baseFontSize } from '../../components/base/Text'
+import Text, { baseFontSize, minFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
-import { Card, Button, Skeleton } from '../../components/ui'
+import { Card, Button, Skeleton, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { useProjectListModal } from '../../data/ModalStore'
 import { projectService, userService, taskService, marketplaceService } from '../../services'
 import type { Project, ProjectPosting } from '../../types'
 import { FolderKanban, ListTodo, User, BarChart3, Search, Plus, SlidersHorizontal } from 'lucide-react'
 import { Authstore } from '../../data/Authstore'
+import { notifyError, notifySuccess } from '../../data/NotificationStore'
 import {
   PEXELS_AVATAR_FALLBACKS,
   PEXELS_AVATAR_LIST,
@@ -220,6 +221,7 @@ const ProjectList = () => {
           setCreateLeadId('')
           setCreateDueDate('')
           loadData()
+          notifySuccess('Project created.')
           return
         }
 
@@ -241,6 +243,9 @@ const ProjectList = () => {
         setCreateDescription('')
         setCreateLeadId('')
         setCreateDueDate('')
+        notifySuccess('Marketplace posting created.')
+      } catch (err) {
+        notifyError(err instanceof Error ? err.message : 'Could not create project.')
       } finally {
         setCreateSaving(false)
       }
@@ -264,6 +269,9 @@ const ProjectList = () => {
       await projectService.delete(deleteProject.id)
       setDeleteProject(null)
       loadData()
+      notifySuccess('Project deleted.')
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not delete project.')
     } finally {
       setActionSaving(false)
     }
@@ -277,6 +285,9 @@ const ProjectList = () => {
       await projectService.update(suspendProject.id, { status: nextStatus })
       setSuspendProject(null)
       loadData()
+      notifySuccess(nextStatus === 'suspended' ? 'Project suspended.' : 'Project resumed.')
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not update project status.')
     } finally {
       setActionSaving(false)
     }
@@ -294,6 +305,9 @@ const ProjectList = () => {
       })
       setEditProject(null)
       loadData()
+      notifySuccess('Project updated.')
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : 'Could not update project.')
     } finally {
       setEditSaving(false)
     }
@@ -411,7 +425,7 @@ const ProjectList = () => {
                     onClick={() => setCompanyProjectTab(tab.id)}
                     className="px-3 py-2 rounded-md font-medium transition-opacity whitespace-nowrap"
                     style={{
-                      fontSize: Math.max(11, baseFontSize * 1.05),
+                      fontSize: baseFontSize,
                       backgroundColor: active ? `${primary}14` : 'transparent',
                       color: active ? primary : (current?.system?.dark ?? '#111'),
                       opacity: active ? 1 : 0.7,
@@ -421,7 +435,7 @@ const ProjectList = () => {
                     <span
                       className="font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
                       style={{
-                        fontSize: Math.max(10, baseFontSize * 0.9),
+                        fontSize: Math.max(minFontSize, baseFontSize * 0.8),
                         marginLeft: 8,
                         backgroundColor: active ? `${primary}22` : (current?.system?.background ?? 'rgba(0,0,0,0.04)'),
                         color: active ? primary : (current?.system?.dark ?? '#111'),
@@ -517,15 +531,18 @@ const ProjectList = () => {
             </div>
           ) : isCompanyAdmin && companyProjectTab === 'marketplace' ? (
             sortedMarketplaceProjects.length === 0 ? (
-              <div className="p-8 text-center">
-                <Text variant="sm" className="opacity-70">
-                  {marketplaceProjects.length === 0
-                    ? 'No marketplace projects yet. Create one to get started.'
-                    : 'No marketplace projects match your search or filters.'}
-                </Text>
-              </div>
+              <EmptyState
+                variant={marketplaceProjects.length === 0 ? 'folder' : 'search'}
+                title={marketplaceProjects.length === 0 ? 'No marketplace projects yet' : 'Nothing matches'}
+                description={
+                  marketplaceProjects.length === 0
+                    ? 'Create one to get started.'
+                    : 'No marketplace projects match your search or filters.'
+                }
+                className="p-4"
+              />
             ) : (
-              <div className="space-y-4 max-w-6xl">
+              <div className="space-y-4 w-full">
                 {sortedMarketplaceProjects.map((p) => (
                   <MarketplaceProjectCard
                     key={p.id}
@@ -547,13 +564,16 @@ const ProjectList = () => {
               </div>
             )
           ) : sortedProjects.length === 0 ? (
-            <div className="p-8 text-center">
-              <Text variant="sm" className="opacity-70">
-                {projectsWithMeta.length === 0
-                  ? 'No projects yet. Create one to get started.'
-                  : 'No projects match your search or filters.'}
-              </Text>
-            </div>
+            <EmptyState
+              variant={projectsWithMeta.length === 0 ? 'folder' : 'search'}
+              title={projectsWithMeta.length === 0 ? 'No projects yet' : 'Nothing matches'}
+              description={
+                projectsWithMeta.length === 0
+                  ? 'Create one to get started.'
+                  : 'No projects match your search or filters.'
+              }
+              className="p-4"
+            />
           ) : (
             <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
               {sortedProjects.map((p) => (

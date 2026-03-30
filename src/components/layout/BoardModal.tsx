@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router'
-import { X, Plus, Settings, GripVertical, Trash2, Pencil, LayoutGrid, Inbox, Check, ListTodo } from 'lucide-react'
+import { X, Plus, Settings, GripVertical, Trash2, Pencil, Check, ListTodo } from 'lucide-react'
 import { Themestore } from '../../data/Themestore'
 import { useBoardModal } from '../../data/ModalStore'
 import { projectService } from '../../services/projectService'
@@ -17,6 +17,8 @@ import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
 import DateSelectInput from '../ui/DateSelectInput'
+import EmptyState from '../ui/EmptyState'
+import { Authstore } from '../../data/Authstore'
 
 export interface BoardModalProps {
   onClose: () => void
@@ -299,6 +301,9 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
     { value: 'low', label: 'Low' },
   ]
 
+  const { user } = Authstore()
+  const canTakeAction = user?.role == "company_admin" || user?.role == "project_lead"
+
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: fg, color: dark, fontSize: baseFontSize }}>
       <header className="flex items-center justify-between gap-4 shrink-0 px-4 py-3 border-b" style={{ borderColor }}>
@@ -306,21 +311,32 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
           <h2 className="font-semibold truncate" style={{ fontSize: baseFontSize }}>
             {projects.find((p) => p.id === projectId)?.name ?? ''}
           </h2>
-          <button
-            type="button"
-            onClick={openWorkflowModal}
-            className="flex items-center gap-2 px-3 py-2 rounded-base opacity-90 hover:opacity-100 transition font-medium"
-            style={{ color: dark, backgroundColor: bg, fontSize: baseFontSize }}
-          >
-            <Settings className="w-4 h-4" />
-            Manage workflow
-          </button>
-          <Button
-            size="sm"
-            label="Add milestone"
-            startIcon={<Plus className="w-4 h-4" />}
-            onClick={() => openAddMilestone(firstStateId)}
-          />
+
+          {
+            canTakeAction
+
+            &&
+
+            <button
+              type="button"
+              onClick={openWorkflowModal}
+              className="flex items-center gap-2 px-3 py-2 rounded-base opacity-90 hover:opacity-100 transition font-medium"
+              style={{ color: dark, backgroundColor: bg, fontSize: baseFontSize }}
+            >
+              <Settings className="w-4 h-4" />
+              Manage workflow
+            </button>
+          }
+          {
+            canTakeAction
+            &&
+            <Button
+              size="sm"
+              label="Add milestone"
+              startIcon={<Plus className="w-4 h-4" />}
+              onClick={() => openAddMilestone(firstStateId)}
+            />
+          }
         </div>
         <button
           type="button"
@@ -339,159 +355,150 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
             <Text variant="sm" style={{ color: dark }}>Loading...</Text>
           </div>
         ) : workflowStates.length === 0 ? (
-          <div className="flex flex-col items-center justify-center flex-1 gap-5 px-4">
-            <div
-              className="flex items-center justify-center w-16 h-16 rounded-full"
-              style={{
-                backgroundColor: primary ? `${primary}18` : 'rgba(255,150,0,0.08)',
-                color: dark,
-              }}
+          <div className="flex flex-col items-center justify-center flex-1 px-4">
+            <EmptyState
+              variant="columns"
+              title="No columns yet"
+              description="Add columns to organise milestones. Use a template or create your own in Manage workflow."
+              className="py-8 max-w-md"
             >
-              <LayoutGrid className="w-8 h-8 opacity-70" style={{ color: dark }} />
-            </div>
-            <div className="text-center max-w-sm">
-              <h3 className="font-medium mb-1.5" style={{ fontSize: baseFontSize * 1.15, color: dark }}>
-                No columns yet
-              </h3>
-              <Text variant="sm" className="opacity-80" style={{ color: dark }}>
-                Add columns to organise milestones. Use a template or create your own in Manage workflow.
-              </Text>
-            </div>
-            <Button
-              label="Manage workflow"
-              startIcon={<Settings className="w-4 h-4" />}
-              onClick={openWorkflowModal}
-            />
+              <Button
+                label="Manage workflow"
+                startIcon={<Settings className="w-4 h-4" />}
+                onClick={openWorkflowModal}
+              />
+            </EmptyState>
           </div>
         ) : (
           <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden scroll-slim">
             <div className="flex gap-3 h-full min-h-0 lg:flex-nowrap lg:w-max">
               {workflowStates.map((state) => {
-              const stateMilestones = milestonesByState[state.id] ?? []
-              const isDropTarget = dropTarget === state.id
-              return (
-                <div
-                  key={state.id}
-                  className="flex flex-col flex-1 min-w-0 min-h-0 rounded-base overflow-hidden h-full lg:flex-none lg:min-w-[30vw] lg:w-[30vw]"
-                  style={{ backgroundColor: bg ?? 'rgba(0,0,0,0.04)', minHeight: 200 }}
-                  onDragOver={(e) => handleDragOver(e, state.id)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, state.id)}
-                >
+                const stateMilestones = milestonesByState[state.id] ?? []
+                const isDropTarget = dropTarget === state.id
+                return (
                   <div
-                    className="shrink-0 flex items-center justify-between gap-2 py-2 px-2 border-b"
-                    style={{
-                      color: dark,
-                      backgroundColor: isDropTarget ? (primary ? `${primary}18` : 'rgba(255,150,0,0.12)') : undefined,
-                      fontSize: baseFontSize,
-                      borderColor: borderColor ?? 'rgba(0,0,0,0.08)',
-                    }}
+                    key={state.id}
+                    className="flex flex-col flex-1 min-w-0 min-h-0 rounded-base overflow-hidden h-full lg:flex-none lg:min-w-[30vw] lg:w-[30vw]"
+                    style={{ backgroundColor: bg ?? 'rgba(0,0,0,0.04)', minHeight: 200 }}
+                    draggable={canTakeAction}
+                    onDragOver={(e) => handleDragOver(e, state.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, state.id)}
                   >
-                    <span className="font-medium truncate">{state.name}</span>
-                    <span className="opacity-70 shrink-0" style={{ fontSize: baseFontSize }}>{stateMilestones.length}</span>
-                    <button
-                      type="button"
-                      onClick={() => openAddMilestone(state.id)}
-                      className="p-1.5 rounded-base opacity-70 hover:opacity-100 transition shrink-0"
-                      style={{ color: dark }}
-                      title="Add milestone to this column"
-                      aria-label="Add milestone"
+                    <div
+                      className="shrink-0 flex items-center justify-between gap-2 py-2 px-2 border-b"
+                      style={{
+                        color: dark,
+                        backgroundColor: isDropTarget ? (primary ? `${primary}18` : 'rgba(255,150,0,0.12)') : undefined,
+                        fontSize: baseFontSize,
+                        borderColor: borderColor ?? 'rgba(0,0,0,0.08)',
+                      }}
                     >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto scroll-slim space-y-2 pt-3 px-2 pb-2 flex flex-col">
-                    {stateMilestones.length === 0 ? (
-                      <div
-                        className="flex-1 min-h-[140px] flex flex-col items-center justify-center gap-3 py-6 px-4 rounded-base text-center"
-                        style={{
-                          color: dark,
-                          backgroundColor: 'rgba(0,0,0,0.04)',
-                        }}
+                      <span className="font-medium truncate">{state.name}</span>
+                      <span className="opacity-70 shrink-0" style={{ fontSize: baseFontSize }}>{stateMilestones.length}</span>
+                      <button
+                        type="button"
+                        onClick={() => openAddMilestone(state.id)}
+                        className="p-1.5 rounded-base opacity-70 hover:opacity-100 transition shrink-0"
+                        style={{ color: dark }}
+                        title="Add milestone to this column"
+                        aria-label="Add milestone"
                       >
-                        <Inbox className="w-10 h-10 opacity-40 shrink-0" style={{ color: dark }} aria-hidden />
-                        <div className="space-y-0.5">
-                          <Text variant="sm" className="font-medium opacity-90" style={{ color: dark }}>
-                            No milestones in {state.name}
-                          </Text>
-                          <Text variant="sm" className="opacity-65" style={{ color: dark }}>
-                            Add one with + or drag from another column
-                          </Text>
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="flex-1 min-h-0 overflow-y-auto scroll-slim space-y-2 pt-3 px-2 pb-2 flex flex-col">
+                      {stateMilestones.length === 0 ? (
+                        <div
+                          className="flex-1 min-h-[140px] flex flex-col items-center justify-center py-2 px-2 rounded-base"
+                          style={{
+                            color: dark,
+                            backgroundColor: 'rgba(0,0,0,0.04)',
+                          }}
+                        >
+                          <EmptyState
+                            variant="task"
+                            compact
+                            title={`No milestones in ${state.name}`}
+                            description="Add one with + or drag from another column."
+                            className="py-4 px-0 text-center"
+                          />
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            label={`Add to ${state.name}`}
+                            startIcon={<Plus className="w-4 h-4" />}
+                            onClick={() => openAddMilestone(state.id)}
+                            className="shrink-0"
+                          />
                         </div>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          label={`Add to ${state.name}`}
-                          startIcon={<Plus className="w-4 h-4" />}
-                          onClick={() => openAddMilestone(state.id)}
-                          className="shrink-0"
-                        />
-                      </div>
-                    ) : (
-                      stateMilestones.map((m) => {
-                        const assigneeIds = assigneeIdsByMilestone[m.id] ?? []
-                        return (
-                          <div
-                            key={m.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, m)}
-                            onDragEnd={handleDragEnd}
-                            className="cursor-grab active:cursor-grabbing touch-none group relative"
-                          >
-                            <MilestoneCard
-                              milestone={m}
-                              assigneeIds={assigneeIds}
-                              userMap={userMap}
-                              users={users}
-                              fg={fg}
-                              dark={dark}
-                              borderColor={borderColor}
-                              compact
-                              isDragging={dragging?.milestoneId === m.id}
-                            />
-                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  onClose()
-                                  navigate(`/app/projects/${projectId}/milestones/${m.id}`)
-                                }}
-                                className="p-1.5 rounded-base hover:opacity-100"
-                                style={{ backgroundColor: bg, color: dark }}
-                                title="View tasks"
-                                aria-label="View tasks under this milestone"
-                              >
-                                <ListTodo className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => openEditMilestone(m)}
-                                className="p-1.5 rounded-base hover:opacity-100"
-                                style={{ backgroundColor: bg, color: dark }}
-                                title="Edit"
-                                aria-label="Edit milestone"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteMilestoneId(m.id)}
-                                className="p-1.5 rounded-base hover:opacity-100"
-                                style={{ backgroundColor: bg, color: current?.system?.error ?? dark }}
-                                title="Delete"
-                                aria-label="Delete milestone"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                      ) : (
+                        stateMilestones.map((m) => {
+                          const assigneeIds = assigneeIdsByMilestone[m.id] ?? []
+                          return (
+                            <div
+                              key={m.id}
+                              draggable={canTakeAction}
+                              onDragStart={(e) => handleDragStart(e, m)}
+                              onDragEnd={handleDragEnd}
+                              className="cursor-grab active:cursor-grabbing touch-none group relative"
+                            >
+                              <MilestoneCard
+                                milestone={m}
+                                assigneeIds={assigneeIds}
+                                userMap={userMap}
+                                users={users}
+                                fg={fg}
+                                dark={dark}
+                                borderColor={borderColor}
+                                compact
+                                isDragging={dragging?.milestoneId === m.id}
+                              />
+                              <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onClose()
+                                    navigate(`/app/projects/${projectId}/milestones/${m.id}`)
+                                  }}
+                                  className="p-1.5 rounded-base hover:opacity-100"
+                                  style={{ backgroundColor: bg, color: dark }}
+                                  title="View tasks"
+                                  aria-label="View tasks under this milestone"
+                                >
+                                  <ListTodo className="w-3.5 h-3.5" />
+                                </button>
+                                {canTakeAction && (<>
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditMilestone(m)}
+                                    className="p-1.5 rounded-base hover:opacity-100"
+                                    style={{ backgroundColor: bg, color: dark }}
+                                    title="Edit"
+                                    aria-label="Edit milestone"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteMilestoneId(m.id)}
+                                    className="p-1.5 rounded-base hover:opacity-100"
+                                    style={{ backgroundColor: bg, color: current?.system?.error ?? dark }}
+                                    title="Delete"
+                                    aria-label="Delete milestone"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>)}
+                              </div>
                             </div>
-                          </div>
-                        )
-                      })
-                    )}
+                          )
+                        })
+                      )}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
             </div>
           </div>
         )}
@@ -597,7 +604,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
             <Button size="sm" variant="background" label="Cancel" onClick={() => setWorkflowModalOpen(false)} />
             <Button size="sm" variant="background" label="Add column" startIcon={<Plus className="w-4 h-4" />} onClick={addWorkflowState} />
-            <Button size="sm" label="Save" onClick={saveWorkflow} disabled={saving} />
+            <Button size="sm" label="Save" onClick={saveWorkflow} disabled={saving} loading={saving} />
           </footer>
         </div>
       </Modal>
@@ -710,7 +717,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
             <Button variant="background" label="Cancel" onClick={() => !saving && setAddMilestoneOpen(false)} disabled={saving} />
-            <Button label="Add milestone" onClick={handleCreateMilestone} disabled={saving || !milestoneName.trim() || !milestoneTarget} />
+            <Button label="Add milestone" onClick={handleCreateMilestone} disabled={saving || !milestoneName.trim() || !milestoneTarget} loading={saving} />
           </footer>
         </div>
       </Modal>
@@ -821,7 +828,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
           </div>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
             <Button variant="background" label="Cancel" onClick={() => !saving && setEditMilestoneId(null)} disabled={saving} />
-            <Button label="Save" onClick={handleUpdateMilestone} disabled={saving || !editName.trim() || !editTarget} />
+            <Button label="Save" onClick={handleUpdateMilestone} disabled={saving || !editName.trim() || !editTarget} loading={saving} />
           </footer>
         </div>
       </Modal>
@@ -837,7 +844,7 @@ export default function BoardModal({ onClose, initialProjectId }: BoardModalProp
           </Text>
           <footer className="flex justify-end gap-2 pt-4 mt-4 border-t shrink-0" style={{ borderColor }}>
             <Button variant="background" label="Cancel" onClick={() => !saving && setDeleteMilestoneId(null)} disabled={saving} />
-            <Button variant="danger" label="Delete" onClick={handleDeleteMilestone} disabled={saving} />
+            <Button variant="danger" label="Delete" onClick={handleDeleteMilestone} disabled={saving} loading={saving} />
           </footer>
         </div>
       </Modal>

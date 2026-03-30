@@ -10,8 +10,8 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
-import Text, { baseFontSize } from '../../components/base/Text'
-import { Button, Card, Modal } from '../../components/ui'
+import { baseFontSize } from '../../components/base/Text'
+import { Button, Card, Modal, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { chartTickStyle } from './utils'
 
@@ -54,9 +54,7 @@ const ProjectListAnalyticsModal = ({
           <Card title="Tasks per project" subtitle="Task count by project" className="px-4 pb-4">
             <div className="h-[280px] w-full">
               {chartDataByProject.length === 0 ? (
-                <div className="h-full flex items-center justify-center">
-                  <Text variant="sm" className="opacity-70">No data yet</Text>
-                </div>
+                <EmptyState variant="chart" compact description="No data yet" className="h-full min-h-[200px]" />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartDataByProject} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -88,9 +86,7 @@ const ProjectListAnalyticsModal = ({
           <Card title="Projects over time" subtitle="New projects by month" className="px-4 pb-4">
             <div className="h-[280px] w-full">
               {trendData.length === 0 ? (
-                <div className="h-full flex items-center justify-center">
-                  <Text variant="sm" className="opacity-70">No data yet</Text>
-                </div>
+                <EmptyState variant="chart" compact description="No data yet" className="h-full min-h-[200px]" />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>

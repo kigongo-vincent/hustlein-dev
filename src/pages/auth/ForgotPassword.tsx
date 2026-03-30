@@ -46,7 +46,7 @@ const ForgotPassword = () => {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             <Input
               label="Email"
               type="email"
@@ -66,7 +66,7 @@ const ForgotPassword = () => {
         <div className="mt-6 text-center">
           <Link to="/auth/login">
             <Text variant="sm" className="underline opacity-80">
-              ← Back to sign in
+              Back to sign in
             </Text>
           </Link>
         </div>

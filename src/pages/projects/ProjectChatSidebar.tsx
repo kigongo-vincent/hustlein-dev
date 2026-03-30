@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import Text from '../../components/base/Text'
+import type { Comment } from '../../types'
 import { Themestore } from '../../data/Themestore'
 import { LayoutGrid } from 'lucide-react'
-import type { Comment } from '../../types'
 import { PEXELS_AVATAR_LIST } from './constants'
 import type { LastSeenByAuthor } from './projectChatTypes'
 import ProjectChatGroupMenu, { type ChatParticipant } from './ProjectChatGroupMenu'
@@ -10,30 +10,6 @@ import ProjectChatMessageList from './ProjectChatMessageList'
 import ProjectChatComposer from './ProjectChatComposer'
 
 export type { LastSeenByAuthor }
-
-const DEMO_MESSAGES_WITH_ATTACHMENTS: Comment[] = [
-  {
-    id: 'demo-img',
-    entityType: 'doc',
-    entityId: '',
-    authorId: 'u2',
-    body: 'Here’s the latest mockup.',
-    createdAt: new Date(Date.now() - 3600000).toISOString(),
-    attachmentUrl: 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=400',
-    attachmentType: 'image',
-  },
-  {
-    id: 'demo-doc',
-    entityType: 'doc',
-    entityId: '',
-    authorId: 'u1',
-    body: 'Project brief and scope doc.',
-    createdAt: new Date(Date.now() - 7200000).toISOString(),
-    attachmentUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    attachmentType: 'doc',
-    attachmentSize: '1.2 MB',
-  },
-]
 
 export type ProjectChatSidebarProps = {
   projectName: string
@@ -56,6 +32,13 @@ export type ProjectChatSidebarProps = {
   projectDescription?: string
   onSaveGroupSettings?: (payload: { name: string; description: string }) => void | Promise<void>
   onLeaveGroup?: () => void
+  hideGroupSettings?: boolean
+  hideLeaveGroup?: boolean
+  hideMuteNotifications?: boolean
+  /** Advance “read” cursor when peer bubbles scroll into view (updates header badge). */
+  onPeerMessagesReadThrough?: (createdAtMs: number) => void
+  composeEnabled?: boolean
+  composeDisabledHint?: string
 }
 
 export default function ProjectChatSidebar({
@@ -77,7 +60,14 @@ export default function ProjectChatSidebar({
   projectDescription,
   onSaveGroupSettings,
   onLeaveGroup,
+  hideGroupSettings = false,
+  hideLeaveGroup = false,
+  hideMuteNotifications = false,
+  onPeerMessagesReadThrough,
+  composeEnabled = true,
+  composeDisabledHint,
 }: ProjectChatSidebarProps) {
+  const scrollRootRef = useRef<HTMLDivElement>(null)
   const { current } = Themestore()
   const dark = current?.system?.dark
   const primaryColor = current?.brand?.primary ?? '#682308'
@@ -90,10 +80,13 @@ export default function ProjectChatSidebar({
   const getAvatarSrc = (authorId: string, index: number) =>
     userAvatarMap[authorId] ?? PEXELS_AVATAR_LIST[index % PEXELS_AVATAR_LIST.length]
 
-  const displayComments = useMemo(() => {
-    const merged = comments.length === 0 ? [] : [...comments, ...DEMO_MESSAGES_WITH_ATTACHMENTS]
-    return merged.slice().sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-  }, [comments])
+  const displayComments = useMemo(
+    () =>
+      [...comments].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      ),
+    [comments]
+  )
 
   return (
     <div
@@ -127,9 +120,16 @@ export default function ProjectChatSidebar({
         groupDescription={projectDescription}
         onSaveGroupSettings={onSaveGroupSettings}
         onLeaveGroup={onLeaveGroup}
+        hideGroupSettings={hideGroupSettings}
+        hideLeaveGroup={hideLeaveGroup}
+        hideMuteNotifications={hideMuteNotifications}
       />
 
-      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scroll-slim px-1 py-2" style={{ overscrollBehavior: 'contain' }}>
+      <div
+        ref={scrollRootRef}
+        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scroll-slim px-1 py-2"
+        style={{ overscrollBehavior: 'contain' }}
+      >
         <ProjectChatMessageList
           comments={displayComments}
           userMap={userMap}
@@ -143,6 +143,8 @@ export default function ProjectChatSidebar({
           bubbleBg={bg ?? 'rgba(0,0,0,0.06)'}
           foreground={fg ?? '#fff'}
           borderColor={borderColor ?? undefined}
+          scrollRootRef={scrollRootRef}
+          onPeerMessagesReadThrough={onPeerMessagesReadThrough}
         />
       </div>
 
@@ -151,6 +153,8 @@ export default function ProjectChatSidebar({
         onNewCommentChange={onNewCommentChange}
         onSend={onSend}
         sending={sending}
+        composeEnabled={composeEnabled}
+        composeDisabledHint={composeDisabledHint}
         onAttachmentSelect={onAttachmentSelect}
         dark={dark}
         primaryColor={primaryColor}

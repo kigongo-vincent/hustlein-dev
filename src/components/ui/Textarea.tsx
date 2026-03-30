@@ -23,6 +23,7 @@ const Textarea = ({
   onChange,
   placeholder,
   rows = 4,
+  autoComplete = 'off',
   ...rest
 }: TextareaProps) => {
   const { current } = Themestore()
@@ -67,6 +68,7 @@ const Textarea = ({
           color: current?.system?.dark,
         }}
         {...rest}
+        autoComplete={autoComplete}
       />
       {error && (
         <Text variant="sm" className="mt-1" color={current?.system?.error}>

@@ -5,6 +5,7 @@ import { Authstore } from '../../data/Authstore'
 import { Themestore } from '../../data/Themestore'
 import { projectService, milestoneService, taskService } from '../../services'
 import type { Milestone, Project } from '../../types'
+import { toast } from 'react-toastify'
 
 /** Contrasting text color on a hex background: white or dark so step number is always readable. */
 function textOnBg(hex: string | undefined, dark: string | undefined): string {
@@ -20,7 +21,7 @@ function textOnBg(hex: string | undefined, dark: string | undefined): string {
 export interface LogTimeModalProps {
   open: boolean
   onClose: () => void
-  onSaved?: () => void
+  onSaved?: (data?: unknown) => void
   /** Prefill description when opening (e.g. from "create task from selection" on Notes). */
   initialDescription?: string
   /** Prefill title when opening. */
@@ -75,11 +76,11 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
     const isConsultant = user?.role === 'consultant'
     const load = isConsultant && currentUserId
       ? taskService.listByOwner(currentUserId).then((tasks) => {
-          const projectIds = [...new Set(tasks.map((t) => t.projectId).filter(Boolean))]
-          return Promise.all(projectIds.map((pid) => projectService.get(pid))).then((results) =>
-            results.filter((p): p is Project => p != null)
-          )
-        })
+        const projectIds = [...new Set(tasks.map((t) => t.projectId).filter(Boolean))]
+        return Promise.all(projectIds.map((pid) => projectService.get(pid))).then((results) =>
+          results.filter((p): p is Project => p != null)
+        )
+      })
       : projectService.list()
     load
       .then(async (list) => {
@@ -147,7 +148,8 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
 
   const canNextFromStep1 = !!selectedProjectId
   const canNextFromStep2 = !!selectedMilestoneId
-  const canSubmit = !!title.trim() && !!selectedProjectId && !!selectedMilestoneId && !!currentUserId
+  // const canSubmit = !!title.trim() && !!selectedProjectId && !!selectedMilestoneId && !!currentUserId
+  const canSubmit = true
 
   const handleNext = useCallback(() => {
     if (step === 1 && canNextFromStep1) setStep(2)
@@ -160,12 +162,14 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
   }, [step])
 
   const handleSubmit = useCallback(async () => {
-    if (!canSubmit || !selectedProjectId || !selectedMilestoneId) return
+    // if (!canSubmit || !selectedProjectId || !selectedMilestoneId) {
+    //   toast("missing project")
+    // }
     const workflow = await projectService.getWorkflow(selectedProjectId)
     const firstStateId = workflow?.states?.[0]?.id ?? 's1'
     setSaving(true)
     try {
-      await taskService.create({
+      const task = await taskService.create({
         projectId: selectedProjectId,
         milestoneId: selectedMilestoneId,
         title: title.trim(),
@@ -175,9 +179,13 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
         priority: 'medium',
         dependencyIds: [],
       })
-      onSaved?.()
+      onSaved?.(task)
       onClose()
-    } finally {
+    }
+    catch (e) {
+
+    }
+    finally {
       setSaving(false)
     }
   }, [canSubmit, selectedProjectId, selectedMilestoneId, title, description, currentUserId, onSaved, onClose])
@@ -187,6 +195,8 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
   const activeStepBg = secondary
   const activeStepColor = textOnBg(secondary, dark)
   const inactiveStepColor = dark ?? '#1a1a1a'
+
+
 
   return (
     <Modal open={open} onClose={() => !saving && onClose()} closeOnBackdrop variant="wide">
@@ -201,7 +211,7 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
         {/* Step indicator: full-width bar with middle divider lines */}
         <div
           className="flex w-full shrink-0 overflow-hidden rounded-base"
-          style={{ height: 40, backgroundColor: contentBg, border: `1px solid ${borderColor}` }}
+          style={{ height: 40, backgroundColor: contentBg }}
           role="progressbar"
           aria-valuenow={step}
           aria-valuemin={1}
@@ -327,14 +337,16 @@ export default function LogTimeModal({ open, onClose, onSaved, initialDescriptio
                   (step === 1 && !canNextFromStep1) ||
                   (step === 2 && !canNextFromStep2)
                 }
+                loading={saving}
               />
             ) : (
               <>
                 <Button variant="background" label="Cancel" onClick={onClose} disabled={saving} />
                 <Button
-                  label={saving ? 'Saving…' : 'Log time'}
+                  label="Log time"
                   onClick={handleSubmit}
-                  disabled={saving || !canSubmit}
+                  // disabled={saving || !canSubmit}
+                  loading={saving}
                 />
               </>
             )}

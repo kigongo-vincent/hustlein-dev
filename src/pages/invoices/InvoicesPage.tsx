@@ -16,7 +16,7 @@ import {
 import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
 import Logo, { LOGIN_LOGO_URL } from '../../components/base/Logo'
-import { Card, Button, Skeleton, Modal, CustomSelect, DatePicker, Input, CurrencyInput } from '../../components/ui'
+import { Card, Button, Skeleton, Modal, CustomSelect, DatePicker, Input, CurrencyInput, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { companyService } from '../../services'
@@ -792,7 +792,7 @@ const InvoicesPage = () => {
               onClick={() => setActiveTab(t.id)}
               className="px-3 py-2 rounded-md font-medium opacity-90 hover:opacity-100 transition"
               style={{
-                fontSize: Math.max(11, baseFontSize * 0.95),
+                fontSize: baseFontSize,
                 backgroundColor: selected
                   ? `${current?.brand?.primary ?? '#682308'}14`
                   : (current?.system?.foreground ?? '#fff'),
@@ -856,13 +856,16 @@ const InvoicesPage = () => {
             ))}
           </div>
         ) : filteredInvoices.length === 0 ? (
-          <div className="p-8 text-center">
-            <Text variant="sm" className="opacity-80">
-              {invoices.length === 0
-                ? 'No invoices yet.'
-                : 'No invoices match your search or filters.'}
-            </Text>
-          </div>
+          <EmptyState
+            variant={invoices.length === 0 ? 'invoice' : 'search'}
+            title={invoices.length === 0 ? 'No invoices yet' : 'Nothing matches'}
+            description={
+              invoices.length === 0
+                ? 'Invoices you create will show up here.'
+                : 'No invoices match your search or filters.'
+            }
+            className="p-6"
+          />
         ) : (
           <div className="overflow-x-auto scroll-slim">
             <AnimatePresence>
@@ -1487,11 +1490,7 @@ const InvoicesPage = () => {
                     ))}
                   </div>
                 ) : byStatusData.length === 0 ? (
-                  <div className="h-full flex items-center justify-center">
-                    <Text variant="sm" className="opacity-70">
-                      No invoices yet
-                    </Text>
-                  </div>
+                  <EmptyState variant="chart" compact description="No invoices yet" className="h-full min-h-[200px]" />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={byStatusData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -1527,11 +1526,7 @@ const InvoicesPage = () => {
                     ))}
                   </div>
                 ) : trendData.length === 0 ? (
-                  <div className="h-full flex items-center justify-center">
-                    <Text variant="sm" className="opacity-70">
-                      No data yet
-                    </Text>
-                  </div>
+                  <EmptyState variant="chart" compact description="No data yet" className="h-full min-h-[200px]" />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 28 }}>
@@ -1587,6 +1582,7 @@ const InvoicesPage = () => {
               startIcon={<CheckCircle className="w-4 h-4 shrink-0" />}
               onClick={handleMarkPaidConfirm}
               disabled={saving}
+              loading={saving}
             />
           </div>
         </div>
@@ -1608,6 +1604,7 @@ const InvoicesPage = () => {
               startIcon={<Undo2 className="w-4 h-4 shrink-0" />}
               onClick={handleUnmarkPaidConfirm}
               disabled={saving}
+              loading={saving}
             />
           </div>
         </div>

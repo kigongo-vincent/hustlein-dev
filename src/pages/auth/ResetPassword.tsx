@@ -67,7 +67,7 @@ const ResetPassword = () => {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <form onSubmit={handleSubmit} className="space-y-4 mt-4" autoComplete="off">
             <Input
               label="New password"
               type="password"
@@ -75,7 +75,6 @@ const ResetPassword = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              autoComplete="new-password"
             />
             <Input
               label="Confirm new password"
@@ -84,7 +83,6 @@ const ResetPassword = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              autoComplete="new-password"
             />
             <Button
               type="submit"

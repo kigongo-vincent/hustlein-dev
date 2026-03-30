@@ -26,6 +26,10 @@ export type ProjectChatGroupMenuProps = {
   onSaveGroupSettings?: (payload: { name: string; description: string }) => void | Promise<void>
   /** Called when user confirms leaving the group. Parent can close chat sidebar. */
   onLeaveGroup?: () => void
+  /** Hide actions that rename the internal workspace (e.g. marketplace freelancer context). */
+  hideGroupSettings?: boolean
+  hideLeaveGroup?: boolean
+  hideMuteNotifications?: boolean
 }
 
 type View = 'menu' | 'participants' | 'settings'
@@ -38,6 +42,9 @@ export default function ProjectChatGroupMenu({
   groupDescription = '',
   onSaveGroupSettings,
   onLeaveGroup,
+  hideGroupSettings = false,
+  hideLeaveGroup = false,
+  hideMuteNotifications = false,
 }: ProjectChatGroupMenuProps) {
   const { current } = Themestore()
   const dark = current?.system?.dark
@@ -72,6 +79,10 @@ export default function ProjectChatGroupMenu({
   }
 
   const handleGroupSettings = () => {
+    if (!onSaveGroupSettings) {
+      setMessage('Group settings are not available in this view.')
+      return
+    }
     setSettingsName(groupName)
     setSettingsDescription(groupDescription ?? '')
     setView('settings')
@@ -101,8 +112,12 @@ export default function ProjectChatGroupMenu({
   }
 
   const handleLeaveGroup = () => {
+    if (!onLeaveGroup) {
+      setMessage('Leaving the group is not available in this view.')
+      return
+    }
     if (!window.confirm('Leave this project chat? You can rejoin later.')) return
-    onLeaveGroup?.()
+    onLeaveGroup()
     setMessage('You have left the group.')
     handleClose()
   }
@@ -178,33 +193,39 @@ export default function ProjectChatGroupMenu({
                     <Users className="w-5 h-5 shrink-0 opacity-80" />
                     <span>Manage participants</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleGroupSettings}
-                    className="w-full flex items-center gap-3 py-2.5 px-3 rounded-base text-left hover:opacity-90"
-                    style={{ color: dark }}
-                  >
-                    <Settings className="w-5 h-5 shrink-0 opacity-80" />
-                    <span>Group settings</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMessage('Notifications muted for this group.')}
-                    className="w-full flex items-center gap-3 py-2.5 px-3 rounded-base text-left hover:opacity-90"
-                    style={{ color: dark }}
-                  >
-                    <BellOff className="w-5 h-5 shrink-0 opacity-80" />
-                    <span>Mute notifications</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleLeaveGroup}
-                    className="w-full flex items-center gap-3 py-2.5 px-3 rounded-base text-left hover:opacity-90"
-                    style={{ color: current?.system?.error }}
-                  >
-                    <LogOut className="w-5 h-5 shrink-0 opacity-80" />
-                    <span>Leave group</span>
-                  </button>
+                  {!hideGroupSettings && (
+                    <button
+                      type="button"
+                      onClick={handleGroupSettings}
+                      className="w-full flex items-center gap-3 py-2.5 px-3 rounded-base text-left hover:opacity-90"
+                      style={{ color: dark }}
+                    >
+                      <Settings className="w-5 h-5 shrink-0 opacity-80" />
+                      <span>Group settings</span>
+                    </button>
+                  )}
+                  {!hideMuteNotifications && (
+                    <button
+                      type="button"
+                      onClick={() => setMessage('Notifications muted for this group.')}
+                      className="w-full flex items-center gap-3 py-2.5 px-3 rounded-base text-left hover:opacity-90"
+                      style={{ color: dark }}
+                    >
+                      <BellOff className="w-5 h-5 shrink-0 opacity-80" />
+                      <span>Mute notifications</span>
+                    </button>
+                  )}
+                  {!hideLeaveGroup && (
+                    <button
+                      type="button"
+                      onClick={handleLeaveGroup}
+                      className="w-full flex items-center gap-3 py-2.5 px-3 rounded-base text-left hover:opacity-90"
+                      style={{ color: current?.system?.error }}
+                    >
+                      <LogOut className="w-5 h-5 shrink-0 opacity-80" />
+                      <span>Leave group</span>
+                    </button>
+                  )}
                 </nav>
               )}
 
@@ -255,9 +276,10 @@ export default function ProjectChatGroupMenu({
                     />
                   </div>
                   <Button
-                    label={savingSettings ? 'Saving…' : 'Save'}
+                    label="Save"
                     onClick={handleSaveSettings}
                     disabled={savingSettings || !settingsName.trim()}
+                    loading={savingSettings}
                   />
                 </div>
               )}

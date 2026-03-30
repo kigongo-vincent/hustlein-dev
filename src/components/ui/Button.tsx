@@ -91,7 +91,7 @@ const Button = ({
           <>
             {startIcon && (
               <span
-                className={`shrink-0 [&>svg]:size-5 ${isLight && !primaryIconColor ? 'text-white [&>svg]:text-white' : '[&>svg]:text-current'}`}
+                className={`shrink-0 text-inherit [&>svg]:size-5 ${isLight && !primaryIconColor ? 'text-white' : ''}`}
                 style={primaryIconColor ? { color: primaryIconColor } : undefined}
               >
                 {startIcon}
