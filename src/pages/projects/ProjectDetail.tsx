@@ -135,11 +135,7 @@ const ProjectDetail = () => {
   const [milestoneTarget, setMilestoneTarget] = useState('')
   const [milestonePriority, setMilestonePriority] = useState<string>('medium')
   const [milestoneAssigneeIds, setMilestoneAssigneeIds] = useState<string[]>([])
-  const [taskTitle, setTaskTitle] = useState('')
-  const [taskMilestoneId, setTaskMilestoneId] = useState('')
   const [taskOwnerId, setTaskOwnerId] = useState('')
-  const [taskPriority, setTaskPriority] = useState<string>('medium')
-  const [taskDueDate, setTaskDueDate] = useState('')
   const [saving, setSaving] = useState(false)
   const [editOpen, setEditOpen] = useProjectDetailModal(id, 'edit')
   const [editName, setEditName] = useState('')
@@ -643,14 +639,7 @@ const ProjectDetail = () => {
     [applicationStatusTab, externalApplications]
   )
 
-  const userOptions = useMemo(
-    () => users.map((u) => ({ value: u.id, label: u.name })),
-    [users]
-  )
-  const milestoneOptions = useMemo(
-    () => [{ value: '', label: 'No milestone' }, ...milestones.map((m) => ({ value: m.id, label: m.name }))],
-    [milestones]
-  )
+
   const priorityOptions = [
     { value: 'high', label: 'High' },
     { value: 'medium', label: 'Medium' },
@@ -680,33 +669,33 @@ const ProjectDetail = () => {
     }
   }, [id, milestoneName, milestoneTarget, milestonePriority, milestoneAssigneeIds, loadData])
 
-  const handleAddTask = useCallback(async () => {
-    if (!id || !taskTitle.trim() || !taskOwnerId) return
-    const workflow = await projectService.getWorkflow(id)
-    const firstStateId = workflow?.states?.[0]?.id ?? 's1'
-    setSaving(true)
-    try {
-      await taskService.create({
-        projectId: id,
-        milestoneId: taskMilestoneId || undefined,
-        title: taskTitle.trim(),
-        workflowStateId: firstStateId,
-        ownerId: taskOwnerId,
-        priority: (taskPriority as 'high' | 'medium' | 'low') || 'medium',
-        dueDate: taskDueDate || undefined,
-        dependencyIds: [],
-      })
-      setAddTaskOpen(false)
-      setTaskTitle('')
-      setTaskMilestoneId('')
-      setTaskOwnerId('')
-      setTaskPriority('medium')
-      setTaskDueDate('')
-      loadData()
-    } finally {
-      setSaving(false)
-    }
-  }, [id, taskTitle, taskMilestoneId, taskOwnerId, taskPriority, taskDueDate, loadData])
+  // const handleAddTask = useCallback(async () => {
+  //   if (!id || !taskTitle.trim() || !taskOwnerId) return
+  //   const workflow = await projectService.getWorkflow(id)
+  //   const firstStateId = workflow?.states?.[0]?.id ?? 's1'
+  //   setSaving(true)
+  //   try {
+  //     await taskService.create({
+  //       projectId: id,
+  //       milestoneId: taskMilestoneId || undefined,
+  //       title: taskTitle.trim(),
+  //       workflowStateId: firstStateId,
+  //       ownerId: taskOwnerId,
+  //       priority: (taskPriority as 'high' | 'medium' | 'low') || 'medium',
+  //       dueDate: taskDueDate || undefined,
+  //       dependencyIds: [],
+  //     })
+  //     setAddTaskOpen(false)
+  //     setTaskTitle('')
+  //     setTaskMilestoneId('')
+  //     setTaskOwnerId('')
+  //     setTaskPriority('medium')
+  //     setTaskDueDate('')
+  //     loadData()
+  //   } finally {
+  //     setSaving(false)
+  //   }
+  // }, [id, taskTitle, taskMilestoneId, taskOwnerId, taskPriority, taskDueDate, loadData])
 
   const workspaceUsersForChat = useMemo(
     () =>
@@ -1632,18 +1621,12 @@ const ProjectDetail = () => {
                   project={project}
                   milestones={milestones}
                   tasks={tasks}
-                  userMap={userMap}
-                  users={users}
-                  primaryColor={primaryColor}
                   secondaryColor={secondaryColor}
-                  dark={dark ?? '#111'}
+                  darkMode={darkMode}
+                  doneStateId={DONE_STATE_ID}
                   fg={fg ?? '#fff'}
                   bg={bg ?? '#f4f4f4'}
                   borderColor={borderColor}
-                  darkMode={darkMode}
-                  doneStateId={DONE_STATE_ID}
-                  successColor={current?.system?.success}
-                  currentUserId={user?.id}
                 />
               </div>
             </section>

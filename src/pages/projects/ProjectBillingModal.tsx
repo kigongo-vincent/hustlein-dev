@@ -5,7 +5,7 @@ import Avatar from '../../components/base/Avatar'
 import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { billingService, userService, milestoneService, projectService, taskService } from '../../services'
-import type { BillingMilestone, Invoice, Milestone, ProjectAssignment, Task, TimesheetEntry, User, WorkflowState } from '../../types'
+import type { BillingMilestone, Invoice, Milestone, ProjectAssignment, Task, User, WorkflowState } from '../../types'
 import { FileText, Receipt, Shield, UserStar } from 'lucide-react'
 
 type Props = {
@@ -13,19 +13,6 @@ type Props = {
   onClose: () => void
   projectId: string
   projectName: string
-}
-
-function minutesToHours(m: number) {
-  return Math.round((m / 60) * 100) / 100
-}
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .filter((part) => part.length > 0)
-    .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
-    .join('')
 }
 
 export default function ProjectBillingModal({ open, onClose, projectId, projectName }: Props) {
@@ -36,13 +23,11 @@ export default function ProjectBillingModal({ open, onClose, projectId, projectN
   const [selectedConsultantIds, setSelectedConsultantIds] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
 
-  const [approvedTimesheets, setApprovedTimesheets] = useState<TimesheetEntry[]>([])
   const [milestones, setMilestones] = useState<BillingMilestone[]>([])
   const [includedMilestoneIds, setIncludedMilestoneIds] = useState<string[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
 
   // User data for enhanced consultant cards
-  const [users, setUsers] = useState<User[]>([])
   const [userMap, setUserMap] = useState<Record<string, User>>({})
 
   // Board milestones state
@@ -51,7 +36,6 @@ export default function ProjectBillingModal({ open, onClose, projectId, projectN
   const [includedBoardMilestoneIds, setIncludedBoardMilestoneIds] = useState<string[]>([])
 
   // Drag state
-  const [draggingType, setDraggingType] = useState<'consultant' | 'milestone' | 'boardMilestone' | null>(null)
 
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -207,7 +191,6 @@ export default function ProjectBillingModal({ open, onClose, projectId, projectN
             milestoneService.listByProject(projectId),
           ])
           setAssignments(list)
-          setUsers(userList)
           setUserMap(Object.fromEntries(userList.map((u) => [u.id, u])))
           setWorkflowStates(workflow?.states ?? [])
           setBoardMilestones(boardMs)
@@ -267,21 +250,7 @@ export default function ProjectBillingModal({ open, onClose, projectId, projectN
     })()
   }, [open, selectedAssignment?.id, includedMilestoneIds, includedBoardMilestoneIds])
 
-  useEffect(() => {
-    if (!open || !selectedAssignment?.id) return
-      ; (async () => {
-        try {
-          const approved = await billingService.listTimesheets(selectedAssignment.id, {
-            status: 'approved',
-            from: from || undefined,
-            to: to || undefined,
-          })
-          setApprovedTimesheets(approved)
-        } catch {
-          setApprovedTimesheets([])
-        }
-      })()
-  }, [open, selectedAssignment?.id, from, to])
+
 
 
   const generateInvoice = async () => {
@@ -372,7 +341,6 @@ export default function ProjectBillingModal({ open, onClose, projectId, projectN
     id: string
   ) => {
     event.dataTransfer.setData('text/plain', JSON.stringify({ type, id }))
-    setDraggingType(type)
   }
 
   const handleDrop = (
@@ -408,11 +376,9 @@ export default function ProjectBillingModal({ open, onClose, projectId, projectN
     } catch {
       // ignore invalid drag data
     }
-    setDraggingType(null)
   }
 
   const handleDragEnd = () => {
-    setDraggingType(null)
   }
 
   return (

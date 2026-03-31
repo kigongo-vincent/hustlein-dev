@@ -18,7 +18,6 @@ import type { Milestone, Project, Task, WorkflowState } from '../../types'
 import { getChartColors, formatDate } from '../projects/utils'
 import { Themestore } from '../../data/Themestore'
 import {
-  ChevronLeft,
   ListTodo,
   CheckCircle,
   Loader2,
