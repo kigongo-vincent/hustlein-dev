@@ -42,22 +42,22 @@ const AppShell = () => {
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      if (!user?.companyId) {
-        setCompanyForCompletion(null)
-        return
-      }
-      setLoadingCompany(true)
-      try {
-        const c = await companyService.get(user.companyId)
-        if (!cancelled) setCompanyForCompletion(c)
-      } catch {
-        // Freelancers and other roles may have a company id but no GET /companies/:id access.
-        if (!cancelled) setCompanyForCompletion(null)
-      } finally {
-        if (!cancelled) setLoadingCompany(false)
-      }
-    })()
+      ; (async () => {
+        if (!user?.companyId) {
+          setCompanyForCompletion(null)
+          return
+        }
+        setLoadingCompany(true)
+        try {
+          const c = await companyService.get(user.companyId)
+          if (!cancelled) setCompanyForCompletion(c)
+        } catch {
+          // Freelancers and other roles may have a company id but no GET /companies/:id access.
+          if (!cancelled) setCompanyForCompletion(null)
+        } finally {
+          if (!cancelled) setLoadingCompany(false)
+        }
+      })()
     return () => {
       cancelled = true
     }
@@ -70,10 +70,7 @@ const AppShell = () => {
       c.name.trim().length > 0 &&
       !!c.email?.trim() &&
       !!c.phone?.trim() &&
-      !!c.address?.trim() &&
-      typeof c.taxRate === 'number' &&
-      typeof c.storageLimitMb === 'number' &&
-      typeof c.storageUsedMb === 'number'
+      !!c.address?.trim()
     )
   }
 
@@ -118,6 +115,7 @@ const AppShell = () => {
         open={shouldBlockCompanyCompletion}
         company={companyForCompletion}
         onUpdated={(updated) => setCompanyForCompletion(updated)}
+        onClose={() => setCompanyForCompletion(null)}
       />
       <Toasts />
     </View>

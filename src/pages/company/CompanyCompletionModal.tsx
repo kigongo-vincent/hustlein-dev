@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import View from '../../components/base/View'
 import Text from '../../components/base/Text'
-import { Input, Button, Modal } from '../../components/ui'
+import { Input, Button, Modal, FileAttachmentDropzone } from '../../components/ui'
 import { companyService } from '../../services'
 import type { Company } from '../../types'
 import { Themestore } from '../../data/Themestore'
@@ -11,11 +11,11 @@ interface Props {
   open: boolean
   company: Company | null
   onUpdated: (company: Company) => void
+  onClose: () => void
 }
 
-const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
+const CompanyCompletionModal = ({ open, company, onUpdated, onClose }: Props) => {
   const { current } = Themestore()
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -25,10 +25,10 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
-  const [taxRate, setTaxRate] = useState<number | ''>(0)
-  const [storageLimitMb, setStorageLimitMb] = useState<number | ''>(512)
-  const [storageUsedMb, setStorageUsedMb] = useState<number | ''>(0)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoFiles, setLogoFiles] = useState<File[]>([])
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const logoPreviewUrlRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!open || !company) return
@@ -37,73 +37,76 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
     setEmail(company.email ?? '')
     setPhone(company.phone ?? '')
     setAddress(company.address ?? '')
-    setTaxRate(typeof company.taxRate === 'number' ? company.taxRate : '')
-    setStorageLimitMb(typeof company.storageLimitMb === 'number' ? company.storageLimitMb : '')
-    setStorageUsedMb(typeof company.storageUsedMb === 'number' ? company.storageUsedMb : '')
     setLogoUrl(company.logoUrl ?? null)
+    setLogoFiles([])
+    // Clean up any existing preview URL
+    if (logoPreviewUrlRef.current) {
+      URL.revokeObjectURL(logoPreviewUrlRef.current)
+      logoPreviewUrlRef.current = null
+    }
+    setLogoPreview(null)
   }, [open, company])
-
-  const numbers = useMemo(() => {
-    const tax = taxRate === '' ? undefined : Number(taxRate)
-    const limit = storageLimitMb === '' ? undefined : Number(storageLimitMb)
-    const used = storageUsedMb === '' ? undefined : Number(storageUsedMb)
-    return { tax, limit, used }
-  }, [taxRate, storageLimitMb, storageUsedMb])
 
   const isValid = useMemo(() => {
     if (!company) return false
-    const hasLogo = !!logoUrl && logoUrl.trim().length > 0
+    const hasLogo = (!!logoUrl && logoUrl.trim().length > 0) || logoFiles.length > 0
     const hasRequiredStrings =
       name.trim().length > 0 &&
       (email?.trim().length ?? 0) > 0 &&
       (phone?.trim().length ?? 0) > 0 &&
       (address?.trim().length ?? 0) > 0
-    const hasRequiredNumbers =
-      typeof numbers.tax === 'number' &&
-      !Number.isNaN(numbers.tax) &&
-      typeof numbers.limit === 'number' &&
-      !Number.isNaN(numbers.limit) &&
-      typeof numbers.used === 'number' &&
-      !Number.isNaN(numbers.used)
-    return hasLogo && hasRequiredStrings && hasRequiredNumbers
-  }, [address, company, email, logoUrl, name, numbers.limit, numbers.tax, numbers.used, phone])
+    return hasLogo && hasRequiredStrings
+  }, [address, company, email, logoUrl, logoFiles, name, phone])
 
-  const onPickLogo = async (file: File | null) => {
-    if (!company || !file) return
-    setError('')
-    setUploading(true)
-    try {
-      const uploadedUrl = await companyService.uploadLogo(company.id, file)
-      setLogoUrl(uploadedUrl)
-      notifySuccess('Logo uploaded.')
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Logo upload failed.'
-      setError(msg)
-      notifyError(msg)
-    } finally {
-      setUploading(false)
+  const handleLogoChange = (files: File[]) => {
+    const file = files[0] ?? null
+    if (!file) return
+
+    // Clean up previous preview URL
+    if (logoPreviewUrlRef.current) {
+      URL.revokeObjectURL(logoPreviewUrlRef.current)
     }
+
+    // Create new preview URL
+    const previewUrl = URL.createObjectURL(file)
+    logoPreviewUrlRef.current = previewUrl
+    setLogoPreview(previewUrl)
+    setLogoFiles([file])
+    setError('')
   }
 
   const handleSave = async () => {
     if (!company) return
-    if (!isValid) return
     setError('')
     setSaving(true)
     try {
+      let finalLogoUrl = logoUrl
+
+      // Upload logo if a new file was selected
+      if (logoFiles.length > 0) {
+        setUploading(true)
+        try {
+          finalLogoUrl = await companyService.uploadLogo(company.id, logoFiles[0])
+          setLogoUrl(finalLogoUrl)
+          setLogoFiles([])
+        } finally {
+          setUploading(false)
+        }
+      }
+
       const updated = await companyService.update(company.id, {
         name: name.trim() || undefined,
         email: email.trim() || undefined,
         phone: phone.trim() || undefined,
         address: address.trim() || undefined,
-        taxRate: numbers.tax,
-        storageLimitMb: numbers.limit,
-        storageUsedMb: numbers.used,
-        logoUrl: logoUrl ?? undefined,
+        logoUrl: finalLogoUrl ?? undefined,
       })
       if (updated) {
         onUpdated(updated)
         notifySuccess('Company profile saved.')
+        onClose()
+        // Force page refresh to ensure all state is updated
+        window.location.reload()
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Could not save company.'
@@ -114,8 +117,19 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
     }
   }
 
+  const handleClose = () => {
+    setError('')
+    // Clean up preview URL
+    if (logoPreviewUrlRef.current) {
+      URL.revokeObjectURL(logoPreviewUrlRef.current)
+      logoPreviewUrlRef.current = null
+    }
+    setLogoPreview(null)
+    onClose()
+  }
+
   return (
-    <Modal open={open} onClose={() => { }} closeOnBackdrop={false} variant="wide">
+    <Modal open={open} onClose={handleClose} closeOnBackdrop={true} variant="wide">
       <View className="space-y-5 p-10">
         <div className="space-y-2">
           <Text variant="md" className="font-semibold">
@@ -149,50 +163,19 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
           />
         </View>
 
-        <View className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* <Input
-            label="Tax rate (%)"
-            type="number"
-            min={0}
-            max={100}
-            value={taxRate}
-            onChange={(e) =>
-              setTaxRate(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))
-            }
-          /> */}
-          {/* <Input
-            label="Storage limit (MB)"
-            type="number"
-            min={0}
-            value={storageLimitMb}
-            onChange={(e) =>
-              setStorageLimitMb(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))
-            }
-          /> */}
-          {/* <Input
-            label="Storage used (MB)"
-            type="number"
-            min={0}
-            value={storageUsedMb}
-            onChange={(e) =>
-              setStorageUsedMb(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))
-            }
-          /> */}
-        </View>
-
         <View className="space-y-3">
           <Text variant="sm" className="opacity-90" style={{ color: current?.system?.dark }}>
             Company logo
           </Text>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             <div
-              className="w-20 h-20 rounded-base overflow-hidden border border-gray-200 flex items-center justify-center"
+              className="w-20 h-20 rounded-base overflow-hidden border border-gray-200 flex items-center justify-center shrink-0"
               style={{ borderColor: current?.system?.border ?? undefined }}
             >
-              {logoUrl ? (
+              {logoPreview || logoUrl ? (
                 <img
-                  src={logoUrl}
+                  src={logoPreview || logoUrl || ''}
                   alt="Company logo"
                   className="w-full h-full object-cover"
                 />
@@ -203,20 +186,15 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
               )}
             </div>
 
-            <div className="flex-1 flex items-center gap-3 justify-end">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => onPickLogo(e.target.files?.[0] ?? null)}
-              />
-              <Button
-                type="button"
-                variant="background"
-                label={uploading ? 'Uploading…' : 'Upload logo'}
+            <div className="flex-1">
+              <FileAttachmentDropzone
+                files={logoFiles}
+                onFilesChange={handleLogoChange}
                 disabled={uploading}
-                onClick={() => fileInputRef.current?.click()}
+                accept="image/*"
+                multiple={false}
+                label=""
+                hint="Drag logo here or browse — PNG, JPG, or SVG"
               />
             </div>
           </div>
@@ -231,9 +209,9 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
         <div className="flex items-center justify-end gap-3 pt-1">
           <Button
             type="button"
-            variant="background"
+            variant="primary"
             label={saving ? 'Saving…' : 'Complete setup'}
-            // disabled={!isValid || saving}
+            disabled={!isValid || saving}
             loading={saving}
             onClick={handleSave}
           />
@@ -244,4 +222,3 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
 }
 
 export default CompanyCompletionModal
-

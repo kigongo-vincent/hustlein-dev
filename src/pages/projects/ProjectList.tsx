@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import Text, { baseFontSize, minFontSize } from '../../components/base/Text'
+import Text, { baseFontSize } from '../../components/base/Text'
 import View from '../../components/base/View'
 import { Card, Button, Skeleton, EmptyState } from '../../components/ui'
 import { Themestore } from '../../data/Themestore'
@@ -33,7 +33,6 @@ const ProjectList = () => {
   const isCompanyAdmin = user?.role === 'company_admin' || user?.role === 'super_admin'
   const [projects, setProjects] = useState<Project[]>([])
   const [marketplaceProjects, setMarketplaceProjects] = useState<ProjectPosting[]>([])
-  const [companyProjectTab, setCompanyProjectTab] = useState<'internal' | 'marketplace'>('internal')
   const [leads, setLeads] = useState<Record<string, string>>({})
   const [taskCountByProject, setTaskCountByProject] = useState<Record<string, number>>({})
   const [membersByProject, setMembersByProject] = useState<Record<string, ProjectMember[]>>({})
@@ -74,7 +73,29 @@ const ProjectList = () => {
         isCompanyAdmin ? marketplaceService.listPostings() : Promise.resolve([] as ProjectPosting[]),
       ])
       setProjects(projectList)
-      setMarketplaceProjects(postingList)
+
+      // Filter out marketplace postings that have been assigned (have linkedProjectId)
+      if (isCompanyAdmin) {
+        const assignedPostingIds = new Set<string>()
+        await Promise.all(
+          postingList.map(async (posting) => {
+            try {
+              const applications = await marketplaceService.listApplications(posting.id)
+              const hasLinkedProject = applications.some((app) => app.linkedProjectId)
+              if (hasLinkedProject) {
+                assignedPostingIds.add(posting.id)
+              }
+            } catch {
+              // Ignore errors for individual posting applications
+            }
+          })
+        )
+        const filteredPostings = postingList.filter((p) => !assignedPostingIds.has(p.id))
+        setMarketplaceProjects(filteredPostings)
+      } else {
+        setMarketplaceProjects(postingList)
+      }
+
       const leadMap: Record<string, string> = {}
       const uMap: Record<string, { name: string; avatarUrl?: string }> = {}
       userList.forEach((u) => {
@@ -370,9 +391,9 @@ const ProjectList = () => {
           <View bg="bg" className="p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <Text className="font-medium">{isCompanyAdmin ? 'Marketplace Projects' : 'Projects'}</Text>
+                <Text className="font-medium">Projects</Text>
                 <Text variant="sm" className="opacity-80">
-                  {isCompanyAdmin ? 'Manage internal and marketplace projects in one place' : 'Upwork-style overview and analytics'}
+                  Manage your projects in one place
                 </Text>
               </div>
               <div className="flex items-center gap-2 flex-nowrap">
@@ -403,52 +424,7 @@ const ProjectList = () => {
             </div>
           </View>
 
-          {isCompanyAdmin && (
-            <div
-              role="tablist"
-              aria-label="Company projects view"
-              className="flex flex-wrap gap-2 pb-2 border-b"
-              style={{ borderColor: current?.system?.border ?? 'rgba(0,0,0,0.06)' }}
-            >
-              {([
-                { id: 'internal', label: 'Internal Projects', count: sortedProjects.length },
-                { id: 'marketplace', label: 'Marketplace Projects', count: sortedMarketplaceProjects.length },
-              ] as const).map((tab) => {
-                const active = companyProjectTab === tab.id
-                const primary = current?.brand?.primary ?? '#682308'
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setCompanyProjectTab(tab.id)}
-                    className="px-3 py-2 rounded-md font-medium transition-opacity whitespace-nowrap"
-                    style={{
-                      fontSize: baseFontSize,
-                      backgroundColor: active ? `${primary}14` : 'transparent',
-                      color: active ? primary : (current?.system?.dark ?? '#111'),
-                      opacity: active ? 1 : 0.7,
-                    }}
-                  >
-                    {tab.label}
-                    <span
-                      className="font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
-                      style={{
-                        fontSize: Math.max(minFontSize, baseFontSize * 0.8),
-                        marginLeft: 8,
-                        backgroundColor: active ? `${primary}22` : (current?.system?.background ?? 'rgba(0,0,0,0.04)'),
-                        color: active ? primary : (current?.system?.dark ?? '#111'),
-                        opacity: active ? 1 : 0.75,
-                      }}
-                    >
-                      {tab.count}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
+
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {loading
@@ -491,11 +467,7 @@ const ProjectList = () => {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                isCompanyAdmin && companyProjectTab === 'marketplace'
-                  ? 'Search marketplace projects by title, description, company or skill…'
-                  : 'Search projects by name, description or lead…'
-              }
+              placeholder='Search projects by name, description or lead…'
               className="flex-1 min-w-0 py-3 pl-3 pr-4 bg-transparent focus:outline-none focus:ring-0 border-0 placeholder:opacity-60"
               style={{ fontSize: baseFontSize, lineHeight: 1.5, color: dark }}
               aria-label="Search projects"
@@ -529,21 +501,25 @@ const ProjectList = () => {
                 </Card>
               ))}
             </div>
-          ) : isCompanyAdmin && companyProjectTab === 'marketplace' ? (
-            sortedMarketplaceProjects.length === 0 ? (
-              <EmptyState
-                variant={marketplaceProjects.length === 0 ? 'folder' : 'search'}
-                title={marketplaceProjects.length === 0 ? 'No marketplace projects yet' : 'Nothing matches'}
-                description={
-                  marketplaceProjects.length === 0
-                    ? 'Create one to get started.'
-                    : 'No marketplace projects match your search or filters.'
-                }
-                className="p-4"
-              />
-            ) : (
-              <div className="space-y-4 w-full">
-                {sortedMarketplaceProjects.map((p) => (
+          ) : sortedProjects.length === 0 && sortedMarketplaceProjects.length === 0 ? (
+            <EmptyState
+              variant={projectsWithMeta.length === 0 && marketplaceProjects.length === 0 ? 'folder' : 'search'}
+              title={projectsWithMeta.length === 0 && marketplaceProjects.length === 0 ? 'No projects yet' : 'Nothing matches'}
+              description={
+                projectsWithMeta.length === 0 && marketplaceProjects.length === 0
+                  ? 'Create one to get started.'
+                  : 'No projects match your search or filters.'
+              }
+              className="p-4"
+            />
+          ) : (
+            <div className="space-y-4 w-full">
+              {sortedProjects.map((p) => (
+                <ProjectCard key={p.id} project={p} />
+              ))}
+              {isCompanyAdmin && sortedMarketplaceProjects
+                .filter((p) => !sortedProjects.some((sp) => sp.id === p.id))
+                .map((p) => (
                   <MarketplaceProjectCard
                     key={p.id}
                     posting={p}
@@ -561,24 +537,6 @@ const ProjectList = () => {
                     }}
                   />
                 ))}
-              </div>
-            )
-          ) : sortedProjects.length === 0 ? (
-            <EmptyState
-              variant={projectsWithMeta.length === 0 ? 'folder' : 'search'}
-              title={projectsWithMeta.length === 0 ? 'No projects yet' : 'Nothing matches'}
-              description={
-                projectsWithMeta.length === 0
-                  ? 'Create one to get started.'
-                  : 'No projects match your search or filters.'
-              }
-              className="p-4"
-            />
-          ) : (
-            <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
-              {sortedProjects.map((p) => (
-                <ProjectCard key={p.id} project={p} />
-              ))}
             </div>
           )}
         </div>
