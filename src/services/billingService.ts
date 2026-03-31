@@ -23,8 +23,11 @@ export const billingService = {
   async approveMilestone(id: string): Promise<BillingMilestone> {
     return billingRepo.approveMilestone(id)
   },
-  async generateInvoice(assignmentId: string, payload: { from?: string; to?: string }): Promise<Invoice> {
+  async generateInvoice(assignmentId: string, payload: { from?: string; to?: string; milestoneIds?: string[] }): Promise<Invoice> {
     return billingRepo.generateInvoice(assignmentId, payload)
+  },
+  async generateBulkInvoices(companyId: string, payload: { consultants?: string[]; from: string; to: string; hybridChoice: "hourly" | "fixed" }): Promise<Invoice[]> {
+    return billingRepo.generateBulkInvoices(companyId, payload)
   },
 }
 

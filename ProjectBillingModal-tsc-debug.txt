@@ -1,0 +1,588 @@
+RC=2
+STDOUT:
+error TS2468: Cannot find global value 'Promise'.
+node_modules/@types/chai/index.d.ts(883,42): error TS2304: Cannot find name 'ReadonlySet'.
+node_modules/@types/chai/index.d.ts(883,59): error TS2304: Cannot find name 'ReadonlyMap'.
+node_modules/@types/chai/index.d.ts(896,49): error TS2583: Cannot find name 'WeakSet'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+node_modules/@types/chai/index.d.ts(926,42): error TS2304: Cannot find name 'ReadonlySet'.
+node_modules/@types/chai/index.d.ts(926,59): error TS2304: Cannot find name 'ReadonlyMap'.
+node_modules/@types/chai/index.d.ts(939,52): error TS2583: Cannot find name 'WeakSet'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+node_modules/@types/chai/index.d.ts(971,42): error TS2304: Cannot find name 'ReadonlySet'.
+node_modules/@types/chai/index.d.ts(971,59): error TS2304: Cannot find name 'ReadonlyMap'.
+node_modules/@types/chai/index.d.ts(984,59): error TS2583: Cannot find name 'WeakSet'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+node_modules/@types/chai/index.d.ts(1006,42): error TS2304: Cannot find name 'ReadonlySet'.
+node_modules/@types/chai/index.d.ts(1006,59): error TS2304: Cannot find name 'ReadonlyMap'.
+node_modules/@types/chai/index.d.ts(1019,62): error TS2583: Cannot find name 'WeakSet'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+node_modules/@types/d3-array/index.d.ts(58,31): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(63,50): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(68,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(69,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(75,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(76,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(82,36): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(87,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(88,53): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(93,36): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(98,31): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(102,50): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(107,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(108,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(114,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(115,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(121,36): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(126,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(127,53): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(133,34): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(137,53): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(142,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(143,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(149,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(150,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(160,32): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(169,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(170,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(176,31): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(181,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(182,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(188,32): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(193,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(194,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(200,34): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(205,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(206,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(212,39): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(217,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(218,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(227,34): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(235,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(236,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(244,36): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(251,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(253,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(259,41): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(264,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(266,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(294,32): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(303,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(305,45): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(315,36): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(323,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(324,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(330,37): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(336,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(337,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(344,30): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(350,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(351,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(358,33): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(364,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(365,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(394,36): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(398,36): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(403,38): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(407,41): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(412,41): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(419,39): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(425,39): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(432,41): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(438,44): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(445,44): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(511,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(524,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(537,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(550,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(563,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(577,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(592,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(607,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(619,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(627,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(638,33): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(646,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(672,5): error TS2370: A rest parameter must be of an array type.
+node_modules/@types/d3-array/index.d.ts(672,37): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(699,15): error TS2574: A rest element type must be an array type.
+node_modules/@types/d3-array/index.d.ts(699,47): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(705,37): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(705,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(713,36): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(722,39): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(731,64): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(737,64): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(869,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(870,47): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(879,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(880,47): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(888,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(889,47): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(896,37): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(896,94): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(903,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(904,82): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(912,15): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(913,82): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(921,38): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(928,35): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(935,35): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(944,41): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(944,71): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(950,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(956,53): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(961,32): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(961,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(966,30): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(966,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(971,32): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(971,48): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(1039,24): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(1040,49): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-array/index.d.ts(1111,50): error TS2583: Cannot find name 'Map'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+node_modules/@types/d3-array/index.d.ts(1117,41): error TS2583: Cannot find name 'Set'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+node_modules/@types/d3-scale/index.d.ts(75,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(89,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(102,23): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(267,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(288,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(289,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(396,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(418,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(419,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(443,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(465,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(466,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(521,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(641,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(662,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(663,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(751,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(772,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(773,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(829,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(843,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(911,56): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(943,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(958,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(959,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1027,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1041,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1054,23): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1228,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1249,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1250,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1273,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1294,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1295,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1332,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1358,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1366,23): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1421,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1437,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1438,45): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1464,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1491,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1518,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1545,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1610,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1649,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1686,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1694,23): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1729,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1746,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1747,45): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1773,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1800,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1827,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1854,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1898,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1909,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(1985,72): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2000,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2001,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2047,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2061,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2100,72): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2113,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2114,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2162,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2175,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2208,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2223,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2224,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2272,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2287,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2319,45): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2333,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2347,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2348,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2388,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2400,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2410,23): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2509,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2520,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2521,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2555,20): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2568,18): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2578,23): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2655,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2667,13): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-scale/index.d.ts(2668,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(627,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(637,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(789,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(799,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(975,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(985,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(1244,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(1253,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2485,12): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2497,16): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2522,46): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2526,25): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2537,50): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2647,70): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2655,73): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2663,68): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2671,74): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/d3-shape/index.d.ts(2680,70): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/deep-eql/index.d.ts(5,30): error TS2583: Cannot find name 'WeakMap'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+node_modules/@types/react/index.d.ts(48,7): error TS2304: Cannot find name 'Iterable'.
+node_modules/@types/react/index.d.ts(436,10): error TS2456: Type alias 'ReactNode' circularly references itself.
+node_modules/@types/react/index.d.ts(441,11): error TS2304: Cannot find name 'Iterable'.
+src/api/client.ts(38,4): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/api/client.ts(51,20): error TS2550: Property 'includes' does not exist on type 'string'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/api/client.ts(65,14): error TS2550: Property 'startsWith' does not exist on type 'string'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/api/endpoints.ts(6,14): error TS1343: The 'import.meta' meta-property is only allowed when the '--module' option is 'es2020', 'es2022', 'esnext', 'system', 'node16', or 'nodenext'.
+src/api/endpoints.ts(6,26): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+src/api/endpoints.ts(16,27): error TS2550: Property 'fromEntries' does not exist on type 'ObjectConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2019' or later.
+src/api/endpoints.ts(17,12): error TS2550: Property 'entries' does not exist on type 'ObjectConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2017' or later.
+src/components/ui/index.ts(1,35): error TS6142: Module './Button' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Button.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(2,34): error TS6142: Module './Input' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Input.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(3,37): error TS6142: Module './Textarea' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Textarea.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(4,50): error TS6142: Module './Textarea' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Textarea.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(5,43): error TS6142: Module './RichTextEditor' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/RichTextEditor.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(11,8): error TS6142: Module './RichTextEditor' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/RichTextEditor.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(12,51): error TS6142: Module './FileAttachmentDropzone' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/FileAttachmentDropzone.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(13,37): error TS6142: Module './SafeHtml' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/SafeHtml.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(14,33): error TS6142: Module './Card' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Card.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(15,35): error TS6142: Module './Select' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Select.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(16,45): error TS6142: Module './Select' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Select.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(17,41): error TS6142: Module './CustomSelect' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/CustomSelect.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(18,60): error TS6142: Module './CustomSelect' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/CustomSelect.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(19,42): error TS6142: Module './CurrencyInput' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/CurrencyInput.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(20,41): error TS6142: Module './CurrencyInput' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/CurrencyInput.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(21,34): error TS6142: Module './Badge' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Badge.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(22,34): error TS6142: Module './Table' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Table.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(23,36): error TS6142: Module './Spinner' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Spinner.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(24,34): error TS6142: Module './Modal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Modal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(25,39): error TS6142: Module './AlertModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/AlertModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(26,47): error TS6142: Module './AddConsultantModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/AddConsultantModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(27,46): error TS6142: Module './AddConsultantModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/AddConsultantModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(28,37): error TS6142: Module './Skeleton' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Skeleton.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(29,39): error TS6142: Module './DatePicker' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/DatePicker.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(30,38): error TS6142: Module './DatePicker' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/DatePicker.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(31,44): error TS6142: Module './DateSelectInput' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/DateSelectInput.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(32,43): error TS6142: Module './DateSelectInput' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/DateSelectInput.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(33,36): error TS6142: Module './Popover' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Popover.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(34,35): error TS6142: Module './Popover' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Popover.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(35,37): error TS6142: Module '../NoteCard' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/NoteCard.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(36,36): error TS6142: Module '../NoteCard' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/NoteCard.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(37,41): error TS6142: Module './LogTimeModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/LogTimeModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(38,40): error TS6142: Module './LogTimeModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/LogTimeModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(39,39): error TS6142: Module './EmptyState' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/EmptyState.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(40,57): error TS6142: Module './EmptyState' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/EmptyState.tsx', but '--jsx' is not set.
+src/pages/projects/ProjectBillingModal.tsx(2,36): error TS6142: Module '../../components/base/Text' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/base/Text.tsx', but '--jsx' is not set.
+src/pages/projects/ProjectBillingModal.tsx(51,22): error TS2583: Cannot find name 'Set'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/pages/projects/ProjectBillingModal.tsx(60,59): error TS2550: Property 'includes' does not exist on type 'string[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2016' or later.
+src/pages/projects/ProjectBillingModal.tsx(67,24): error TS2550: Property 'find' does not exist on type 'ProjectAssignment[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/pages/projects/ProjectBillingModal.tsx(71,85): error TS2550: Property 'includes' does not exist on type 'string[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2016' or later.
+src/pages/projects/ProjectBillingModal.tsx(76,57): error TS2550: Property 'includes' does not exist on type 'string[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2016' or later.
+src/pages/projects/ProjectBillingModal.tsx(86,10): error TS2304: Cannot find name 'selected'.
+src/pages/projects/ProjectBillingModal.tsx(86,23): error TS2304: Cannot find name 'selected'.
+src/pages/projects/ProjectBillingModal.tsx(87,39): error TS2304: Cannot find name 'selected'.
+src/pages/projects/ProjectBillingModal.tsx(88,22): error TS2304: Cannot find name 'selected'.
+src/pages/projects/ProjectBillingModal.tsx(103,7): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/pages/projects/ProjectBillingModal.tsx(114,25): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/pages/projects/ProjectBillingModal.tsx(134,7): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/pages/projects/ProjectBillingModal.tsx(149,27): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/pages/projects/ProjectBillingModal.tsx(159,38): error TS2550: Property 'from' does not exist on type 'ArrayConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/pages/projects/ProjectBillingModal.tsx(159,47): error TS2583: Cannot find name 'Set'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/pages/projects/ProjectBillingModal.tsx(193,46): error TS2550: Property 'from' does not exist on type 'ArrayConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/pages/projects/ProjectBillingModal.tsx(193,55): error TS2583: Cannot find name 'Set'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/pages/projects/ProjectBillingModal.tsx(201,45): error TS2550: Property 'from' does not exist on type 'ArrayConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/pages/projects/ProjectBillingModal.tsx(201,54): error TS2583: Cannot find name 'Set'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/pages/projects/ProjectBillingModal.tsx(239,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(240,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(241,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(242,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(243,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(246,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(250,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(253,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(254,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(255,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(256,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(261,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(263,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(265,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(267,59): error TS2550: Property 'includes' does not exist on type 'string[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2016' or later.
+src/pages/projects/ProjectBillingModal.tsx(269,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(276,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(279,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(280,27): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(283,27): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(293,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(298,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(300,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(302,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(304,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(311,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(314,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(315,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(318,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(329,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(334,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(340,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(341,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(342,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(343,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(349,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(351,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(353,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(355,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(362,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(363,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(370,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(376,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(378,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(380,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(382,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(389,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(390,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(400,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(401,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(402,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(403,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(409,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(416,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(417,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(417,16): error TS2304: Cannot find name 'CustomSelect'.
+src/pages/projects/ProjectBillingModal.tsx(419,24): error TS2304: Cannot find name 'generateHybridChoice'.
+src/pages/projects/ProjectBillingModal.tsx(420,38): error TS2304: Cannot find name 'setGenerateHybridChoice'.
+src/pages/projects/ProjectBillingModal.tsx(429,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(430,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(431,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(437,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(444,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(445,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(446,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(447,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(448,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(450,30): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(459,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(460,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(461,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(462,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(463,16): error TS2304: Cannot find name 'selected'.
+src/pages/projects/ProjectBillingModal.tsx(464,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(464,66): error TS2304: Cannot find name 'selected'.
+src/pages/projects/ProjectBillingModal.tsx(464,88): error TS2304: Cannot find name 'selected'.
+src/pages/projects/ProjectBillingModal.tsx(467,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(468,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(469,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(470,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(470,88): error TS2304: Cannot find name 'selected'.
+src/pages/projects/ProjectBillingModal.tsx(472,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(473,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(474,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(474,65): error TS2304: Cannot find name 'selected'.
+src/pages/projects/ProjectBillingModal.tsx(475,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(480,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(486,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(487,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(488,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(489,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(490,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/repos/api.ts(41,19): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(45,30): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(49,61): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(53,54): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(57,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(64,19): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(68,30): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(72,42): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(76,36): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(80,44): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(84,51): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(88,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(95,19): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(99,30): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(103,42): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(107,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(111,61): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(115,54): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(119,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(126,31): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(129,42): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(133,48): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(137,68): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(144,19): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(148,30): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(152,72): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(156,88): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(160,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(167,37): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(171,53): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(175,72): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(179,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(186,30): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(190,42): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(194,46): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(198,47): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(202,65): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(206,80): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(210,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(214,46): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(221,19): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(225,30): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(229,42): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(233,46): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(237,38): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(241,72): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(245,51): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(249,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(256,19): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(260,30): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(264,42): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(268,63): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(272,56): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(276,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(283,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(287,78): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(291,57): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(295,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(302,75): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(308,61): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(312,124): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(316,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(323,25): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(327,33): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(331,190): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(335,138): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(339,36): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(343,174): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(347,46): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(351,31): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(355,95): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(359,197): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(363,54): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(367,67): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(386,21): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(390,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(397,105): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(398,105): error TS2550: Property 'entries' does not exist on type 'ObjectConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2017' or later.
+src/repos/api.ts(402,113): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(406,39): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(410,47): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(414,126): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(418,39): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(422,114): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(426,147): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(433,73): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(440,30): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(444,31): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/repos/api.ts(448,54): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/assignmentService.ts(5,21): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/assignmentService.ts(8,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/billingService.ts(5,52): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/billingService.ts(8,105): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/billingService.ts(11,113): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/billingService.ts(14,39): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/billingService.ts(17,47): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/billingService.ts(20,126): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/billingService.ts(23,39): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/billingService.ts(26,114): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/billingService.ts(29,147): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/calendarService.ts(5,37): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/calendarService.ts(8,53): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/calendarService.ts(11,72): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/calendarService.ts(14,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/commentService.ts(5,76): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/commentService.ts(8,58): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/commentService.ts(11,124): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/commentService.ts(14,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/companyService.ts(7,17): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/companyService.ts(10,26): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/companyService.ts(13,61): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/companyService.ts(16,56): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/companyService.ts(19,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/companyService.ts(22,52): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/departmentService.ts(5,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/departmentService.ts(8,78): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/departmentService.ts(11,57): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/departmentService.ts(14,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/invoiceService.ts(5,60): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/invoiceService.ts(8,26): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/invoiceService.ts(11,31): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/invoiceService.ts(14,54): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(5,25): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(8,33): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(11,86): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(14,96): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(17,36): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(20,89): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(23,46): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(26,31): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(29,95): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(32,91): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(35,54): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/marketplaceService.ts(38,67): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/milestoneService.ts(5,17): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/milestoneService.ts(8,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/milestoneService.ts(11,26): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/milestoneService.ts(14,63): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/milestoneService.ts(17,58): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/milestoneService.ts(20,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/noteService.ts(5,17): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/noteService.ts(8,30): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/noteService.ts(11,72): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/noteService.ts(14,88): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/noteService.ts(17,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectFileService.ts(7,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectFileService.ts(10,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectFileService.ts(13,44): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectFileService.ts(16,62): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectFileService.ts(19,80): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectFileService.ts(22,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectFileService.ts(25,46): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectFileService.ts(28,67): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectService.ts(5,17): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectService.ts(8,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectService.ts(11,44): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectService.ts(14,26): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectService.ts(17,41): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectService.ts(20,75): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectService.ts(25,61): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectService.ts(28,56): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/projectService.ts(31,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/reportService.ts(5,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/reportService.ts(10,51): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/reportService.ts(14,50): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/taskService.ts(5,17): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/taskService.ts(8,43): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/taskService.ts(11,47): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/taskService.ts(14,39): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/taskService.ts(17,26): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/taskService.ts(20,72): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/taskService.ts(23,53): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/taskService.ts(26,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/userService.ts(5,17): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/userService.ts(8,26): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/userService.ts(11,42): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/userService.ts(14,36): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/userService.ts(17,44): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/userService.ts(20,53): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/services/userService.ts(23,29): error TS2705: An async function or method in ES5 requires the 'Promise' constructor.  Make sure you have a declaration for the 'Promise' constructor or include 'ES2015' in your '--lib' option.
+src/utils/authProviderStorage.ts(41,14): error TS2550: Property 'includes' does not exist on type 'string'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+
+STDERR:
+

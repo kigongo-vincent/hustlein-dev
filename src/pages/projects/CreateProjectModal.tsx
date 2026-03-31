@@ -12,6 +12,10 @@ type CreateInternalPayload = {
   description: string
   leadId: string
   dueDate: string
+  budgetType?: MarketplaceBudgetType
+  hourlyRate?: number
+  fixedBudget?: number
+  currency?: string
 }
 
 type CreateExternalPayload = {
@@ -79,6 +83,12 @@ const CreateProjectModal = ({
   const [extFixedBudget, setExtFixedBudget] = useState('')
   const [extCurrency, setExtCurrency] = useState('UGX')
   const [extSkills, setExtSkills] = useState('')
+
+  // Internal project budget fields
+  const [intBudgetType, setIntBudgetType] = useState<MarketplaceBudgetType>('hybrid')
+  const [intHourlyRate, setIntHourlyRate] = useState('')
+  const [intFixedBudget, setIntFixedBudget] = useState('')
+  const [intCurrency, setIntCurrency] = useState('UGX')
 
   const resetExternal = () => {
     setExtTitle('')
@@ -314,6 +324,42 @@ const CreateProjectModal = ({
                   onChange={onDueDateChange}
                   aria-label="Project due date"
                 />
+
+                <CustomSelect
+                  label="Budget type"
+                  options={BUDGET_OPTIONS}
+                  value={intBudgetType}
+                  onChange={(v) => setIntBudgetType(v === 'hourly' || v === 'fixed' || v === 'hybrid' ? v : 'hybrid')}
+                  placement="below"
+                />
+
+                {(intBudgetType === 'hourly' || intBudgetType === 'hybrid') && (
+                  <CurrencyInput
+                    label={intBudgetType === 'hybrid' ? 'Hourly rate' : 'Hourly rate (per hour)'}
+                    value={intHourlyRate}
+                    onChange={setIntHourlyRate}
+                    currency={intCurrency}
+                    showCurrencySymbol={false}
+                  />
+                )}
+
+                {(intBudgetType === 'fixed' || intBudgetType === 'hybrid') && (
+                  <CurrencyInput
+                    label={intBudgetType === 'hybrid' ? 'Fixed budget (total)' : 'Fixed budget'}
+                    value={intFixedBudget}
+                    onChange={setIntFixedBudget}
+                    currency={intCurrency}
+                    showCurrencySymbol={false}
+                  />
+                )}
+
+                <CustomSelect
+                  label="Currency"
+                  options={CURRENCY_OPTIONS}
+                  value={intCurrency}
+                  onChange={(v) => setIntCurrency(v || 'UGX')}
+                  placement="below"
+                />
               </div>
             )}
 
@@ -356,12 +402,21 @@ const CreateProjectModal = ({
                     return
                   }
 
+                  const hourlyN = intHourlyRate.trim() ? Number(intHourlyRate) : undefined
+                  const fixedN = intFixedBudget.trim() ? Number(intFixedBudget) : undefined
+                  const hourlyRate = intBudgetType === 'hourly' || intBudgetType === 'hybrid' ? hourlyN : undefined
+                  const fixedBudget = intBudgetType === 'fixed' || intBudgetType === 'hybrid' ? fixedN : undefined
+
                   onSubmit({
                     projectType: 'internal',
                     name: name.trim(),
                     description,
                     leadId,
                     dueDate,
+                    budgetType: intBudgetType,
+                    hourlyRate,
+                    fixedBudget,
+                    currency: intCurrency.trim() || 'UGX',
                   })
                 }}
                 disabled={

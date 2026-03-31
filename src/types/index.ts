@@ -137,6 +137,8 @@ export interface BillingMilestone {
   status: BillingMilestoneStatus;
   createdAt: string;
   updatedAt: string;
+  /** Summary of total duration per user for this milestone */
+  summary?: UserDurationSummary[];
 }
 
 export interface ProjectAssignment {
@@ -144,6 +146,7 @@ export interface ProjectAssignment {
   projectId: string;
   companyId: string;
   freelancerId: string;
+  freelancerName?: string;
   billingType: "hourly" | "fixed" | "hybrid";
   hourlyRate?: number;
   fixedBudget?: number;
@@ -311,6 +314,14 @@ export interface Project {
   projectType?: ProjectType;
   /** Optional project due date (ISO date string) */
   dueDate?: string;
+  /** Budget type: hourly, fixed, or hybrid */
+  budgetType?: MarketplaceBudgetType;
+  /** Hourly rate for hourly billing */
+  hourlyRate?: number;
+  /** Fixed budget for fixed billing */
+  fixedBudget?: number;
+  /** Currency code (e.g., UGX, USD) */
+  currency?: string;
 }
 
 // Workflow
@@ -357,6 +368,13 @@ export interface Milestone {
   workflowStateId?: string;
   /** User IDs assigned to this milestone (optional; also derived from task owners). */
   assigneeIds?: string[];
+  /** Summary of total duration per user for this milestone */
+  summary?: UserDurationSummary[];
+}
+
+export interface UserDurationSummary {
+  userId: string;
+  totalDuration: number; // in hours
 }
 
 // Goal (high-level, can map to milestones)
@@ -476,6 +494,13 @@ export interface Invoice {
   issuer?: InvoiceIssuer;
   bank?: InvoiceBankDetails;
   lineItems?: InvoiceLineItem[];
+}
+
+export interface GenerateBulkInvoicesRequest {
+  consultants?: string[]; // uuids, empty for all
+  from: string; // YYYY-MM-DD
+  to: string; // YYYY-MM-DD
+  hybridChoice: "hourly" | "fixed";
 }
 
 // Note (standalone notes page + project file notes)

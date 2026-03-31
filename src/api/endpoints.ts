@@ -128,6 +128,7 @@ export const endpoints = {
   assignmentBillingMilestones: (assignmentId: string) => path(['assignments', assignmentId, 'billing-milestones']),
   approveBillingMilestone: (id: string) => path(['billing-milestones', id, 'approve']),
   generateAssignmentInvoice: (assignmentId: string) => path(['assignments', assignmentId, 'invoices', 'generate']),
+  generateBulkInvoices: (companyId: string) => path(['companies', companyId, 'invoices', 'generate-bulk']),
 } as const
 
 export type Endpoints = typeof endpoints

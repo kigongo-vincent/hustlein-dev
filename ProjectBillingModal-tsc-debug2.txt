@@ -1,0 +1,163 @@
+RC=2
+STDOUT:
+src/api/client.ts(20,10): error TS2304: Cannot find name 'localStorage'.
+src/api/client.ts(24,22): error TS2304: Cannot find name 'localStorage'.
+src/api/client.ts(25,8): error TS2304: Cannot find name 'localStorage'.
+src/api/client.ts(43,15): error TS2304: Cannot find name 'RequestInit'.
+src/api/client.ts(48,21): error TS2304: Cannot find name 'fetch'.
+src/api/client.ts(69,5): error TS2304: Cannot find name 'window'.
+src/api/client.ts(69,30): error TS2304: Cannot find name 'CustomEvent'.
+src/api/endpoints.ts(6,14): error TS1343: The 'import.meta' meta-property is only allowed when the '--module' option is 'es2020', 'es2022', 'esnext', 'system', 'node16', or 'nodenext'.
+src/api/endpoints.ts(6,26): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+src/api/endpoints.ts(16,27): error TS2550: Property 'fromEntries' does not exist on type 'ObjectConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2019' or later.
+src/api/endpoints.ts(19,22): error TS2304: Cannot find name 'URLSearchParams'.
+src/components/ui/index.ts(1,35): error TS6142: Module './Button' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Button.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(2,34): error TS6142: Module './Input' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Input.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(3,37): error TS6142: Module './Textarea' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Textarea.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(4,50): error TS6142: Module './Textarea' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Textarea.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(5,43): error TS6142: Module './RichTextEditor' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/RichTextEditor.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(11,8): error TS6142: Module './RichTextEditor' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/RichTextEditor.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(12,51): error TS6142: Module './FileAttachmentDropzone' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/FileAttachmentDropzone.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(13,37): error TS6142: Module './SafeHtml' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/SafeHtml.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(14,33): error TS6142: Module './Card' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Card.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(15,35): error TS6142: Module './Select' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Select.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(16,45): error TS6142: Module './Select' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Select.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(17,41): error TS6142: Module './CustomSelect' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/CustomSelect.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(18,60): error TS6142: Module './CustomSelect' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/CustomSelect.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(19,42): error TS6142: Module './CurrencyInput' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/CurrencyInput.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(20,41): error TS6142: Module './CurrencyInput' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/CurrencyInput.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(21,34): error TS6142: Module './Badge' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Badge.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(22,34): error TS6142: Module './Table' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Table.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(23,36): error TS6142: Module './Spinner' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Spinner.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(24,34): error TS6142: Module './Modal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Modal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(25,39): error TS6142: Module './AlertModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/AlertModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(26,47): error TS6142: Module './AddConsultantModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/AddConsultantModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(27,46): error TS6142: Module './AddConsultantModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/AddConsultantModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(28,37): error TS6142: Module './Skeleton' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Skeleton.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(29,39): error TS6142: Module './DatePicker' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/DatePicker.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(30,38): error TS6142: Module './DatePicker' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/DatePicker.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(31,44): error TS6142: Module './DateSelectInput' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/DateSelectInput.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(32,43): error TS6142: Module './DateSelectInput' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/DateSelectInput.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(33,36): error TS6142: Module './Popover' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Popover.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(34,35): error TS6142: Module './Popover' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/Popover.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(35,37): error TS6142: Module '../NoteCard' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/NoteCard.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(36,36): error TS6142: Module '../NoteCard' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/NoteCard.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(37,41): error TS6142: Module './LogTimeModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/LogTimeModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(38,40): error TS6142: Module './LogTimeModal' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/LogTimeModal.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(39,39): error TS6142: Module './EmptyState' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/EmptyState.tsx', but '--jsx' is not set.
+src/components/ui/index.ts(40,57): error TS6142: Module './EmptyState' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/ui/EmptyState.tsx', but '--jsx' is not set.
+src/data/Authstore.ts(25,7): error TS2304: Cannot find name 'localStorage'.
+src/data/Themestore.ts(112,17): error TS2304: Cannot find name 'localStorage'.
+src/data/Themestore.ts(129,5): error TS2304: Cannot find name 'localStorage'.
+src/data/Themestore.ts(144,14): error TS2584: Cannot find name 'document'. Do you need to change your target library? Try changing the 'lib' compiler option to include 'dom'.
+src/data/Themestore.ts(145,16): error TS2584: Cannot find name 'document'. Do you need to change your target library? Try changing the 'lib' compiler option to include 'dom'.
+src/data/Themestore.ts(149,3): error TS2584: Cannot find name 'document'. Do you need to change your target library? Try changing the 'lib' compiler option to include 'dom'.
+src/data/Themestore.ts(150,18): error TS2584: Cannot find name 'document'. Do you need to change your target library? Try changing the 'lib' compiler option to include 'dom'.
+src/pages/projects/ProjectBillingModal.tsx(2,36): error TS6142: Module '../../components/base/Text' was resolved to '/Users/mac/Documents/git/tekjuice/hustle-in/frontend/src/components/base/Text.tsx', but '--jsx' is not set.
+src/pages/projects/ProjectBillingModal.tsx(209,24): error TS2339: Property 'setData' does not exist on type 'DataTransfer'.
+src/pages/projects/ProjectBillingModal.tsx(215,37): error TS2339: Property 'getData' does not exist on type 'DataTransfer'.
+src/pages/projects/ProjectBillingModal.tsx(239,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(240,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(241,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(242,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(243,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(246,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(250,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(253,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(254,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(255,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(256,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(261,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(263,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(265,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(269,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(276,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(279,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(280,27): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(283,27): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(293,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(298,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(300,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(302,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(304,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(311,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(314,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(315,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(318,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(329,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(334,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(340,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(341,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(342,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(343,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(349,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(351,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(353,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(355,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(362,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(363,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(370,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(376,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(378,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(380,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(382,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(389,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(390,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(400,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(401,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(402,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(403,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(409,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(416,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(417,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(417,16): error TS2304: Cannot find name 'CustomSelect'.
+src/pages/projects/ProjectBillingModal.tsx(419,24): error TS2304: Cannot find name 'generateHybridChoice'.
+src/pages/projects/ProjectBillingModal.tsx(420,38): error TS2304: Cannot find name 'setGenerateHybridChoice'.
+src/pages/projects/ProjectBillingModal.tsx(429,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(430,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(431,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(437,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(444,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(445,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(446,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(447,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(448,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(450,30): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(459,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(460,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(461,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(462,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(464,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(467,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(468,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(469,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(470,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(472,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(473,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(474,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(475,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(480,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(486,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(487,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(488,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(489,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/pages/projects/ProjectBillingModal.tsx(490,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/repos/api.ts(367,60): error TS2304: Cannot find name 'File'.
+src/repos/api.ts(369,22): error TS2693: 'FormData' only refers to a type, but is being used as a value here.
+src/repos/api.ts(371,23): error TS2304: Cannot find name 'fetch'.
+src/repos/api.ts(398,82): error TS2304: Cannot find name 'URLSearchParams'.
+src/repos/api.ts(436,33): error TS2304: Cannot find name 'URLSearchParams'.
+src/services/companyService.ts(22,45): error TS2304: Cannot find name 'File'.
+src/services/companyService.ts(24,22): error TS2693: 'FormData' only refers to a type, but is being used as a value here.
+src/services/companyService.ts(27,23): error TS2304: Cannot find name 'fetch'.
+src/services/marketplaceService.ts(38,60): error TS2304: Cannot find name 'File'.
+src/services/projectFileService.ts(28,41): error TS2304: Cannot find name 'File'.
+src/services/projectFileService.ts(30,22): error TS2693: 'FormData' only refers to a type, but is being used as a value here.
+src/services/projectFileService.ts(33,23): error TS2304: Cannot find name 'fetch'.
+src/utils/authProviderStorage.ts(7,5): error TS2304: Cannot find name 'localStorage'.
+src/utils/authProviderStorage.ts(15,5): error TS2304: Cannot find name 'localStorage'.
+src/utils/authProviderStorage.ts(23,15): error TS2304: Cannot find name 'localStorage'.
+src/utils/authProviderStorage.ts(38,18): error TS2304: Cannot find name 'atob'.
+
+STDERR:
+

@@ -21,6 +21,7 @@ import { Themestore } from '../../data/Themestore'
 import { Authstore } from '../../data/Authstore'
 import { companyService } from '../../services'
 import { invoiceService } from '../../services/invoiceService'
+import { billingService } from '../../services'
 import type { Invoice, InvoiceStatus, InvoiceLineItem, Company } from '../../types'
 import { downloadInvoicePdf } from '../../utils/invoicePdf'
 import {
@@ -356,6 +357,13 @@ const InvoicesPage = () => {
   const [filterSidebarEntered, setFilterSidebarEntered] = useState(false)
   const [activeTab, setActiveTab] = useState<'all' | 'processing' | 'pending' | 'paid'>('all')
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
+  const [bulkGenerateOpen, setBulkGenerateOpen] = useState(false)
+  const [generateFrom, setGenerateFrom] = useState('')
+  const [generateTo, setGenerateTo] = useState('')
+  const [generateConsultants, setGenerateConsultants] = useState<string[]>([])
+  const [generateHybridChoice, setGenerateHybridChoice] = useState<'hourly' | 'fixed'>('hourly')
+  const [generating, setGenerating] = useState(false)
+  const [refresh, setRefresh] = useState(0)
   const [company, setCompany] = useState<Company | null>(null)
   const [draftStatus, setDraftStatus] = useState<InvoiceStatus | ''>('')
   const [draftIssuedFrom, setDraftIssuedFrom] = useState('')
@@ -400,7 +408,7 @@ const InvoicesPage = () => {
     return () => {
       cancelled = true
     }
-  }, [user?.companyId])
+  }, [user?.companyId, refresh])
 
   const searchLower = searchQuery.trim().toLowerCase()
   const filteredInvoices = invoices.filter((inv) => {
@@ -694,6 +702,33 @@ const InvoicesPage = () => {
     exportInvoicesToCsv(invoicesForCurrentMonth, `invoices-${currentYearMonth}.csv`)
   }
 
+  const handleBulkGenerate = async () => {
+    if (!company) return
+    setGenerating(true)
+    try {
+      const payload = {
+        consultants: generateConsultants.length > 0 ? generateConsultants : undefined,
+        from: generateFrom,
+        to: generateTo,
+        hybridChoice: generateHybridChoice,
+      }
+      await billingService.generateBulkInvoices(company.id, payload)
+      // Refresh invoices
+      setRefresh(r => r + 1)
+      setBulkGenerateOpen(false)
+      // Reset form
+      setGenerateFrom('')
+      setGenerateTo('')
+      setGenerateConsultants([])
+      setGenerateHybridChoice('hourly')
+      // Perhaps show success message
+    } catch (error) {
+      console.error('Failed to generate invoices', error)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const handleDownloadInvoicePdf = (inv: Invoice) => {
     const items = getInvoiceLineItems(inv)
     downloadInvoicePdf({
@@ -728,6 +763,13 @@ const InvoicesPage = () => {
               startIcon={<BarChart className="w-4 h-4 shrink-0" />}
               onClick={() => setAnalyticsOpen(true)}
               disabled={loading || invoices.length === 0}
+            />
+            <Button
+              size="sm"
+              label="Generate Invoices"
+              startIcon={<FileText className="w-4 h-4 shrink-0" />}
+              onClick={() => setBulkGenerateOpen(true)}
+              disabled={loading}
             />
             <Button
               size="sm"
@@ -1583,6 +1625,65 @@ const InvoicesPage = () => {
               onClick={handleMarkPaidConfirm}
               disabled={saving}
               loading={saving}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Bulk generate modal */}
+      <Modal open={bulkGenerateOpen} onClose={() => setBulkGenerateOpen(false)}>
+        <div className="p-6">
+          <Text className="font-semibold mb-4 block">Generate Invoices</Text>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <DatePicker
+                label="From date"
+                value={generateFrom}
+                onChange={setGenerateFrom}
+                placeholder="YYYY-MM-DD"
+              />
+              <DatePicker
+                label="To date"
+                value={generateTo}
+                onChange={setGenerateTo}
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
+            <CustomSelect
+              label="Hybrid billing choice"
+              value={generateHybridChoice}
+              onChange={(value) => setGenerateHybridChoice(value as 'hourly' | 'fixed')}
+              options={[
+                { label: 'Hourly', value: 'hourly' },
+                { label: 'Fixed', value: 'fixed' },
+              ]}
+            />
+            <div>
+              <Text variant="sm" className="mb-2 block">Consultants</Text>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="all-consultants"
+                  checked={generateConsultants.length === 0}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setGenerateConsultants([])
+                    }
+                  }}
+                />
+                <label htmlFor="all-consultants" className="text-sm">All consultants</label>
+              </div>
+              {/* For simplicity, no multi-select for now, just all or none */}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-6">
+            <Button label="Cancel" variant="background" onClick={() => setBulkGenerateOpen(false)} />
+            <Button
+              label="Generate"
+              startIcon={<FileText className="w-4 h-4 shrink-0" />}
+              onClick={handleBulkGenerate}
+              disabled={generating || !generateFrom || !generateTo}
+              loading={generating}
             />
           </div>
         </div>

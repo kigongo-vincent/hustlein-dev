@@ -419,9 +419,13 @@ export const billingRepo = {
     const res = await api.patch<BillingMilestone>(endpoints.approveBillingMilestone(id), {})
     return assertOk(res) as BillingMilestone
   },
-  async generateInvoice(assignmentId: string, payload: { from?: string; to?: string }): Promise<Invoice> {
+  async generateInvoice(assignmentId: string, payload: { from?: string; to?: string; milestoneIds?: string[] }): Promise<Invoice> {
     const res = await api.post<Invoice>(endpoints.generateAssignmentInvoice(assignmentId), payload)
     return assertOk(res) as Invoice
+  },
+  async generateBulkInvoices(companyId: string, payload: { consultants?: string[]; from: string; to: string; hybridChoice: "hourly" | "fixed" }): Promise<Invoice[]> {
+    const res = await api.post<Invoice[]>(endpoints.generateBulkInvoices(companyId), payload)
+    return assertOk(res) as Invoice[]
   },
 }
 

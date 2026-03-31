@@ -1265,6 +1265,21 @@ const ProjectDetail = () => {
                           <span className="opacity-70 shrink-0" style={{ color: dark }}>Due</span>
                           <span style={{ color: dark }}>{projectDueLabel ?? '—'}</span>
                         </div>
+                        {!isMarketplacePostingDetail && project.budgetType && (
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Target className="w-4 h-4 shrink-0 opacity-70" style={{ color: dark }} />
+                            <span className="opacity-70 shrink-0" style={{ color: dark }}>Budget</span>
+                            <span style={{ color: dark }}>
+                              {project.budgetType === 'hourly' && project.hourlyRate
+                                ? `${formatMoney(project.hourlyRate, project.currency)} / hr`
+                                : project.budgetType === 'fixed' && project.fixedBudget
+                                  ? `${formatMoney(project.fixedBudget, project.currency)} fixed`
+                                  : project.budgetType === 'hybrid' && project.hourlyRate && project.fixedBudget
+                                    ? `${formatMoney(project.hourlyRate, project.currency)} / hr + ${formatMoney(project.fixedBudget, project.currency)} fixed`
+                                    : project.budgetType}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 min-w-0">
                           <Target className="w-4 h-4 shrink-0 opacity-70" style={{ color: dark }} />
                           <span className="opacity-70 shrink-0" style={{ color: dark }}>
