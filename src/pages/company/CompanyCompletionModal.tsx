@@ -25,9 +25,9 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
-  const [taxRate, setTaxRate] = useState<number | ''>('')
-  const [storageLimitMb, setStorageLimitMb] = useState<number | ''>('')
-  const [storageUsedMb, setStorageUsedMb] = useState<number | ''>('')
+  const [taxRate, setTaxRate] = useState<number | ''>(0)
+  const [storageLimitMb, setStorageLimitMb] = useState<number | ''>(512)
+  const [storageUsedMb, setStorageUsedMb] = useState<number | ''>(0)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
@@ -115,8 +115,8 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
   }
 
   return (
-    <Modal open={open} onClose={() => {}} closeOnBackdrop={false} variant="wide">
-      <View className="space-y-5 p-1">
+    <Modal open={open} onClose={() => { }} closeOnBackdrop={false} variant="wide">
+      <View className="space-y-5 p-10">
         <div className="space-y-2">
           <Text variant="md" className="font-semibold">
             Complete company setup
@@ -150,7 +150,7 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
         </View>
 
         <View className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input
+          {/* <Input
             label="Tax rate (%)"
             type="number"
             min={0}
@@ -159,8 +159,8 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
             onChange={(e) =>
               setTaxRate(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))
             }
-          />
-          <Input
+          /> */}
+          {/* <Input
             label="Storage limit (MB)"
             type="number"
             min={0}
@@ -168,8 +168,8 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
             onChange={(e) =>
               setStorageLimitMb(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))
             }
-          />
-          <Input
+          /> */}
+          {/* <Input
             label="Storage used (MB)"
             type="number"
             min={0}
@@ -177,7 +177,7 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
             onChange={(e) =>
               setStorageUsedMb(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))
             }
-          />
+          /> */}
         </View>
 
         <View className="space-y-3">
