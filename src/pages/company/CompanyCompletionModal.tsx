@@ -233,7 +233,7 @@ const CompanyCompletionModal = ({ open, company, onUpdated }: Props) => {
             type="button"
             variant="background"
             label={saving ? 'Saving…' : 'Complete setup'}
-            disabled={!isValid || saving}
+            // disabled={!isValid || saving}
             loading={saving}
             onClick={handleSave}
           />
