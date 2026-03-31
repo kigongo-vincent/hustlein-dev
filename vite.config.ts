@@ -1,3 +1,22 @@
+// import { defineConfig } from "vite";
+// import react from "@vitejs/plugin-react-swc";
+// import tailwindcss from "@tailwindcss/vite";
+
+// // https://vite.dev/config/
+// export default defineConfig({
+//   plugins: [react(), tailwindcss()],
+//   server: {
+//     proxy: {
+//       '/api': {
+//         target: 'http://localhost:3000',
+//         changeOrigin: true,
+//       },
+//       '/uploads': { target: 'http://localhost:3000', changeOrigin: true },
+//       '/health': { target: 'http://localhost:3000', changeOrigin: true },
+//     },
+//   },
+// });
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
@@ -7,12 +26,19 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        ws: true, // ✅ enable WebSocket proxy
+      },
+      "/uploads": {
+        target: "http://localhost:3000",
         changeOrigin: true,
       },
-      '/uploads': { target: 'http://localhost:3000', changeOrigin: true },
-      '/health': { target: 'http://localhost:3000', changeOrigin: true },
+      "/health": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
     },
   },
 });
