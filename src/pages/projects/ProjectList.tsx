@@ -264,6 +264,7 @@ const ProjectList = () => {
         setCreateDescription('')
         setCreateLeadId('')
         setCreateDueDate('')
+        loadData()
         notifySuccess('Marketplace posting created.')
       } catch (err) {
         notifyError(err instanceof Error ? err.message : 'Could not create project.')
